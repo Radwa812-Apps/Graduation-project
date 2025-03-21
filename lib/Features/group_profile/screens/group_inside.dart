@@ -6,21 +6,81 @@ import 'package:near_me_new_version/Features/group_profile/screens/group_profile
 import '../../../core/constants.dart';
 import '../../chat_group/screens/group_chat.dart';
 import '../components/member_group_inside.dart';
+import 'package:near_me_new_version/core/services/group_services.dart';
 
-class GroupInsideScreen extends StatelessWidget {
+class GroupInsideScreen extends StatefulWidget {
   static String groupInsideScreenKey = '/GroupInsideScreen';
 
-  String userName = 'Radwa';
-  String lastLocatin = 'Just arrived home';
-  String distance = '2.5km';
+  const GroupInsideScreen({super.key});
 
-  final LatLng _initialPosition =
-      const LatLng(30.0444, 31.2357); // Cairo, Egypt
+  @override
+  _GroupInsideScreenState createState() => _GroupInsideScreenState();
+}
+
+class _GroupInsideScreenState extends State<GroupInsideScreen> {
+  final GroupService _groupService = GroupService();
+  List<Map<String, dynamic>> _members = [];
+  String? _groupName;
+  String? _createdBy;
+  String? _groupId; 
+  bool _isDataLoaded = false;
+
+  final LatLng _initialPosition = const LatLng(30.0444, 31.2357);
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isDataLoaded) {
+      _loadGroupData();
+      _isDataLoaded = true;
+    }
+  }
+
+  void _loadGroupData() async {
+    final String? groupId = ModalRoute.of(context)?.settings.arguments as String?;
+    print("Group ID received: $groupId");
+
+    if (groupId != null) {
+      final group = await _groupService.getGroupById(groupId);
+      print("Group data: ${group?.toJson()}");
+
+      if (group != null) {
+        print("Members in group: ${group.members}");
+        List<Map<String, dynamic>> membersData = [];
+        for (String uid in group.members) {
+          Map<String, String>? userData = await _groupService.getUserData(uid);
+          print("User data for UID $uid: $userData");
+          if (userData != null) {
+            membersData.add({
+              'uid': uid,
+              'userName': "${userData['fName']} ${userData['lName']}".trim(),
+              'lastLocation': 'Just arrived home',
+              'distance': '2.5km',
+            });
+          }
+        }
+        setState(() {
+          _members = membersData;
+          _groupName = group.name;
+          _createdBy = group.createdBy;
+          _groupId = groupId; 
+          print("Members list updated: $_members");
+        });
+      } else {
+        print("Group not found for ID: $groupId");
+      }
+    } else {
+      print("No groupId provided!");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String name = ModalRoute.of(context)!.settings.arguments as String;
-
     return Scaffold(
       backgroundColor: kBackgroundColor,
       body: Stack(
@@ -64,17 +124,7 @@ class GroupInsideScreen extends StatelessWidget {
                     controller: scrollController,
                     padding: const EdgeInsets.all(16.0),
                     children: [
-                      // const Center(
-                      //   child: Icon(
-                      //     Icons.horizontal_rule,
-                      //     color: Colors.grey,
-                      //     size: 30,
-                      //   ),
-
-                      // ),
-                      SizedBox(
-                        height: 30.h,
-                      ),
+                      SizedBox(height: 30.h),
                       Row(
                         children: [
                           Expanded(
@@ -85,24 +135,19 @@ class GroupInsideScreen extends StatelessWidget {
                               child: TextField(
                                 decoration: InputDecoration(
                                   hintText: 'Search...',
-                                  hintStyle: TextStyle(
-                                      color: Colors.grey.withOpacity(0.8)),
-                                  suffixIcon: const Icon(Icons.search,
-                                      color: kPrimaryColor1),
+                                  hintStyle: TextStyle(color: Colors.grey.withOpacity(0.8)),
+                                  suffixIcon: const Icon(Icons.search, color: kPrimaryColor1),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20.0),
-                                    borderSide: BorderSide(
-                                        color: Colors.grey.withOpacity(0.5)),
+                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.5)),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20.0),
-                                    borderSide: BorderSide(
-                                        color: Colors.grey.withOpacity(0.5)),
+                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.5)),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20.0),
-                                    borderSide: BorderSide(
-                                        color: Colors.white.withOpacity(0.8)),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.8)),
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey[200],
@@ -112,9 +157,7 @@ class GroupInsideScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          SizedBox(
-                            width: 10.w,
-                          ),
+                          SizedBox(width: 10.w),
                           InkWell(
                             onTap: () {},
                             borderRadius: BorderRadius.circular(10),
@@ -134,11 +177,28 @@ class GroupInsideScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      MemberGroupInside(
-                        userName: userName,
-                        lastLocatin: lastLocatin,
-                        distance: distance,
-                      ),
+                      if (!_isDataLoaded)
+                        const Center(child: CircularProgressIndicator())
+                      else if (_members.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Text(
+                            "No members in this group.",
+                            style: TextStyle(color: kFontColor),
+                          ),
+                        )
+                      else
+                        ..._members.map(
+                          (member) => Padding(
+                            padding: EdgeInsets.only(bottom: 8.h),
+                            child: MemberGroupInside(
+                              userName: member['userName'],
+                              lastLocatin: member['lastLocation'],
+                              distance: member['distance'],
+                              isOwner: member['uid'] == _createdBy,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 );
@@ -157,8 +217,10 @@ class GroupInsideScreen extends StatelessWidget {
             child: GestureDetector(
               onTap: (() {
                 Navigator.pushNamed(
-                    context, GroupProfileScreen.groupProfileScreenKey,
-                    arguments: name);
+                  context,
+                  GroupProfileScreen.groupProfileScreenKey,
+                  arguments: _groupId, 
+                );
               }),
               child: const CircleAvatar(
                 radius: 40,
@@ -170,7 +232,11 @@ class GroupInsideScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, GroupChat.groupChatKey, arguments: name);
+          Navigator.pushNamed(
+            context,
+            GroupChat.groupChatKey,
+            arguments: _groupName ?? '',
+          );
         },
         backgroundColor: kPrimaryColor1,
         shape: RoundedRectangleBorder(

@@ -5,11 +5,13 @@ import '../../Home/Home/components/round_image_widget.dart';
 class RowCheckbox extends StatefulWidget {
   final String? userName;
   final Function(bool)? onChanged;
+  final bool initialValue; // ضفنا ده عشان نتحكم في القيمة الابتدائية
 
   const RowCheckbox({
     super.key,
     this.userName,
     this.onChanged,
+    this.initialValue = false, // قيمة افتراضية
   });
 
   @override
@@ -17,7 +19,13 @@ class RowCheckbox extends StatefulWidget {
 }
 
 class _RowCheckboxState extends State<RowCheckbox> {
-  bool isChecked = false;
+  late bool isChecked;
+
+  @override
+  void initState() {
+    super.initState();
+    isChecked = widget.initialValue; // البداية بناءً على القيمة اللي جاية
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +42,7 @@ class _RowCheckboxState extends State<RowCheckbox> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Color.fromARGB(255, 176, 238, 178).withOpacity(0.2),
+            color: const Color.fromARGB(255, 176, 238, 178).withOpacity(0.2),
             spreadRadius: 2,
             blurRadius: 3,
             offset: const Offset(0, 3),
@@ -65,7 +73,7 @@ class _RowCheckboxState extends State<RowCheckbox> {
                 ),
                 const SizedBox(width: 20),
                 Text(
-                  widget.userName!,
+                  widget.userName ?? 'Unknown',
                   style: const TextStyle(
                     color: kFontColor,
                     fontSize: 20,

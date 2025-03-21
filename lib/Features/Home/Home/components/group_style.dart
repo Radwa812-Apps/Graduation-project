@@ -7,8 +7,9 @@ import 'round_image_widget.dart';
 
 class GroupStyle extends StatelessWidget {
   final String? groupName;
+  final String? groupId; 
 
-  const GroupStyle({super.key, this.groupName});
+  const GroupStyle({super.key, this.groupName, this.groupId});
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +23,10 @@ class GroupStyle extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Color.fromARGB(255, 74, 72, 72)
-                .withOpacity(0.2), 
-            blurRadius: 6, 
-            spreadRadius: 2, 
-            offset: const Offset(0, 3), 
+            color: Color.fromARGB(255, 74, 72, 72).withOpacity(0.2),
+            blurRadius: 6,
+            spreadRadius: 2,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -42,13 +42,16 @@ class GroupStyle extends StatelessWidget {
                 GestureDetector(
                   onTap: (() {
                     Navigator.pushNamed(
-                        context, GroupInsideScreen.groupInsideScreenKey,
-                        arguments: groupName);
+                      context,
+                      GroupInsideScreen.groupInsideScreenKey,
+                      arguments: groupId, 
+                    );
                   }),
                   child: RoundImageWidget(
-                      name: 'assets/images/group.jpg',
-                      width: screenWidth * .14.w,
-                      height: screenHeight * .07.h),
+                    name: 'assets/images/group.jpg',
+                    width: screenWidth * .14.w,
+                    height: screenHeight * .07.h,
+                  ),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -59,23 +62,24 @@ class GroupStyle extends StatelessWidget {
                       fontFamily: kFontRegular,
                       color: kFontColor,
                     ),
-                    overflow:
-                        TextOverflow.ellipsis, 
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 SizedBox(width: 8.w),
                 IconButton(
                   onPressed: (() {
                     Navigator.pushNamed(
-                        context, GroupNotifications.groupNotificationsKey,
-                        arguments: groupName);
+                      context,
+                      GroupNotifications.groupNotificationsKey,
+                      arguments: groupName,
+                    );
                   }),
                   icon: Icon(
                     Icons.notifications_outlined,
                     size: 30.sp,
                     color: kPrimaryColor1,
                   ),
-                )
+                ),
               ],
             ),
           ),

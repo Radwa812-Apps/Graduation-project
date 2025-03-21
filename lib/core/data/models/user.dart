@@ -10,16 +10,19 @@ class UserModel {
   final String dateOfBirth;
   final String profilPicture;
   final String role;
+  final List<String> groups;
 
-  UserModel(
-      {required this.id,
-      required this.fName,
-      required this.lName,
-      required this.email,
-      required this.phoneNumber,
-      required this.dateOfBirth,
-      required this.profilPicture,
-      required this.role});
+  UserModel({
+    required this.id,
+    required this.fName,
+    required this.lName,
+    required this.email,
+    required this.phoneNumber,
+    required this.dateOfBirth,
+    required this.profilPicture,
+    required this.role,
+    this.groups=const[],
+  });
 
   factory UserModel.fromJson(Map<String, dynamic> json, String id) {
     //final String rawPhoneNumber = json['phoneNumber'];
@@ -36,6 +39,7 @@ class UserModel {
       dateOfBirth: json['dateOfBirth'],
       profilPicture: json['profilPicture'],
       role: json['role'],
+       groups: List<String>.from(json['groups'] ?? []),
     );
   }
 
@@ -47,15 +51,18 @@ class UserModel {
       throw Exception("UserCredential does not contain a valid user.");
     }
     return UserModel(
-        id: user.uid,
-        fName: user.displayName ?? '',
-        email: user.email ?? '',
-        phoneNumber: user.phoneNumber ??
-            'PhoneNumber(countryISOCode: EG, countryCode: +20, number: 1100338766)',
-        dateOfBirth: '',
-        profilPicture: user.photoURL ?? 'assets/images/user.jpg',
-        role: 'not admin',
-        lName: '');
+      id: user.uid,
+      fName: user.displayName ?? '',
+      email: user.email ?? '',
+      phoneNumber:
+          user.phoneNumber ??
+          'PhoneNumber(countryISOCode: EG, countryCode: +20, number: 1100338766)',
+      dateOfBirth: '',
+      profilPicture: user.photoURL ?? 'assets/images/user.jpg',
+      role: 'not admin',
+      lName: '',
+      groups: const [],
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -68,6 +75,7 @@ class UserModel {
       'dateOfBirth': this.dateOfBirth,
       'role': this.role,
       'profilPicture': this.profilPicture,
+      'groups': this.groups,
     };
   }
 }

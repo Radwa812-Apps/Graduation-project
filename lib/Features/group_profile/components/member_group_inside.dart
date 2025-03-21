@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants.dart';
 import '../../Home/Home/components/round_image_widget.dart';
 
@@ -10,35 +9,36 @@ class MemberGroupInside extends StatelessWidget {
     required this.userName,
     required this.lastLocatin,
     required this.distance,
+    this.isOwner = false, 
   });
 
   final String userName;
   final String lastLocatin;
   final String distance;
+  final bool isOwner;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 80,
-      width: double.infinity, 
+      width: double.infinity,
       decoration: BoxDecoration(
         border: Border.all(
-          color: kPrimaryColor1, 
-          width: 1, 
+          color: kPrimaryColor1,
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(30), 
+        borderRadius: BorderRadius.circular(30),
         boxShadow: const [
           BoxShadow(
-            color: kBackgroundColor, 
-            blurRadius: 10, 
+            color: kBackgroundColor,
+            blurRadius: 10,
             spreadRadius: 2,
-            offset: Offset(0, 0), 
+            offset: Offset(0, 0),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.center, 
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Padding(
             padding: EdgeInsets.only(left: 16),
@@ -51,21 +51,41 @@ class MemberGroupInside extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment
-                  .center,
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  userName,
-                  style: const TextStyle(
-                    color: kFontColor,
-                    fontSize: 20,
-                    fontFamily: kFontRegular,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        color: kFontColor,
+                        fontSize: 20,
+                        fontFamily: kFontRegular,
+                      ),
+                    ),
+                    
+                    if (isOwner) ...[
+                      SizedBox(width: 5.w),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: kPrimaryColor1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          'Owner',
+                          style: TextStyle(
+                            color: kPrimaryColor1,
+                            fontSize: 10.sp,
+                            fontFamily: kFontRegular,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(
-                  height: 1,
-                ),
+                const SizedBox(height: 1),
                 Text(
                   lastLocatin,
                   style: const TextStyle(
@@ -77,7 +97,7 @@ class MemberGroupInside extends StatelessWidget {
               ],
             ),
           ),
-          const Spacer(), 
+          const Spacer(),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Text(

@@ -8,10 +8,14 @@ class RowAddMember extends StatelessWidget {
     super.key,
     required this.screenWidth,
     required this.onSearchPressed,
+    required this.groupId,
+    required this.onReturn, 
   });
 
   final double screenWidth;
   final VoidCallback onSearchPressed;
+  final String groupId;
+  final VoidCallback onReturn; 
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +26,12 @@ class RowAddMember extends StatelessWidget {
           GestureDetector(
             onTap: () {
               Navigator.pushNamed(
-                  context, AddMembersScreen.addMembersScreenKey);
+                context,
+                AddMembersScreen.addMembersScreenKey,
+                arguments: groupId,
+              ).then((_) {
+                onReturn(); 
+              });
             },
             child: Row(
               children: const [
@@ -44,13 +53,12 @@ class RowAddMember extends StatelessWidget {
               ],
             ),
           ),
-          const Spacer(
-            flex: 1,
-          ),
+          const Spacer(flex: 1),
           IconButton(
-              icon: const Icon(Icons.search, size: 28, color: kPrimaryColor1),
-              onPressed: (() =>
-                  Navigator.pushNamed(context, SearchMember.searchMemberKey))),
+            icon: const Icon(Icons.search, size: 28, color: kPrimaryColor1),
+            onPressed: () =>
+                Navigator.pushNamed(context, SearchMember.searchMemberKey),
+          ),
         ],
       ),
     );

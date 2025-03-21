@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/group_profile_screen.dart';
-import '../../../core/constants.dart';
+import 'package:near_me_new_version/core/constants.dart';
+
 class FloatingAddIcon extends StatelessWidget {
+  final double screenWidth;
+  final bool isCheckboxSelected;
+  final VoidCallback? onPressed; 
+
   const FloatingAddIcon({
     super.key,
     required this.screenWidth,
     required this.isCheckboxSelected,
+    this.onPressed,
   });
-
-  final double screenWidth;
-  final bool isCheckboxSelected;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(bottom: 40, left: screenWidth * .75),
       child: GestureDetector(
-        onTap: isCheckboxSelected
-            ? () {
-                Navigator.pushNamed(
-                    context, GroupProfileScreen.groupProfileScreenKey);
-              }
-            : null,
+        onTap: isCheckboxSelected ? onPressed : null, 
         child: Container(
           width: 56,
           height: 56,
