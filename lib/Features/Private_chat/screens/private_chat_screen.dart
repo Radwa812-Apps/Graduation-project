@@ -112,17 +112,17 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
               itemCount: _messages.length,
               itemBuilder: (context, index) {
                 final message = _messages[index];
-                return MessageBubble(
+                /*return MessageBubble(
                   message: message["message"]!,
                   time: message["time"]!,
-                );
+                );*/
               },
             ),
           ),
-          ChatInputField(
+          /*ChatInputField(
             controller: _messageController,
             onSend: _sendMessage,
-          ),
+          ),*/
         ],
       ),
     );

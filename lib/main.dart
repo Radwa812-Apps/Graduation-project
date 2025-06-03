@@ -24,6 +24,7 @@ import 'package:near_me_new_version/core/data/bloc/custom_places/custom_places_b
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
 import 'package:near_me_new_version/core/data/models/chat_model_temp.dart';
 import 'package:near_me_new_version/core/services/Auth_functions.dart';
+import 'package:near_me_new_version/core/services/chat_services.dart' show ChatService;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Features/Home/Home/Screens/home_screen.dart';
@@ -36,6 +37,7 @@ import 'Features/Private_chat/screens/private_chat_screen.dart';
 import 'Features/User_Profile/screens/edit_screen.dart';
 import 'Features/auth/Forgot_password/Screens/send_email_for_pass.dart';
 import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
+import 'Features/chat_group/components/message_bubble.dart';
 import 'Features/group_profile/screens/group_inside.dart';
 import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
@@ -49,15 +51,41 @@ void main() async {
     await Firebase.initializeApp();
   }
 
-  runApp(
+  /*runApp(
     ScreenUtilInit(
       builder: (BuildContext context, Widget? child) {
         return NearMeApp();
       },
       child: ChangeNotifierProvider(create: (_) => ChatModelTemp()),
     ),
+  );*/
+  runApp(
+    ScreenUtilInit(
+      builder: (BuildContext context, Widget? child) {
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => ChatModelTemp()),
+            Provider<ChatService>(create: (_) => ChatService()),
+            // Your existing BLoC providers
+            BlocProvider(
+              create: (context) => AuthBloc(Services()),
+            ),
+            BlocProvider(
+              create: (context) => CustomPlacesBloc(Services()),
+            ),
+            BlocProvider(
+              create: (context) => ProfileBloc(),
+            ),
+          ],
+          child: NearMeApp(),
+        );
+      },
+      child: Container(), // Empty container since providers are now above
+    ),
   );
 }
+
+
 
 // ignore: must_be_immutable
 class NearMeApp extends StatelessWidget {
@@ -126,7 +154,13 @@ class NearMeApp extends StatelessWidget {
                     (context) => GroupProfileScreen(),
                 AddMembersScreen.addMembersScreenKey:
                     (context) => AddMembersScreen(),
-                GroupChat.groupChatKey: (context) => const GroupChat(),
+                GroupChat.groupChatKey: (context) {
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+    return GroupChat(
+      groupId: args['groupId']!,
+      groupName: args['groupName']!,
+    );
+  },
                 EditScreen.editScreenKey: (context) => EditScreen(),
                 GroupNotifications.groupNotificationsKey:
                     (context) => const GroupNotifications(title: 'Alex Trip'),

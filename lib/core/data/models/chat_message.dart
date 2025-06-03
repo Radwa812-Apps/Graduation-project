@@ -9,7 +9,8 @@ class ChatMessage {
   final String typingStatus;
   final String onlineStatus;
   final String messageType; // (chat , group)
-  final Timestamp timestamp;
+  final Timestamp? timestamp;
+  final String senderName;
 
   ChatMessage(
       {required this.id,
@@ -19,7 +20,9 @@ class ChatMessage {
       required this.typingStatus,
       required this.onlineStatus,
       required this.messageType,
-      required this.timestamp});
+      required this.timestamp,
+      required this.senderName,
+      });
   factory ChatMessage.fromJson(Map<String, dynamic> json, String id) {
     return ChatMessage(
         id: id,
@@ -29,6 +32,7 @@ class ChatMessage {
         typingStatus: json['typingStatus'],
         onlineStatus: json['onlineStatus'],
         messageType: json['messageType'],
-        timestamp: json['timestamp'] as Timestamp);
+        senderName: json['senderName'] ?? 'Unknown',
+        timestamp: json['timestamp'] as Timestamp?);
   }
 }

@@ -159,7 +159,10 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
                           ),
                           SizedBox(width: 10.w),
                           InkWell(
-                            onTap: () {},
+                            onTap: () {
+                              //HERE
+                              
+                            },
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
                               padding: const EdgeInsets.all(8),
@@ -230,7 +233,7 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      /*floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.pushNamed(
             context,
@@ -243,7 +246,31 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
           borderRadius: BorderRadius.circular(50.0),
         ),
         child: const Icon(Icons.message, color: Colors.white),
-      ),
+      ),*/
+      floatingActionButton: FloatingActionButton(
+  onPressed: () {
+    if (_groupId != null && _groupName != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GroupChat(
+            groupId: _groupId!,
+            groupName: _groupName!,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Group data not loaded yet')),
+      );
+    }
+  },
+  backgroundColor: kPrimaryColor1,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(50.0),
+  ),
+  child: const Icon(Icons.message, color: Colors.white),
+),
     );
   }
 }
