@@ -101,34 +101,64 @@ class SocialAuthWidgetState  extends State<SocialAuthWidget> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 220.w,
-              height: 45.h,
-              child: SignInButton(
-                Buttons.google,
-                onPressed: () {
-                  signInWithGoogle(context);
-                },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50.0),
+Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 50.w), 
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                InkWell(
+                  onTap: () {
+                    signInWithGoogle(context);
+                  },
+                  borderRadius: BorderRadius.circular(30.0),
+                  child: Container(
+                    height: 51.h, 
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30.0), 
+                      color: Colors.white, 
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        
+                        Padding(
+                          padding: EdgeInsets.only(right: 10.w),
+                          child: Image.asset(
+                            'assets/images/google.png', 
+                            width: 30.w, 
+                            height: 30.h,
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            "Sign in with Google",
+                            style: TextStyle(
+                              color: Colors.black87, 
+                              fontSize: 16.sp, 
+                              fontWeight: FontWeight.normal,
+                              fontFamily: kFontSemiBold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                elevation: 5,
-              ),
+                if (isLoading)
+                  const CircularProgressIndicator(
+                    color: kPrimaryColor1,
+                  ),
+              ],
             ),
-            if (isLoading)
-              const CircularProgressIndicator(
-                color: kPrimaryColor1,
-              ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

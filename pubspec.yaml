@@ -75,6 +75,9 @@ dependencies:
   firebase_storage: ^12.4.2
   cloud_firestore: ^5.6.5
   image_picker: ^1.0.7
+  flutter_sound: ^9.28.0
+  audioplayers: ^5.2.1
+  
   
 
 dev_dependencies:
