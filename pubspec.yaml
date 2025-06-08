@@ -75,6 +75,8 @@ dependencies:
   firebase_storage: ^12.4.2
   cloud_firestore: ^5.6.5
   image_picker: ^1.0.7
+  location: ^8.0.0
+  flutter_polyline_points: ^2.1.0
   
 
 dev_dependencies:
