@@ -1,13 +1,20 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/icons_text_switch_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/media.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 
-class FeaturesOne extends StatelessWidget {
-  const FeaturesOne({
-    super.key,
-  });
+class FeaturesOne extends StatefulWidget {
+  final Function(bool)? onToggle;
+  final bool isLiveTrackingOn;
+  const FeaturesOne({this.onToggle, super.key, this.isLiveTrackingOn = false});
 
+  @override
+  State<FeaturesOne> createState() => _FeaturesOneState();
+}
+
+class _FeaturesOneState extends State<FeaturesOne> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -17,15 +24,25 @@ class FeaturesOne extends StatelessWidget {
           featureName: 'Notifications',
         ),
         const SizedBox(height: 20),
-        const IconsTextSwitchWidget(
+        IconsTextSwitchWidget(
           iconData: Icons.location_on_outlined,
           featureName: 'Share Location',
+          onToggle: (value) {
+            // هنا تقدر تطبع قيمة الـ onToggle في اللوج
+            print("onToggle value: $value");
+            if (widget.onToggle != null) {
+              widget.onToggle!(value);
+            }
+          },
+          isLiveTrackingOn: widget.isLiveTrackingOn,
         ),
         const SizedBox(height: 20),
         GestureDetector(
           onTap: () {
             Navigator.pushNamed(
-                context, SelectPlaceScreen.selectPlaceScreenKey);
+              context,
+              SelectPlaceScreen.selectPlaceScreenKey,
+            );
           },
           child: const IconsTextSwitchWidget(
             iconData: Icons.select_all_rounded,

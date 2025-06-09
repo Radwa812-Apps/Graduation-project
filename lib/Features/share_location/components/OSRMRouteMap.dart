@@ -1,8 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as latLng;
-
+import 'package:latlong2/latlong.dart' as latLng;
 
 class OSRMRouteMap {
   Dio dio = Dio();

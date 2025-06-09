@@ -1,21 +1,30 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/switch_widget.dart';
+import 'package:near_me_new_version/core/constants.dart';
 
-import '../../../core/constants.dart';
-
-class IconsTextSwitchWidget extends StatelessWidget {
+class IconsTextSwitchWidget extends StatefulWidget {
   const IconsTextSwitchWidget({
     super.key,
     this.showSwitch = true,
     required this.featureName,
     required this.iconData,
+    this.onToggle,
+    this.initialFeatureStatus = false,
+    this.isLiveTrackingOn = false,
   });
-
+  final bool initialFeatureStatus;
+  final Function(bool)? onToggle;
   final bool showSwitch;
   final String? featureName;
   final IconData? iconData;
+  final bool isLiveTrackingOn; // Added this parameter
 
+  @override
+  State<IconsTextSwitchWidget> createState() => _IconsTextSwitchWidgetState();
+}
+
+class _IconsTextSwitchWidgetState extends State<IconsTextSwitchWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -25,14 +34,10 @@ class IconsTextSwitchWidget extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                iconData,
-                size: 30,
-                color: kPrimaryColor1,
-              ),
+              Icon(widget.iconData, size: 30, color: kPrimaryColor1),
               const SizedBox(width: 10),
               Text(
-                featureName!,
+                widget.featureName!,
                 style: const TextStyle(
                   fontSize: 20,
                   fontFamily: kFontRegular,
@@ -42,8 +47,15 @@ class IconsTextSwitchWidget extends StatelessWidget {
               ),
             ],
           ),
-          if (showSwitch)
-            const SwitchWidget(), 
+
+          if (widget.onToggle != null)
+            SwitchWidget(
+              isSharingLocationPressed: true,
+              onToggle: widget.onToggle,
+              isLiveTrackingOn: widget.isLiveTrackingOn,
+            ),
+
+          // Removed invalid if statement; only widgets are allowed here.
         ],
       ),
     );

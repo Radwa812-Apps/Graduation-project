@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/group_notifications.dart';
+import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import '../../../../core/constants.dart';
 import '../../../group_profile/screens/group_inside.dart';
 import 'round_image_widget.dart';
@@ -43,7 +44,7 @@ class GroupStyle extends StatelessWidget {
                   onTap: (() {
                     Navigator.pushNamed(
                       context,
-                      GroupInsideScreen.groupInsideScreenKey,
+                      OrderTrackingPage.OrderTrackingScreenKey,
                       arguments: groupId, 
                     );
                   }),

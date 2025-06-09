@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/search_text_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/components/split_between_features.dart';
@@ -32,12 +34,27 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
     super.initState();
   }
 
+  Function(bool)? onToggle;
+  late String name;
+  bool isLiveTrackingOn = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isDataLoaded) {
       _loadGroupData();
       _isDataLoaded = true;
+    }
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    if (args != null) {
+      name = args['name'];
+      log("Name received: $name");
+      onToggle = args['onToggle'];
+      log("onToggle received: $onToggle");
+      if (args.containsKey('isLiveTrackingOn')) {
+        setState(() {
+          isLiveTrackingOn = args['isLiveTrackingOn'];
+        });
+      }
     }
   }
 
@@ -231,7 +248,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const FeaturesOne(),
+                FeaturesOne(onToggle: onToggle, isLiveTrackingOn: isLiveTrackingOn),
                 SplitBetweenFeatures(),
                 const SizedBox(height: 10),
                 RowAddMember(

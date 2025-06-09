@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/group_profile_screen.dart';
+import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -147,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onTap: () {
                                       Navigator.pushNamed(
                                         context,
-                                        GroupInsideScreen.groupInsideScreenKey,
+                                        OrderTrackingPage.OrderTrackingScreenKey,
                                         arguments: _groups[index].id,
                                       );
                                     },

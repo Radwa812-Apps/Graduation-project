@@ -18,13 +18,16 @@ import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart'
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/search_member.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
+import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
+import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/custom_places/custom_places_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
 import 'package:near_me_new_version/core/data/models/chat_model_temp.dart';
 import 'package:near_me_new_version/core/services/Auth_functions.dart';
-import 'package:near_me_new_version/core/services/chat_services.dart' show ChatService;
+import 'package:near_me_new_version/core/services/chat_services.dart'
+    show ChatService;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Features/Home/Home/Screens/home_screen.dart';
@@ -47,9 +50,8 @@ import 'Features/group_profile/screens/media.dart';
 void main() async {
   // debugPaintSizeEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp();
-  }
+
+  await Firebase.initializeApp();
 
   /*runApp(
     ScreenUtilInit(
@@ -67,15 +69,10 @@ void main() async {
             ChangeNotifierProvider(create: (_) => ChatModelTemp()),
             Provider<ChatService>(create: (_) => ChatService()),
             // Your existing BLoC providers
-            BlocProvider(
-              create: (context) => AuthBloc(Services()),
-            ),
-            BlocProvider(
-              create: (context) => CustomPlacesBloc(Services()),
-            ),
-            BlocProvider(
-              create: (context) => ProfileBloc(),
-            ),
+            BlocProvider(create: (context) => AuthBloc(Services())),
+            BlocProvider(create: (context) => CustomPlacesBloc(Services())),
+            BlocProvider(create: (context) => ProfileBloc()),
+            BlocProvider (create: (context) => TrackingOnCubit()),
           ],
           child: NearMeApp(),
         );
@@ -84,8 +81,6 @@ void main() async {
     ),
   );
 }
-
-
 
 // ignore: must_be_immutable
 class NearMeApp extends StatelessWidget {
@@ -155,12 +150,14 @@ class NearMeApp extends StatelessWidget {
                 AddMembersScreen.addMembersScreenKey:
                     (context) => AddMembersScreen(),
                 GroupChat.groupChatKey: (context) {
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-    return GroupChat(
-      groupId: args['groupId']!,
-      groupName: args['groupName']!,
-    );
-  },
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, String>;
+                  return GroupChat(
+                    groupId: args['groupId']!,
+                    groupName: args['groupName']!,
+                  );
+                },
                 EditScreen.editScreenKey: (context) => EditScreen(),
                 GroupNotifications.groupNotificationsKey:
                     (context) => const GroupNotifications(title: 'Alex Trip'),
@@ -176,6 +173,7 @@ class NearMeApp extends StatelessWidget {
                     (context) => const PasswordResetPage(),
                 GroupInsideScreen.groupInsideScreenKey:
                     (context) => GroupInsideScreen(),
+                    OrderTrackingPage.OrderTrackingScreenKey: (context) => OrderTrackingPage(),
               },
             ),
           );
