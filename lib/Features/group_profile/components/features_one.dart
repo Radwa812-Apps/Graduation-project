@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/icons_text_switch_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/media.dart';
@@ -8,7 +6,8 @@ import 'package:near_me_new_version/Features/select_place/screens/select_place_s
 class FeaturesOne extends StatefulWidget {
   final Function(bool)? onToggle;
   final bool isLiveTrackingOn;
-  const FeaturesOne({this.onToggle, super.key, this.isLiveTrackingOn = false});
+  final String id;
+  const FeaturesOne({this.onToggle, super.key, this.isLiveTrackingOn = false, this.id = ''});
 
   @override
   State<FeaturesOne> createState() => _FeaturesOneState();
@@ -25,6 +24,7 @@ class _FeaturesOneState extends State<FeaturesOne> {
         ),
         const SizedBox(height: 20),
         IconsTextSwitchWidget(
+          id: widget.id,
           iconData: Icons.location_on_outlined,
           featureName: 'Share Location',
           onToggle: (value) {

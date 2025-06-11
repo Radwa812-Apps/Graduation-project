@@ -20,6 +20,7 @@ import 'package:near_me_new_version/Features/group_profile/screens/search_member
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
+import 'package:near_me_new_version/Features/share_location/screens/test.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/custom_places/custom_places_bloc.dart';
@@ -72,7 +73,7 @@ void main() async {
             BlocProvider(create: (context) => AuthBloc(Services())),
             BlocProvider(create: (context) => CustomPlacesBloc(Services())),
             BlocProvider(create: (context) => ProfileBloc()),
-            BlocProvider (create: (context) => TrackingOnCubit()),
+            BlocProvider(create: (context) => TrackingOnCubit()),
           ],
           child: NearMeApp(),
         );
@@ -173,7 +174,9 @@ class NearMeApp extends StatelessWidget {
                     (context) => const PasswordResetPage(),
                 GroupInsideScreen.groupInsideScreenKey:
                     (context) => GroupInsideScreen(),
-                    OrderTrackingPage.OrderTrackingScreenKey: (context) => OrderTrackingPage(),
+                OrderTrackingPage.orderTrackingScreenKey:
+                    (context) => OrderTrackingPage(),
+                    CustomMarkerMap.customMarkerMapScreenKey: (context) => CustomMarkerMap(),
               },
             ),
           );

@@ -12,6 +12,7 @@ class IconsTextSwitchWidget extends StatefulWidget {
     this.onToggle,
     this.initialFeatureStatus = false,
     this.isLiveTrackingOn = false,
+    this.id = '',
   });
   final bool initialFeatureStatus;
   final Function(bool)? onToggle;
@@ -19,6 +20,7 @@ class IconsTextSwitchWidget extends StatefulWidget {
   final String? featureName;
   final IconData? iconData;
   final bool isLiveTrackingOn; // Added this parameter
+  final String id; // Added this parameter
 
   @override
   State<IconsTextSwitchWidget> createState() => _IconsTextSwitchWidgetState();
@@ -53,6 +55,7 @@ class _IconsTextSwitchWidgetState extends State<IconsTextSwitchWidget> {
               isSharingLocationPressed: true,
               onToggle: widget.onToggle,
               isLiveTrackingOn: widget.isLiveTrackingOn,
+              id: widget.id,
             ),
 
           // Removed invalid if statement; only widgets are allowed here.

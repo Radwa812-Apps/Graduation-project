@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart';
@@ -126,48 +128,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(height: 20.h),
                 Expanded(
-                  child: _selectedTab == 'Groups'
-                      ? (_groups.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 100),
-                              child: Image.asset(
-                                'assets/images/noGroups.png',
-                                width: screenWidth * .8.w,
-                                height: screenHeight * .8.h,
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _groups.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w,
-                                    vertical: 4.h,
-                                  ),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pushNamed(
-                                        context,
-                                        OrderTrackingPage.OrderTrackingScreenKey,
-                                        arguments: _groups[index].id,
-                                      );
-                                    },
-                                    child: GroupStyle(
-                                      groupName: _groups[index].name,
-                                      groupId: _groups[index].id, 
+                  child:
+                      _selectedTab == 'Groups'
+                          ? (_groups.isEmpty
+                              ? Padding(
+                                padding: const EdgeInsets.only(top: 100),
+                                child: Image.asset(
+                                  'assets/images/noGroups.png',
+                                  width: screenWidth * .8.w,
+                                  height: screenHeight * .8.h,
+                                ),
+                              )
+                              : ListView.builder(
+                                itemCount: _groups.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w,
+                                      vertical: 4.h,
                                     ),
-                                  ),
-                                );
-                              },
-                            ))
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 100),
-                          child: Image.asset(
-                            'assets/images/noChats.png',
-                            width: screenWidth * .8.w,
-                            height: screenHeight * .8.h,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        log("Navigating to group with ID: ${_groups[index].id}");
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => OrderTrackingPage(
+                                                  groupId: _groups[index].id,
+                                                  groupName: _groups[index].name,
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: GroupStyle(
+                                        groupName: _groups[index].name,
+                                        groupId: _groups[index].id,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ))
+                          : Padding(
+                            padding: const EdgeInsets.only(top: 100),
+                            child: Image.asset(
+                              'assets/images/noChats.png',
+                              width: screenWidth * .8.w,
+                              height: screenHeight * .8.h,
+                            ),
                           ),
-                        ),
                 ),
               ],
             ),

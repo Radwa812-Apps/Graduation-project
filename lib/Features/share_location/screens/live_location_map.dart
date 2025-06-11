@@ -1,314 +1,207 @@
-import 'dart:async';
 import 'dart:developer';
+
+import 'package:cloud_firestore/cloud_firestore.dart' show QuerySnapshot;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/components/custom_back_button.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/group_profile_screen.dart';
-import 'package:near_me_new_version/Features/share_location/components/OSRMRouteMap.dart';
 import 'package:near_me_new_version/Features/share_location/components/build_Bottom_Sheet_With_Avatar.dart';
-import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
+import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
+import 'package:near_me_new_version/Features/share_location/components/location_controller.dart';
+import 'package:near_me_new_version/Features/share_location/components/map_controller.dart';
+import 'package:near_me_new_version/Features/share_location/components/map_widget.dart';
 
 class OrderTrackingPage extends StatefulWidget {
-  const OrderTrackingPage({Key? key}) : super(key: key);
+  final String groupId;
+  final String groupName;
+
+  const OrderTrackingPage({Key? key, this.groupId = '', this.groupName = ''})
+    : super(key: key);
+
   @override
-  State<OrderTrackingPage> createState() => OrderTrackingPageState();
-  static String OrderTrackingScreenKey = '/OrderTrackingScreen';
+  State<OrderTrackingPage> createState() => _OrderTrackingPageState();
+
+  static String orderTrackingScreenKey = '/OrderTrackingScreen';
 }
 
-class OrderTrackingPageState extends State<OrderTrackingPage> {
-  LocationData? currentLocation;
-  LocationData? sourceLocation;
-  LocationData? destinationLocation;
-  late Location location;
-  bool isFirstLocation = true;
-  bool isMapReady = false;
-  GoogleMapController? mapController;
-  LatLng _initialPosition = const LatLng(30.0444, 31.2357);
-  String userName = 'Radwa';
-  String lastLocatin = 'Just arrived home';
-  String distance = '2.5km'; // Cairo, Egypt
-  StreamSubscription<LocationData>? locationSubscription;
+class _OrderTrackingPageState extends State<OrderTrackingPage> {
+  final LocationController _locationController = LocationController();
+  final FirebaseController _firebaseController = FirebaseController();
+  final MapController _mapController = MapController();
+
   bool isLiveTrackingOn = false;
+  firebase_auth.User? user;
+  String userName = 'Radwa';
+  String lastLocationText = 'Just arrived home';
+  String distance = '2.5km';
+  List<LatLng> polylineCoordinates = [];
+
   @override
   void initState() {
     super.initState();
-    location = Location();
-    isLiveTrackingOn = context.read<TrackingOnCubit>().state;
-    toggleLiveTracking(isLiveTrackingOn);
-    //updatePolyline();
+    user = firebase_auth.FirebaseAuth.instance.currentUser;
+    _initializeTracking();
+  }
 
-    // initializeLocation();
-    //setCustomMarkerIcon();
+  Future<void> _initializeTracking() async {
+    await _locationController.getInitialLocation();
+    final hasLiveLocations = await _firebaseController
+        .checkIfGroupHasLiveLocations(widget.groupId);
+
+    setState(() {
+      isLiveTrackingOn = hasLiveLocations ?? false;
+      log("Live tracking status: $isLiveTrackingOn");
+      if (_locationController.currentLocation != null) {
+        _mapController.initialPosition = LatLng(
+          _locationController.currentLocation!.latitude!,
+          _locationController.currentLocation!.longitude!,
+        );
+        log("Initial position set to: ${_mapController.initialPosition}");
+      }
+    });
+
+    _toggleLiveTracking(isLiveTrackingOn);
+  }
+
+  void _toggleLiveTracking(bool isEnabled) async {
+    setState(() => isLiveTrackingOn = isEnabled);
+
+    if (isEnabled) {
+      _startLiveTracking();
+    } else {
+      _stopLiveTracking();
+    }
+  }
+
+  void _startLiveTracking() {
+    _locationController.startLocationUpdates((newLoc) {
+      _handleLocationUpdate(newLoc);
+    });
+
+    _listenToGroupLiveLocations();
+  }
+
+  void _stopLiveTracking() {
+    _locationController.stopLocationUpdates();
+    _updateFirebaseLocation(false);
+    _resetStaticMap();
+  }
+
+  void _handleLocationUpdate(LocationData newLoc) {
+    _locationController.currentLocation = newLoc;
+    _locationController.destinationLocation = newLoc;
+    _updateFirebaseLocation(true);
+    
+    _mapController.updateCameraPosition(
+      LatLng(newLoc.latitude!, newLoc.longitude!),
+      zoom: 13.5,
+    );
+    
+    setState(() {});
+  }
+
+  Future<void> _resetStaticMap() async {
+    await _locationController.getInitialLocation();
+    _mapController.initialPosition = LatLng(
+      _locationController.currentLocation!.latitude!,
+      _locationController.currentLocation!.longitude!,
+    );
+    log(
+      "Static map reset to initial position: ${_mapController.initialPosition}",
+    );
+    setState(() {});
+  }
+
+  void _updateFirebaseLocation(bool isEnabled) {
+    _firebaseController.updateLiveLocation(
+      widget.groupId,
+      user,
+      isEnabled,
+      _locationController.currentLocation,
+      _locationController.sourceLocation,
+    );
+    log("Firebase location updated: $isEnabled");
+  }
+
+  void _listenToGroupLiveLocations() {
+    _firebaseController.getGroupLiveLocationsStream(widget.groupId).listen((
+      snapshot,
+    ) {
+      final markers = _createMarkersFromSnapshot(snapshot);
+      _mapController.updateMarkers(markers);
+      setState(() {});
+    });
+  }
+
+  Set<Marker> _createMarkersFromSnapshot(QuerySnapshot snapshot) {
+    final markers = <Marker>{};
+
+    for (var doc in snapshot.docs) {
+      final curLat = double.parse(doc['curLat'].toString());
+      final curLng = double.parse(doc['curLng'].toString());
+      final sourceLat = double.parse(doc['sourceLat'].toString());
+      final sourceLng = double.parse(doc['sourceLng'].toString());
+      final userId = doc.id;
+
+      markers.addAll([
+        Marker(
+          markerId: MarkerId('${userId}_current'),
+          position: LatLng(curLat, curLng),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+        ),
+        infoWindow: InfoWindow(
+            title: 'Current Location',
+            snippet: 'User ID: $userId',  
+          ),
+        ),
+        Marker(
+          markerId: MarkerId('${userId}_source'),
+          position: LatLng(sourceLat, sourceLng),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueRed,
+          ),
+          infoWindow: InfoWindow(
+            title: 'Source Location',
+            snippet: 'User ID: $userId',  
+          ),
+        ),
+      ]);
+    }
+    log("Markers created: ${markers.length}");
+    return markers;
   }
 
   @override
   void dispose() {
-    locationSubscription?.cancel();
+    _locationController.dispose();
+    _mapController.dispose();
     super.dispose();
-  }
-
-  void toggleLiveTracking(bool isEnabled) async {
-    log("toggleLiveTracking called with isEnabled: $isEnabled");
-    setState(() {
-      isLiveTrackingOn = isEnabled;
-    });
-    if (isEnabled) {
-      currentLocation = await location.getLocation();
-      sourceLocation = currentLocation;
-      context.read<TrackingOnCubit>().updateValue(isLiveTrackingOn);
-      initializeLocation();
-    } else {
-      locationSubscription?.cancel();
-      locationSubscription = null;
-
-      setState(() {
-        currentLocation = null;
-        _initialPosition = const LatLng(30.0444, 31.2357);
-      });
-      mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(zoom: 14.0, target: _initialPosition),
-        ),
-      );
-    }
-  }
-
-  void initializeLocation() async {
-    try {
-      currentLocation = await location.getLocation();
-      sourceLocation = currentLocation;
-      log(
-        "Current Location: ${currentLocation!.latitude}, ${currentLocation!.longitude}",
-      );
-      // initial destination location
-      destinationLocation = LocationData.fromMap({
-        "latitude": 26.9943, //currentLocation?.latitude, //
-        "longitude": 31.4168, //currentLocation?.longitude, //
-      });
-
-      locationSubscription = location.onLocationChanged.listen((newLoc) {
-        currentLocation = newLoc;
-        log(
-          "Updated Location: ${currentLocation!.latitude}, ${currentLocation!.longitude}",
-        );
-
-        updatePolyline();
-
-        if (isMapReady && mapController != null) {
-          try {
-            mapController!.animateCamera(
-              CameraUpdate.newCameraPosition(
-                CameraPosition(
-                  zoom: 13.5,
-                  target: LatLng(newLoc.latitude!, newLoc.longitude!),
-                ),
-              ),
-            );
-          } catch (e) {
-            print("Error animating camera: $e");
-          }
-        }
-
-        setState(() {});
-      });
-    } catch (e) {
-      print("Error getting location: $e");
-    }
-  }
-
-  List<LatLng> polylineCoordinates = [];
-
-  void updatePolyline() async {
-    log("updatePolyline called");
-    log(
-      "Current Location: ${currentLocation?.latitude}, ${currentLocation?.longitude}",
-    );
-    log(
-      "destination Location: ${sourceLocation?.latitude}, ${sourceLocation?.longitude}",
-    );
-    if (currentLocation == null || sourceLocation == null) return;
-    log("Fetching polyline points");
-    //PolylinePoints polylinePoints = PolylinePoints();
-    try {
-      OSRMRouteMap osrmRouteMap = OSRMRouteMap();
-      final latlong2Points = await osrmRouteMap.getRoute(
-        sourceLocation!.latitude!,
-        sourceLocation!.longitude!,
-        currentLocation!.latitude!,
-        currentLocation!.longitude!,
-      );
-      polylineCoordinates =
-          latlong2Points
-              .map((point) => LatLng(point.latitude, point.longitude))
-              .toList();
-      setState(() {});
-      log("Number of polyline points: ${polylineCoordinates.length}");
-      
-    } catch (e) {
-      log("Error fetching polyline points: $e");
-    }
-  }
-
-  BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker;
-  BitmapDescriptor destinationIcon = BitmapDescriptor.defaultMarker;
-  BitmapDescriptor currentLocationIcon = BitmapDescriptor.defaultMarker;
-  void setCustomMarkerIcon() {
-    BitmapDescriptor.fromAssetImage(
-      ImageConfiguration.empty,
-      "assets/Pin_source.png",
-    ).then((icon) {
-      sourceIcon = icon;
-    });
-    BitmapDescriptor.fromAssetImage(
-      ImageConfiguration.empty,
-      "assets/Pin_destination.png",
-    ).then((icon) {
-      destinationIcon = icon;
-    });
-    BitmapDescriptor.fromAssetImage(
-      ImageConfiguration.empty,
-      "assets/Badge.png",
-    ).then((icon) {
-      currentLocationIcon = icon;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final String name = ModalRoute.of(context)!.settings.arguments as String;
-
     return Scaffold(
       body: Stack(
         children: [
-          isLiveTrackingOn == true
-              ? currentLocation == null || destinationLocation == null
-                  ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text("Loading"),
-                      ],
-                    ),
-                  )
-                  : GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(
-                        currentLocation!.latitude!,
-                        currentLocation!.longitude!,
-                      ),
-                      zoom: 13.5,
-                    ),
-                    markers: {
-                      Marker(
-                        markerId: const MarkerId("currentLocation"),
-                        position: LatLng(
-                          currentLocation!.latitude!,
-                          currentLocation!.longitude!,
-                        ),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                          BitmapDescriptor.hueBlue,
-                        ),
-                      ),
-                      Marker(
-                        markerId: const MarkerId("sourceLocation"),
-                        position: LatLng(
-                          sourceLocation!.latitude!,
-                          sourceLocation!.longitude!,
-                        ),
-                        icon: BitmapDescriptor.defaultMarkerWithHue(
-                          BitmapDescriptor.hueRed,
-                        ),
-                      ),
-                    },
-                    onMapCreated: (controller) {
-                      mapController = controller;
-                      isMapReady = true;
-                    },
-                    polylines: {
-                      Polyline(
-                        polylineId: const PolylineId("route"),
-                        color: Colors.blue,
-                        width: 5,
-                        points: polylineCoordinates,
-                      ),
-                      // Polyline(
-                      //   polylineId: PolylineId("manual_route"),
-                      //   color: Colors.blue,
-                      //   width: 5,
-                      //   points: [
-                      //     LatLng(
-                      //       sourceLocation!.latitude!,
-                      //       sourceLocation!.longitude!,
-                      //     ),
-                      //     LatLng(
-                      //       currentLocation!.latitude!,
-                      //       currentLocation!.longitude!,
-                      //     ),
-                      //   ],
-                      // ),
-                    },
-                  )
-              : GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _initialPosition,
-                  zoom: 14.0,
-                ),
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('group_location'),
-                    position: _initialPosition,
-                    infoWindow: const InfoWindow(title: 'Group Location'),
-                  ),
-                },
-              ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CustomBackButton(
-                  icon: Icons.arrow_back_ios_outlined,
-                  ontap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                GestureDetector(
-                  onTap: () {
-                    _navigateToGroupProfile(context, name);
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                      image: const DecorationImage(
-                        image: AssetImage("assets/images/group.jpg"),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          MapWidget(
+            isLiveTrackingOn: isLiveTrackingOn,
+            currentLocation: _locationController.currentLocation,
+            destinationLocation: _locationController.destinationLocation,
+            sourceLocation: _locationController.sourceLocation,
+            markers: _mapController.markers,
+            onMapCreated: _mapController.onMapCreated,
+            polylines: _createPolylines(),
+            mapController: _mapController,
           ),
-
+          _buildTopControls(),
           BuildBottomSheetWithAvatar(
             avatarUrl: "assets/images/group.jpg",
             userName: userName,
-            lastLocatin: lastLocatin,
+            lastLocatin: lastLocationText,
             distance: distance,
           ),
         ],
@@ -316,13 +209,77 @@ class OrderTrackingPageState extends State<OrderTrackingPage> {
     );
   }
 
-  void _navigateToGroupProfile(BuildContext context, String name) {
+  Set<Polyline> _createPolylines() {
+    if (_locationController.currentLocation == null ||
+        _locationController.sourceLocation == null) {
+      return {};
+    }
+
+    return {
+      Polyline(
+        polylineId: const PolylineId("manual_route"),
+        points: [
+          LatLng(
+            _locationController.sourceLocation!.latitude!,
+            _locationController.sourceLocation!.longitude!,
+          ),
+          LatLng(
+            _locationController.currentLocation!.latitude!,
+            _locationController.currentLocation!.longitude!,
+          ),
+        ],
+      ),
+    };
+  }
+
+  Widget _buildTopControls() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          CustomBackButton(
+            icon: Icons.arrow_back_ios_outlined,
+            ontap: () => Navigator.pop(context),
+          ),
+          GestureDetector(
+            onTap: () => _navigateToGroupProfile(context),
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: _buildGroupAvatarDecoration(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _buildGroupAvatarDecoration() {
+    return BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 4),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.2),
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+        ),
+      ],
+      image: const DecorationImage(
+        image: AssetImage("assets/images/group.jpg"),
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  void _navigateToGroupProfile(BuildContext context) {
     Navigator.pushNamed(
       context,
       GroupProfileScreen.groupProfileScreenKey,
       arguments: {
-        'name': name,
-        'onToggle': toggleLiveTracking,
+        'id': widget.groupId,
+        'onToggle': _toggleLiveTracking,
         'isLiveTrackingOn': isLiveTrackingOn,
       },
     );

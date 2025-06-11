@@ -35,7 +35,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   }
 
   Function(bool)? onToggle;
-  late String name;
+  late String id;
   bool isLiveTrackingOn = false;
   @override
   void didChangeDependencies() {
@@ -46,8 +46,8 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
     }
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null) {
-      name = args['name'];
-      log("Name received: $name");
+      id = args['id'];
+      log("id received: $id");
       onToggle = args['onToggle'];
       log("onToggle received: $onToggle");
       if (args.containsKey('isLiveTrackingOn')) {
@@ -248,7 +248,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                FeaturesOne(onToggle: onToggle, isLiveTrackingOn: isLiveTrackingOn),
+                FeaturesOne(onToggle: onToggle, isLiveTrackingOn: isLiveTrackingOn, id: id),
                 SplitBetweenFeatures(),
                 const SizedBox(height: 10),
                 RowAddMember(

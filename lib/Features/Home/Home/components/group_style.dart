@@ -8,7 +8,7 @@ import 'round_image_widget.dart';
 
 class GroupStyle extends StatelessWidget {
   final String? groupName;
-  final String? groupId; 
+  final String? groupId;
 
   const GroupStyle({super.key, this.groupName, this.groupId});
 
@@ -42,10 +42,14 @@ class GroupStyle extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: (() {
-                    Navigator.pushNamed(
+                    Navigator.push(
                       context,
-                      OrderTrackingPage.OrderTrackingScreenKey,
-                      arguments: groupId, 
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                OrderTrackingPage(groupId: groupId ?? '',
+                                  groupName: groupName ?? '',),
+                      ),
                     );
                   }),
                   child: RoundImageWidget(
