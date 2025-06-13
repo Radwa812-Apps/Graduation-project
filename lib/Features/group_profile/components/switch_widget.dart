@@ -1,15 +1,9 @@
 import 'dart:developer';
 import 'package:location/location.dart';
-import 'package:near_me_new_version/core/data/models/userRadwa.dart'
-    as user_model;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
-import 'package:near_me_new_version/core/data/models/group.dart' as group_model;
-import 'package:near_me_new_version/core/data/models/userRadwa.dart';
-import 'package:near_me_new_version/core/services/group_services.dart';
 import '../../../core/constants.dart';
 
 bool sharingLocation = false; // Default value for sharing location
@@ -35,18 +29,7 @@ class SwitchWidget extends StatefulWidget {
 
 class _SwitchWidgetState extends State<SwitchWidget> {
   late bool _featureEnabled;
-  // final GroupService _groupService = GroupService();
-  // group_model.Group? group = null;
-  // void getGroupById(String groupId) async {
-  //   group_model.Group? _group = await _groupService.getGroupById(groupId);
-  //   if (_group != null) {
-  //     log("Group found: ${_group.name}");
-  //     group = _group;
-  //   } else {
-  //     log("Group not found with ID: $groupId");
-  //     group = null;
-  //   }
-  // }
+
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
   LocationData? currentLocation;
   late Location location;
@@ -54,8 +37,6 @@ class _SwitchWidgetState extends State<SwitchWidget> {
   @override
   void initState() {
     super.initState();
-    //location = Location();
-    //_initLocation();
     if (widget.isLiveTrackingOn) {
       log("Live tracking is enabled");
       _featureEnabled = true;
@@ -78,28 +59,7 @@ class _SwitchWidgetState extends State<SwitchWidget> {
       onChanged: (bool value) {
         setState(() {
           _featureEnabled = value;
-          context.read<TrackingOnCubit>().updateValue(value);
-          //   if (value) {
-          //     log("Live tracking is now enabled");
-          //     FirebaseFirestore.instance
-          //         .collection('groups')
-          //         .doc(widget.id)
-          //         .collection('live_locations')
-          //         .doc(user!.uid)
-          //         .set({
-          //           'latitude': currentLocation!.latitude,
-          //           'longitude': currentLocation!.longitude,
-          //           'timestamp': FieldValue.serverTimestamp(),
-          //         });
-          //   } else {
-          //     log("Live tracking is now disabled");
-          //     FirebaseFirestore.instance
-          //         .collection('groups')
-          //         .doc(widget.id)
-          //         .collection('live_locations')
-          //         .doc(user!.uid)
-          //         .delete();
-          //   }
+          context.read<TrackingUserOnCubit>().updateValue(value);
         });
 
         if (widget.isSharingLocationPressed) {
@@ -107,11 +67,12 @@ class _SwitchWidgetState extends State<SwitchWidget> {
         }
         log("value: $value");
         log("featureEnabled: $_featureEnabled");
-        // Invoke the callback from parent
+        //Invoke the callback from parent
         if (widget.onToggle != null) {
           log("Calling parent's toggleLiveTracking with value: $value");
-          widget.onToggle!(value); // ← Call parent's toggleLiveTracking
+          widget.onToggle!(value); // ← Call parent's _hanldeLiveLocationInstance
         }
+        
       },
       activeColor: kPrimaryColor1,
     );

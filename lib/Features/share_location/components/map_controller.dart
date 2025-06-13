@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 
@@ -17,6 +19,7 @@ class MapController {
   }
 
   void updateCameraPosition(LatLng position, {double zoom = 14.0}) {
+    log("Updating camera position to: $position with zoom: $zoom");
     mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(target: position, zoom: zoom),

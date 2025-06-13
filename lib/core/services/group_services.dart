@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as flutter_contacts;
@@ -195,6 +197,7 @@ class GroupService {
         List<String> contactNumbers = [];
         for (var contact in contacts) {
           for (var phone in contact.phones) {
+            //log("Contact: ${contact.displayName}, Phone: ${phone.number}");
             String cleanedNumber = phone.number.replaceAll(
               RegExp(r'[^0-9]'),
               '',
@@ -208,9 +211,10 @@ class GroupService {
                 contactNumbers.add(cleanedNumber.substring(2));
               }
             }
+            log("contactNumbers: $contactNumbers");
           }
         }
-
+        //log("Total contact numbers: ${contactNumbers.length}");
         var usersSnapshot =
             await FirebaseFirestore.instance.collection('users').get();
 
@@ -234,6 +238,7 @@ class GroupService {
             RegExp(r'[^0-9]'),
             '',
           );
+          //log("cleanedPhoneNumber: $cleanedPhoneNumber");
 
           if (contactNumbers.contains(cleanedPhoneNumber)) {
             matchedUsers.add({
@@ -242,8 +247,10 @@ class GroupService {
               'lName': data['lName'] ?? '',
               'phoneNumber': cleanedPhoneNumber,
             });
+            //log("Matched user: ${data['fName']} ${data['lName']} with phone $cleanedPhoneNumber");
           }
         }
+        //log("Total matched users: ${matchedUsers.length}");
         return matchedUsers;
       } else {
         return [];

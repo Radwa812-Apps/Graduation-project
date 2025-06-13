@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
 import '../../../core/constants.dart';
@@ -19,6 +21,7 @@ class RowAddMember extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    log("RowAddMember: Building RowAddMember with groupId: $groupId"); 
     return Padding(
       padding: const EdgeInsets.only(left: 10.0),
       child: Row(

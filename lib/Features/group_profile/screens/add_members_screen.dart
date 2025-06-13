@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/floating_add_icon.dart';
 import 'package:near_me_new_version/Features/group_profile/components/search_text_widget.dart';
@@ -23,7 +25,6 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   @override
   void initState() {
     super.initState();
-    
   }
 
   @override
@@ -36,7 +37,9 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   }
 
   void _loadUsers() async {
-    final String? groupId = ModalRoute.of(context)?.settings.arguments as String?;
+    final String? groupId =
+        ModalRoute.of(context)?.settings.arguments as String?;
+    log("AddMembersScreen: Loading users for groupId: $groupId");
     if (groupId == null) {
       setState(() {
         _isDataLoaded = true;
@@ -44,13 +47,15 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
       return;
     }
 
-    List<Map<String, dynamic>> users = await _groupService.getUsersFromContacts();
+    List<Map<String, dynamic>> users =
+        await _groupService.getUsersFromContacts();
     final group = await _groupService.getGroupById(groupId);
     if (group != null) {
-      List<Map<String, dynamic>> filteredUsers = users.where((user) {
-        return !group.members.contains(user['uid']);
-      }).toList();
-
+      List<Map<String, dynamic>> filteredUsers =
+          users.where((user) {
+            return !group.members.contains(user['uid']);
+          }).toList();
+      log("Filtered users: ${filteredUsers.length} out of ${users.length}");
       setState(() {
         _allUsers = filteredUsers;
         _isDataLoaded = true;
@@ -74,7 +79,8 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   }
 
   void _addMembers() async {
-    final String? groupId = ModalRoute.of(context)?.settings.arguments as String?;
+    final String? groupId =
+        ModalRoute.of(context)?.settings.arguments as String?;
     if (groupId != null && _selectedUids.isNotEmpty) {
       await _groupService.addMembersToGroup(groupId, _selectedUids);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -89,16 +95,16 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
       if (groupId == null) {
         errorMessage = "Error: Group ID is missing!";
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-
+log("AddMembersScreen: Building with screenWidth: $_allUsers");
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -156,7 +162,8 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                       (user) => RowCheckbox(
                         userName: "${user['fName']} ${user['lName']}".trim(),
                         initialValue: _selectedUids.contains(user['uid']),
-                        onChanged: (value) => _onCheckboxChanged(user['uid'], value),
+                        onChanged:
+                            (value) => _onCheckboxChanged(user['uid'], value),
                       ),
                     ),
                 ],

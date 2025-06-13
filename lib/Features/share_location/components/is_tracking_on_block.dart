@@ -1,10 +1,10 @@
 // shared_value_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class TrackingOnCubit extends Cubit<bool> {
-  TrackingOnCubit() : super(false);
+class TrackingUserOnCubit extends Cubit<bool> {
+  TrackingUserOnCubit() : super(false);
 
-  void updateValue(bool is_trackingOn) {
-    emit(is_trackingOn);
+  void updateValue(bool is_userTrackingOn) {
+    emit(is_userTrackingOn);
   }
 }

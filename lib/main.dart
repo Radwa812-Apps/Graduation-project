@@ -41,7 +41,6 @@ import 'Features/Private_chat/screens/private_chat_screen.dart';
 import 'Features/User_Profile/screens/edit_screen.dart';
 import 'Features/auth/Forgot_password/Screens/send_email_for_pass.dart';
 import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
-import 'Features/chat_group/components/message_bubble.dart';
 import 'Features/group_profile/screens/group_inside.dart';
 import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
@@ -73,7 +72,7 @@ void main() async {
             BlocProvider(create: (context) => AuthBloc(Services())),
             BlocProvider(create: (context) => CustomPlacesBloc(Services())),
             BlocProvider(create: (context) => ProfileBloc()),
-            BlocProvider(create: (context) => TrackingOnCubit()),
+            BlocProvider(create: (context) => TrackingUserOnCubit()),
           ],
           child: NearMeApp(),
         );
@@ -176,7 +175,8 @@ class NearMeApp extends StatelessWidget {
                     (context) => GroupInsideScreen(),
                 OrderTrackingPage.orderTrackingScreenKey:
                     (context) => OrderTrackingPage(),
-                    CustomMarkerMap.customMarkerMapScreenKey: (context) => CustomMarkerMap(),
+                CustomMarkerMap.customMarkerMapScreenKey:
+                    (context) => CustomMarkerMap(),
               },
             ),
           );

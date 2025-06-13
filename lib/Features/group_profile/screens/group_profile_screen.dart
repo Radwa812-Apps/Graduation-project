@@ -35,19 +35,23 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   }
 
   Function(bool)? onToggle;
-  late String id;
+  late String groupId;
   bool isLiveTrackingOn = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    getMapPofileArgs();
     if (!_isDataLoaded) {
       _loadGroupData();
       _isDataLoaded = true;
     }
-    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+  }
+
+  void getMapPofileArgs() {
+     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null) {
-      id = args['id'];
-      log("id received: $id");
+      groupId = args['id'];
+      log("id received: $groupId");
       onToggle = args['onToggle'];
       log("onToggle received: $onToggle");
       if (args.containsKey('isLiveTrackingOn')) {
@@ -55,15 +59,18 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
           isLiveTrackingOn = args['isLiveTrackingOn'];
         });
       }
+      
+    
     }
   }
 
   void _loadGroupData() async {
-    final String? groupId = ModalRoute.of(context)?.settings.arguments as String?;
+    log("Loading group data...");
+    log("Group ID: $groupId");
     if (groupId != null) {
       Group? group = await _groupService.getGroupById(groupId);
+      log("Group fetched: ${group?.name}");
       if (group != null) {
-        // جلب بيانات الأعضاء
         List<Map<String, String>> membersData = [];
         for (String uid in group.members) {
           Map<String, String>? userData = await _groupService.getUserData(uid);
@@ -74,6 +81,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
 
         setState(() {
           _group = group;
+          log("Group data loaded: ${_group?.name}");
         });
       } else {
         print("Group with ID $groupId not found!");
@@ -248,7 +256,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                FeaturesOne(onToggle: onToggle, isLiveTrackingOn: isLiveTrackingOn, id: id),
+                FeaturesOne(onToggle: onToggle, isLiveTrackingOn: isLiveTrackingOn, id: groupId),
                 SplitBetweenFeatures(),
                 const SizedBox(height: 10),
                 RowAddMember(
