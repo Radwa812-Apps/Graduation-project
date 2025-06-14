@@ -5,8 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:near_me_new_version/Features/Map_After_SignUp/Screens/map1.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
+
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
 import 'package:near_me_new_version/core/messages.dart';
+import 'package:near_me_new_version/core/services/settings_service.dart';
 import '../../../core/constants.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,20 +49,9 @@ class SettingsScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: spaceBetweenRows),
-              IconAndTextWidget(
-                iconData: Icons.warning_amber_outlined,
-                text: 'Quick Risk Alert',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
-                isExpandable: true,
-                expandedContent: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Risk Type 1'),
-                    Text('Risk Type 2'),
-                    Text('Risk Type 3'),
-                  ],
-                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: SettingsService(),
               ),
               SizedBox(height: spaceBetweenRows),
               IconAndTextWidget(
@@ -100,10 +91,12 @@ class SettingsScreen extends StatelessWidget {
                           await FirebaseAuth.instance.signOut();
 
                           GoogleSignIn googleSignIn = GoogleSignIn();
-                          FirebaseAuth.instance.signOut();
-                          // ignore: use_build_context_synchronously
+                          await googleSignIn.signOut();
+                          await FirebaseAuth.instance.signOut();
                           Navigator.popAndPushNamed(
-                              context, SignInScreen.signInScreenKey);
+                            context,
+                            SignInScreen.signInScreenKey,
+                          );
                         },
                       );
                     },
@@ -134,9 +127,10 @@ class SettingsScreen extends StatelessWidget {
                   if (state is UserDeletedSuccessState) {
                     Navigator.of(context, rootNavigator: true).pop();
                     AppMessages().sendVerification(
-                        context,
-                        Colors.green.withOpacity(0.6),
-                        'Your account deleted successfully');
+                      context,
+                      Colors.green.withOpacity(0.6),
+                      'Your account deleted successfully',
+                    );
 
                     Navigator.pushNamedAndRemoveUntil(
                       context,
@@ -146,16 +140,17 @@ class SettingsScreen extends StatelessWidget {
                   } else if (state is UserDeleteErrorState) {
                     Navigator.of(context, rootNavigator: true).pop();
                     return AppMessages().sendVerification(
-                        context,
-                        Colors.red.withOpacity(0.6),
-                        'Failed to delete account: ${state.error}');
+                      context,
+                      Colors.red.withOpacity(0.6),
+                      'Failed to delete account: ${state.error}',
+                    );
                   } else {
                     showDialog(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      builder:
+                          (context) =>
+                              const Center(child: CircularProgressIndicator()),
                     );
                   }
                 },
@@ -193,8 +188,10 @@ class SettingsScreen extends StatelessWidget {
                                     lineColor: Colors.grey,
                                     controller: emailController,
                                     hint: 'Email',
-                                    prefixIcon: const Icon(Icons.email_outlined,
-                                        color: Colors.grey),
+                                    prefixIcon: const Icon(
+                                      Icons.email_outlined,
+                                      color: Colors.grey,
+                                    ),
                                     keyboardType: TextInputType.emailAddress,
                                     validatior: ((p0) {
                                       if (p0 == null || p0.isEmpty) {
@@ -214,8 +211,10 @@ class SettingsScreen extends StatelessWidget {
                                     lineColor: Colors.grey,
                                     controller: passwordController,
                                     hint: 'Password',
-                                    prefixIcon: const Icon(Icons.lock_outline,
-                                        color: Colors.grey),
+                                    prefixIcon: const Icon(
+                                      Icons.lock_outline,
+                                      color: Colors.grey,
+                                    ),
                                     keyboardType: TextInputType.text,
                                     isPassword: true,
                                     validatior: ((p0) {
@@ -245,8 +244,8 @@ class SettingsScreen extends StatelessWidget {
                                       color: Colors.blue,
                                     ),
                                     child: TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(),
+                                      onPressed:
+                                          () => Navigator.of(context).pop(),
                                       child: const Text(
                                         "Cancel",
                                         style: TextStyle(color: Colors.white),
@@ -263,9 +262,9 @@ class SettingsScreen extends StatelessWidget {
                                     child: TextButton(
                                       onPressed: () {
                                         if (formKey.currentState!.validate()) {
-                                          BlocProvider.of<ProfileBloc>(context)
-                                              .add(DeleteUserEvent(
-                                                  pass!, email!));
+                                          BlocProvider.of<ProfileBloc>(
+                                            context,
+                                          ).add(DeleteUserEvent(pass!, email!));
                                           Navigator.pop(context);
                                         }
                                       },
@@ -277,9 +276,7 @@ class SettingsScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                height: 30.h,
-                              )
+                              SizedBox(height: 30.h),
                             ],
                           );
                         },

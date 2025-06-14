@@ -41,6 +41,9 @@ import 'Features/chat_group/components/message_bubble.dart';
 import 'Features/group_profile/screens/group_inside.dart';
 import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
+import 'package:flutter/services.dart';
+
+const platform = MethodChannel('com.example.near_me_new_version/floating_button');
 
 // Use only one import path
 
