@@ -1,0 +1,1824 @@
+From d20cf296ad34e649c5280f9daefae3dca9bb0247 Mon Sep 17 00:00:00 2001
+From: Alyaa <aliaaezzshahat@gmail.com>
+Date: Sat, 14 Jun 2025 21:22:40 +0300
+Subject: [PATCH] Add floating button service and alert feature
+
+---
+ .vscode/launch.json                           |  15 +
+ android/app/build.gradle                      |  14 +-
+ android/app/build.gradle.kts                  |   4 +-
+ android/app/src/main/AndroidManifest.xml      |   8 +-
+ .../FloatingButtonService.kt                  | 200 +++++++++++
+ .../near_me_new_version/MainActivity.kt       | 139 +++++++-
+ .../res/drawable/circle_button_background.xml |   5 +
+ .../res/layout/floating_button_layout.xml     |  18 +
+ android/app/src/main/res/values/styles.xml    |   2 +-
+ android/build.gradle.kts                      |   1 +
+ android/settings.gradle.kts                   |   2 +-
+ .../Home/Home/Screens/home_screen.dart        | 244 +++++++++++++-
+ .../Home/Home/components/group_style.dart     | 195 +++++++----
+ .../Settings/components/alert_helper.dart     |  24 ++
+ .../components/group_selection_widget.dart    | 318 ++++++++++++++++++
+ .../Settings/screens/settings_screen.dart     |  73 ++--
+ .../components/switch_widget.dart             |   6 +-
+ lib/core/data/models/group_risk_alert.dart    |  42 ++-
+ lib/core/services/settings_service.dart       | 140 ++++++++
+ lib/main.dart                                 |   3 +
+ 20 files changed, 1323 insertions(+), 130 deletions(-)
+ create mode 100644 .vscode/launch.json
+ create mode 100644 android/app/src/main/java/com/example/near_me_new_version/FloatingButtonService.kt
+ create mode 100644 android/app/src/main/res/drawable/circle_button_background.xml
+ create mode 100644 android/app/src/main/res/layout/floating_button_layout.xml
+ create mode 100644 lib/Features/Settings/components/alert_helper.dart
+ create mode 100644 lib/Features/Settings/components/group_selection_widget.dart
+ create mode 100644 lib/core/services/settings_service.dart
+
+diff --git a/.vscode/launch.json b/.vscode/launch.json
+new file mode 100644
+index 0000000..33feee2
+--- /dev/null
++++ b/.vscode/launch.json
+@@ -0,0 +1,15 @@
++{
++      // Use IntelliSense to learn about possible attributes.
++      // Hover to view descriptions of existing attributes.
++      // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
++      "version": "0.2.0",
++      "configurations": [
++            {
++                  "name": "Python Debugger: Current File",
++                  "type": "debugpy",
++                  "request": "launch",
++                  "program": "${file}",
++                  "console": "integratedTerminal"
++            }
++      ]
++}
+\ No newline at end of file
+diff --git a/android/app/build.gradle b/android/app/build.gradle
+index ab46f8a..f62c832 100644
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -21,10 +21,7 @@ android {
+     }
+ 
+     defaultConfig {
+-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+         applicationId = "com.example.near_me_new_version"
+-        // You can update the following values to match your application needs.
+-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+         minSdk = 24
+         targetSdk = flutter.targetSdkVersion
+         versionCode = flutter.versionCode
+@@ -33,13 +30,18 @@ android {
+ 
+     buildTypes {
+         release {
+-            // TODO: Add your own signing config for the release build.
+-            // Signing with the debug keys for now, so `flutter run --release` works.
+             signingConfig = signingConfigs.getByName("debug")
+         }
+     }
+ }
+ 
++dependencies {
++    implementation platform('com.google.firebase:firebase-bom:32.7.0')
++    implementation 'com.google.firebase:firebase-auth'
++    implementation 'com.google.firebase:firebase-firestore'
++    
++}
++
+ flutter {
+     source = "../.."
+-}
++}
+\ No newline at end of file
+diff --git a/android/app/build.gradle.kts b/android/app/build.gradle.kts
+index 9dd2031..90e8f1c 100644
+--- a/android/app/build.gradle.kts
++++ b/android/app/build.gradle.kts
+@@ -26,7 +26,7 @@ android {
+         applicationId = "com.example.near_me_new_version"
+         // You can update the following values to match your application needs.
+         // For more information, see: https://flutter.dev/to/review-gradle-config.
+-        minSdk = 23
++        minSdk = 24
+         targetSdk =  33
+         versionCode = flutter.versionCode
+         versionName = flutter.versionName
+@@ -47,4 +47,6 @@ flutter {
+ dependencies {
+     implementation(platform("com.google.firebase:firebase-bom:32.7.0")) // 🔹 تأكد من استخدام `platform()`
+     implementation("com.google.firebase:firebase-analytics") // 🔹 استخدام Kotlin DSL
++    implementation("com.google.firebase:firebase-auth")       // ✅ أضيفي دي
++    implementation("com.google.firebase:firebase-firestore")
+ }
+\ No newline at end of file
+diff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml
+index be1eb25..984e5a1 100644
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -8,6 +8,8 @@
+         the internet.
+         -->
+     <uses-permission android:name="android.permission.INTERNET"/>
++    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
++    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+     <!--  Permissions options for the `contacts` group  -->
+     <uses-permission android:name="android.permission.READ_CONTACTS"/>
+     <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
+@@ -44,10 +46,11 @@
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+     <application
+-
++        
+         android:label="near_me_new_version"
+         android:name="${applicationName}"
+         android:icon="@mipmap/ic_launcher">
++        
+         <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyCjuQzoirmEY4zZ7Oh84iRloMwROLf-_Uw"/>
+ 
+         <activity
+@@ -72,6 +75,9 @@
+                 <category android:name="android.intent.category.LAUNCHER"/>
+             </intent-filter>
+         </activity>
++        <service android:name=".FloatingButtonService"
++         android:enabled="true"
++         android:exported="false" />
+         <!-- Don't delete the meta-data below.
+              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+         <meta-data
+diff --git a/android/app/src/main/java/com/example/near_me_new_version/FloatingButtonService.kt b/android/app/src/main/java/com/example/near_me_new_version/FloatingButtonService.kt
+new file mode 100644
+index 0000000..d392efe
+--- /dev/null
++++ b/android/app/src/main/java/com/example/near_me_new_version/FloatingButtonService.kt
+@@ -0,0 +1,200 @@
++package com.example.near_me_new_version
++
++import android.app.Service
++import android.content.Intent
++import android.graphics.PixelFormat
++import android.os.Build
++import android.os.IBinder
++import android.util.Log
++import android.view.*
++import android.widget.Button
++import android.widget.Toast
++import com.google.firebase.auth.FirebaseAuth
++import com.google.firebase.firestore.FirebaseFirestore
++import java.util.*
++
++class FloatingButtonService : Service() {
++    private lateinit var windowManager: WindowManager
++    private lateinit var floatingButton: View
++    private val firestore = FirebaseFirestore.getInstance()
++    private val auth = FirebaseAuth.getInstance()
++    private val TAG = "FloatingButtonService"
++
++    override fun onCreate() {
++        super.onCreate()
++        Log.d(TAG, "Service onCreate called")
++        setupFloatingButton()
++    }
++
++    private fun setupFloatingButton() {
++        Log.d(TAG, "setupFloatingButton called")
++        floatingButton = LayoutInflater.from(this).inflate(R.layout.floating_button_layout, null)
++        Log.d(TAG, "Inflated floating button layout: ${floatingButton != null}")
++
++        val params = WindowManager.LayoutParams(
++            WindowManager.LayoutParams.WRAP_CONTENT,
++            WindowManager.LayoutParams.WRAP_CONTENT,
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
++                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
++            else
++                WindowManager.LayoutParams.TYPE_PHONE,
++            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
++            PixelFormat.TRANSLUCENT
++        ).apply {
++            gravity = Gravity.TOP or Gravity.START
++            x = 100
++            y = 300
++            Log.d(TAG, "LayoutParams created: type=${this.type}, flags=${this.flags}")
++        }
++
++        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
++        Log.d(TAG, "WindowManager initialized: $windowManager")
++
++        try {
++            windowManager.addView(floatingButton, params)
++            Log.d(TAG, "Floating button added to window successfully")
++        } catch (e: Exception) {
++            Log.e(TAG, "Error adding floating button: ${e.message}", e)
++        }
++
++        // ✅ السحب والتحريك
++        floatingButton.setOnTouchListener(object : View.OnTouchListener {
++            private var initialX = 0
++            private var initialY = 0
++            private var initialTouchX = 0f
++            private var initialTouchY = 0f
++
++            override fun onTouch(v: View?, event: MotionEvent): Boolean {
++                when (event.action) {
++                    MotionEvent.ACTION_DOWN -> {
++                        initialX = params.x
++                        initialY = params.y
++                        initialTouchX = event.rawX
++                        initialTouchY = event.rawY
++                        return true
++                    }
++                    MotionEvent.ACTION_MOVE -> {
++                        params.x = initialX + (event.rawX - initialTouchX).toInt()
++                        params.y = initialY + (event.rawY - initialTouchY).toInt()
++                        windowManager.updateViewLayout(floatingButton, params)
++                        return true
++                    }
++                }
++                return false
++            }
++        })
++
++        // ✅ الضغط على الزر يرسل التنبيهات
++        floatingButton.findViewById<Button>(R.id.floating_button)?.setOnClickListener {
++            Log.d(TAG, "Floating button clicked")
++            sendAlertToSelectedGroups()
++        } ?: Log.e(TAG, "Floating button view not found with ID: R.id.floating_button")
++    }
++
++    private fun sendAlertToSelectedGroups() {
++        val user = auth.currentUser ?: run {
++            showToast("Please sign in first")
++            Log.e(TAG, "No authenticated user")
++            return
++        }
++
++        Log.d(TAG, "Starting alert process for user: ${user.uid}")
++
++        firestore.collection("selected_alert_groups")
++            .document(user.uid)
++            .get()
++            .addOnSuccessListener { document ->
++                Log.d(TAG, "Document fetched: ${document.exists()}")
++                if (!document.exists()) {
++                    showToast("No valid groups found")
++                    Log.e(TAG, "Document does not exist for user: ${user.uid}")
++                    return@addOnSuccessListener
++                }
++
++                val groupIds = document.get("groups") as? List<String>
++                Log.d(TAG, "Retrieved groupIds: $groupIds")
++                if (groupIds == null || groupIds.isEmpty()) {
++                    showToast("No groups selected")
++                    Log.e(TAG, "groupIds field is missing or empty for user: ${user.uid}")
++                    return@addOnSuccessListener
++                }
++
++                Log.d(TAG, "Found ${groupIds.size} groups to alert: $groupIds")
++                sendAlertsToGroups(groupIds)
++            }
++            .addOnFailureListener { e ->
++                showToast("Failed to load groups")
++                Log.e(TAG, "Error loading groups for user: ${user.uid}, Error: ${e.message}", e)
++            }
++    }
++
++    private fun sendAlertsToGroups(groupIds: List<String>) {
++        Log.d(TAG, "sendAlertsToGroups called with ${groupIds.size} groups")
++        val batch = firestore.batch()
++        val timestamp = Date()
++        val userId = auth.currentUser?.uid ?: ""
++
++        groupIds.forEach { groupId ->
++            val groupRef = firestore.collection("groups").document(groupId)
++            Log.d(TAG, "Updating group: $groupId")
++            batch.update(groupRef, mapOf(
++                "alert" to true,
++                "alert_timestamp" to timestamp,
++                "alert_color" to "#FF0000",
++                "last_alert_sender" to userId
++            ))
++        }
++
++        val alertRef = firestore.collection("group_risk_alerts").document()
++        Log.d(TAG, "Setting alertRef: $alertRef")
++        batch.set(alertRef, mapOf(
++            "groupIds" to groupIds,
++            "userId" to userId,
++            "timestamp" to timestamp,
++            "status" to "active"
++        ))
++
++        batch.commit()
++            .addOnSuccessListener {
++                showToast("Alerts sent successfully to ${groupIds.size} groups")
++                Log.d(TAG, "Batch commit successful for groups: $groupIds")
++
++                val intent = Intent(this, MainActivity::class.java)
++                intent.putExtra("alertSent", true)
++                intent.putStringArrayListExtra("groupIds", ArrayList(groupIds))
++                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
++                startActivity(intent)
++            }
++            .addOnFailureListener { e ->
++                showToast("Failed to send alerts")
++                Log.e(TAG, "Batch commit failed for groups: $groupIds, Error: ${e.message}", e)
++            }
++    }
++
++    private fun showToast(message: String) {
++        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
++    }
++
++    override fun onDestroy() {
++        super.onDestroy()
++        if (::floatingButton.isInitialized) {
++            try {
++                windowManager.removeView(floatingButton)
++                Log.d(TAG, "Floating button removed from window")
++            } catch (e: Exception) {
++                Log.e(TAG, "Error removing floating button: ${e.message}", e)
++            }
++        }
++    }
++
++    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
++        Log.d(TAG, "onStartCommand called with intent: $intent")
++        if (intent?.getBooleanExtra("enable", false) == true) {
++            Log.d(TAG, "Service starting with enable = true")
++            setupFloatingButton()
++        }
++        return START_STICKY
++    }
++
++    override fun onBind(intent: Intent?): IBinder? = null
++}
+\ No newline at end of file
+diff --git a/android/app/src/main/kotlin/com/example/near_me_new_version/MainActivity.kt b/android/app/src/main/kotlin/com/example/near_me_new_version/MainActivity.kt
+index 515f3af..df290a1 100644
+--- a/android/app/src/main/kotlin/com/example/near_me_new_version/MainActivity.kt
++++ b/android/app/src/main/kotlin/com/example/near_me_new_version/MainActivity.kt
+@@ -1,5 +1,142 @@
+ package com.example.near_me_new_version
+ 
++import android.content.Intent
++import android.net.Uri
++import android.os.Build
++import android.os.Bundle
++import android.provider.Settings
++import android.util.Log
++import android.widget.Toast
+ import io.flutter.embedding.android.FlutterActivity
++import io.flutter.embedding.engine.FlutterEngine
++import io.flutter.plugin.common.MethodChannel
+ 
+-class MainActivity : FlutterActivity()
++class MainActivity : FlutterActivity() {
++    private val CHANNEL = "com.example.near_me_new_version/floating_button"
++    private val ALERT_CHANNEL = "com.example.near_me_new_version/alert"
++    private var isServiceRunning = false
++    private val TAG = "MainActivity"
++
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++        Log.d(TAG, "onCreate called")
++
++        intent?.let { handleIntent(it) }
++
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
++            Log.d(TAG, "Requesting overlay permission")
++            val intent = Intent(
++                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
++                Uri.parse("package:$packageName")
++            )
++            startActivityForResult(intent, 1234)
++            Toast.makeText(
++                this,
++                "Please enable 'Draw over other apps' permission to show the floating button.",
++                Toast.LENGTH_LONG
++            ).show()
++        }
++    }
++
++    override fun onNewIntent(intent: Intent) {
++        super.onNewIntent(intent)
++        Log.d(TAG, "onNewIntent called")
++        handleIntent(intent)
++    }
++
++    private fun handleIntent(intent: Intent) {
++        if (intent.getBooleanExtra("alertSent", false)) {
++            val groupIds = intent.getStringArrayListExtra("groupIds") ?: emptyList()
++            Log.d(TAG, "Received alertSent with groupIds: $groupIds")
++            sendAlertNotification(groupIds)
++        }
++    }
++
++    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
++        super.configureFlutterEngine(flutterEngine)
++        Log.d(TAG, "Configuring Flutter engine")
++
++        val alertChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger!!, ALERT_CHANNEL)
++        alertChannel.setMethodCallHandler { call, result ->
++            Log.d(TAG, "Alert channel method call received: ${call.method}")
++            result.success(null)
++        }
++
++        MethodChannel(flutterEngine.dartExecutor.binaryMessenger!!, CHANNEL).setMethodCallHandler { call, result ->
++            Log.d(TAG, "Method call received: ${call.method}")
++            when (call.method) {
++                "toggleFloatingButton" -> {
++                    val enable = call.argument<Boolean>("enable") ?: false
++                    Log.d(TAG, "toggleFloatingButton called with enable: $enable")
++                    if (enable && !isServiceRunning) {
++                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
++                            result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
++                            val intent = Intent(
++                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
++                                Uri.parse("package:$packageName")
++                            )
++                            startActivity(intent)
++                        } else {
++                            val intent = Intent(this, FloatingButtonService::class.java)
++                            intent.putExtra("enable", true)
++                            startService(intent)
++                            isServiceRunning = true
++                            result.success("Floating button started")
++                            Log.d(TAG, "Floating button service started")
++                        }
++                    } else if (!enable && isServiceRunning) {
++                        val intent = Intent(this, FloatingButtonService::class.java)
++                        stopService(intent)
++                        isServiceRunning = false
++                        result.success("Floating button stopped")
++                        Log.d(TAG, "Floating button service stopped")
++                    } else {
++                        result.success(if (isServiceRunning) "Floating button is running" else "Floating button is stopped")
++                        Log.d(TAG, "Service state: ${if (isServiceRunning) "running" else "stopped"}")
++                    }
++                }
++                else -> {
++                    result.notImplemented()
++                    Log.d(TAG, "Method not implemented: ${call.method}")
++                }
++            }
++        }
++    }
++
++    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
++        super.onActivityResult(requestCode, resultCode, data)
++        Log.d(TAG, "onActivityResult called with requestCode: $requestCode")
++        if (requestCode == 1234) {
++            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
++                val intent = Intent(this, FloatingButtonService::class.java)
++                intent.putExtra("enable", true)
++                startService(intent)
++                isServiceRunning = true
++                Toast.makeText(this, "Floating button service started", Toast.LENGTH_SHORT).show()
++                Log.d(TAG, "Overlay permission granted, service started")
++            } else {
++                Toast.makeText(this, "Permission denied, floating button won't work.", Toast.LENGTH_LONG).show()
++                Log.e(TAG, "Overlay permission denied")
++            }
++        }
++    }
++
++    private fun sendAlertNotification(groupIds: List<String>) {
++        flutterEngine?.dartExecutor?.binaryMessenger?.let { binaryMessenger ->
++            val alertChannel = MethodChannel(binaryMessenger, ALERT_CHANNEL)
++            alertChannel.invokeMethod("alertSent", mapOf("groupIds" to groupIds), object : MethodChannel.Result {
++                override fun success(result: Any?) {
++                    Log.d(TAG, "Alert notification sent successfully to Flutter")
++                }
++
++                override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
++                    Log.e(TAG, "Error sending alert notification: $errorMessage")
++                }
++
++                override fun notImplemented() {
++                    Log.e(TAG, "Alert notification method not implemented")
++                }
++            })
++        } ?: Log.e(TAG, "Flutter engine or binary messenger is null")
++    }
++}
+diff --git a/android/app/src/main/res/drawable/circle_button_background.xml b/android/app/src/main/res/drawable/circle_button_background.xml
+new file mode 100644
+index 0000000..62739a5
+--- /dev/null
++++ b/android/app/src/main/res/drawable/circle_button_background.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<shape xmlns:android="http://schemas.android.com/apk/res/android"
++    android:shape="oval">
++    <solid android:color="#3D5300" />
++</shape>
+\ No newline at end of file
+diff --git a/android/app/src/main/res/layout/floating_button_layout.xml b/android/app/src/main/res/layout/floating_button_layout.xml
+new file mode 100644
+index 0000000..77629a3
+--- /dev/null
++++ b/android/app/src/main/res/layout/floating_button_layout.xml
+@@ -0,0 +1,18 @@
++<?xml version="1.0" encoding="utf-8"?>
++<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    
++    android:layout_width="wrap_content"
++    android:layout_height="wrap_content"
++    android:background="@android:color/transparent"
++    android:padding="8dp">
++
++    <Button
++        android:id="@+id/floating_button"
++        android:layout_width="60dp"
++        android:layout_height="60dp"
++        android:text="⚠"
++        android:clickable="true"
++        android:focusable="true"
++        android:background="@drawable/circle_button_background"
++        android:textColor="#FFFFFF" />
++</FrameLayout>
+diff --git a/android/app/src/main/res/values/styles.xml b/android/app/src/main/res/values/styles.xml
+index cb1ef88..a73bb30 100644
+--- a/android/app/src/main/res/values/styles.xml
++++ b/android/app/src/main/res/values/styles.xml
+@@ -15,4 +15,4 @@
+     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+         <item name="android:windowBackground">?android:colorBackground</item>
+     </style>
+-</resources>
++</resources>
+\ No newline at end of file
+diff --git a/android/build.gradle.kts b/android/build.gradle.kts
+index 1ea9e55..a983c91 100644
+--- a/android/build.gradle.kts
++++ b/android/build.gradle.kts
+@@ -8,6 +8,7 @@ buildscript {
+         classpath("com.google.gms:google-services:4.3.15")
+ 
+     }
++    
+ }
+ 
+ allprojects {
+diff --git a/android/settings.gradle.kts b/android/settings.gradle.kts
+index a439442..11662c3 100644
+--- a/android/settings.gradle.kts
++++ b/android/settings.gradle.kts
+@@ -19,7 +19,7 @@ pluginManagement {
+ plugins {
+     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+     id("com.android.application") version "8.7.0" apply false
+-    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
++    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+ }
+ 
+ include(":app")
+diff --git a/lib/Features/Home/Home/Screens/home_screen.dart b/lib/Features/Home/Home/Screens/home_screen.dart
+index 3b7920c..45589a0 100644
+--- a/lib/Features/Home/Home/Screens/home_screen.dart
++++ b/lib/Features/Home/Home/Screens/home_screen.dart
+@@ -1,10 +1,10 @@
+-import 'package:flutter/material.dart';
++/*import 'package:flutter/material.dart';
+ import 'package:flutter_screenutil/flutter_screenutil.dart';
+ import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart';
+-import 'package:near_me_new_version/Features/group_profile/screens/group_profile_screen.dart';
++
+ import 'package:near_me_new_version/core/data/models/group.dart';
+ import 'package:near_me_new_version/core/services/group_services.dart';
+-import 'package:shared_preferences/shared_preferences.dart';
++
+ import '../../../../core/constants.dart';
+ import '../components/container_text_field_widget.dart';
+ import '../components/floating_yellow_icon.dart';
+@@ -190,4 +190,242 @@ class _HomeScreenState extends State<HomeScreen> {
+       ),
+     );
+   }
++}
++*/
++import 'package:flutter/material.dart';
++import 'package:flutter_screenutil/flutter_screenutil.dart';
++import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart';
++import 'package:near_me_new_version/core/data/models/group.dart';
++import 'package:near_me_new_version/core/services/group_services.dart';
++import 'package:near_me_new_version/core/constants.dart';
++import 'package:flutter/services.dart';
++import '../components/container_text_field_widget.dart';
++import '../components/floating_yellow_icon.dart';
++import '../components/group_style.dart';
++import '../components/home_bar_widget.dart';
++import '../components/row_after_bar_chats_groups.dart';
++
++class HomeScreen extends StatefulWidget {
++  static String homeScreenKey = '/HomeScreen';
++
++  @override
++  _HomeScreenState createState() => _HomeScreenState();
++}
++
++class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
++  bool _isSearching = false;
++  bool _isDraggableSheetVisible = false;
++  final TextEditingController _searchController = TextEditingController();
++  final DraggableScrollableController _draggableScrollableController = DraggableScrollableController();
++  String _selectedTab = 'Groups';
++  List<Group> _groups = [];
++  final GroupService _groupService = GroupService();
++  final List<String> _alertedGroups = []; 
++  late AnimationController _animationController;
++  late Animation<double> _animation;
++
++  @override
++  void initState() {
++    super.initState();
++    _loadGroups();
++    _setupMethodChannel();
++    _animationController = AnimationController(
++      vsync: this,
++      duration: Duration(milliseconds: 500),
++    )..addStatusListener((status) {
++      if (status == AnimationStatus.completed) {
++        _animationController.reverse();
++      } else if (status == AnimationStatus.dismissed) {
++        _animationController.forward();
++      }
++    });
++    _animation = Tween<double>(begin: 1.0, end: 1.2).animate(_animationController);
++  }
++
++  void _setupMethodChannel() {
++    const platform = MethodChannel('com.example.near_me_new_version/alert');
++    platform.setMethodCallHandler((call) async {
++      if (call.method == "alertSent") {
++        final groupIds = call.arguments['groupIds'] as List<dynamic>? ?? [];
++        setState(() {
++          _alertedGroups.addAll(groupIds.cast<String>());
++          _animationController.forward(); // بدء الـ Animation
++        });
++      }
++    });
++  }
++
++  @override
++  void dispose() {
++    _animationController.dispose();
++    _searchController.dispose();
++    _draggableScrollableController.dispose();
++    super.dispose();
++  }
++
++  void _loadGroups() async {
++    List<Group> fetchedGroups = await _groupService.getMyGroups();
++    setState(() {
++      _groups = fetchedGroups;
++    });
++  }
++
++  void _toggleSearch() {
++    setState(() {
++      _isSearching = !_isSearching;
++      if (!_isSearching) {
++        _searchController.clear();
++      }
++    });
++  }
++
++  void _performSearch() {
++    final query = _searchController.text.trim();
++    if (query.isNotEmpty) {
++      print('Performing search for: $query');
++    } else {
++      print('Search query is empty');
++    }
++  }
++
++  void _toggleDraggableSheet() {
++    setState(() {
++      _isDraggableSheetVisible = !_isDraggableSheetVisible;
++    });
++  }
++
++  void _expandDraggableSheet() {
++    _draggableScrollableController.animateTo(
++      0.6,
++      duration: const Duration(milliseconds: 300),
++      curve: Curves.easeInOut,
++    );
++  }
++
++  void _selectTab(String tabName) {
++    setState(() {
++      _selectedTab = tabName;
++      _isDraggableSheetVisible = false;
++    });
++  }
++
++  void _addGroup(String groupName) async {
++    if (groupName.isNotEmpty) {
++      String? groupId = await _groupService.makeNewGroup(groupName, "No description yet");
++      if (groupId != null) {
++        await _groupService.addGroupToUser(groupId);
++        _loadGroups();
++        setState(() {
++          _isDraggableSheetVisible = false;
++        });
++      }
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    double screenHeight = MediaQuery.of(context).size.height;
++    double screenWidth = MediaQuery.of(context).size.width;
++    return Scaffold(
++      resizeToAvoidBottomInset: false,
++      backgroundColor: kBackgroundColor,
++      appBar: HomeAppBar(
++        isSearching: _isSearching,
++        onSearchPressed: _toggleSearch,
++        onClosePressed: _toggleSearch,
++        searchController: _searchController,
++        onSearch: _performSearch,
++        onSearchChanged: (value) {
++          print('Search query: $value');
++        },
++      ),
++      body: Stack(
++        children: [
++          SafeArea(
++            child: Column(
++              children: [
++                RowAfterBarChatsGroups(
++                  selectedTab: _selectedTab,
++                  onTabSelected: _selectTab,
++                ),
++                SizedBox(height: 20.h),
++                Expanded(
++                  child: _selectedTab == 'Groups'
++                      ? (_groups.isEmpty
++                          ? Padding(
++                              padding: const EdgeInsets.only(top: 100),
++                              child: Image.asset(
++                                'assets/images/noGroups.png',
++                                width: screenWidth * .8.w,
++                                height: screenHeight * .8.h,
++                              ),
++                            )
++                          : ListView.builder(
++                              itemCount: _groups.length,
++                              itemBuilder: (context, index) {
++                                final group = _groups[index];
++                                bool isAlerted = _alertedGroups.contains(group.id);
++                                return Padding(
++                                  padding: EdgeInsets.symmetric(
++                                    horizontal: 10.w,
++                                    vertical: 4.h,
++                                  ),
++                                  child: GestureDetector(
++                                    onTap: () {
++                                      Navigator.pushNamed(
++                                        context,
++                                        GroupInsideScreen.groupInsideScreenKey,
++                                        arguments: group.id,
++                                      );
++                                    },
++                                    child: AnimatedBuilder(
++                                      animation: _animationController,
++                                      builder: (context, child) {
++                                        return Transform.scale(
++                                          scale: isAlerted ? _animation.value : 1.0,
++                                          child: Opacity(
++                                            opacity: isAlerted ? 1.0 : 0.9,
++                                            child: GroupStyle(
++                                              groupName: group.name,
++                                              groupId: group.id,
++                                            ),
++                                          ),
++                                        );
++                                      },
++                                    ),
++                                  ),
++                                );
++                              },
++                            ))
++                      : Padding(
++                          padding: const EdgeInsets.only(top: 100),
++                          child: Image.asset(
++                            'assets/images/noChats.png',
++                            width: screenWidth * .8.w,
++                            height: screenHeight * .8.h,
++                          ),
++                        ),
++                ),
++              ],
++            ),
++          ),
++          if (_selectedTab == 'Groups') ...[
++            if (_isDraggableSheetVisible)
++              GestureDetector(
++                onTap: _toggleDraggableSheet,
++                child: ContainerTextFieldWidget(
++                  onTextFieldFocus: _expandDraggableSheet,
++                  draggableScrollableController: _draggableScrollableController,
++                  onSubmitted: (groupName) {
++                    _addGroup(groupName);
++                  },
++                ),
++              ),
++            if (!_isDraggableSheetVisible)
++              FloatingYellowIcon(toggleDraggableSheet: _toggleDraggableSheet),
++          ],
++        ],
++      ),
++    );
++  }
+ }
+\ No newline at end of file
+diff --git a/lib/Features/Home/Home/components/group_style.dart b/lib/Features/Home/Home/components/group_style.dart
+index 6406ef6..3504ba4 100644
+--- a/lib/Features/Home/Home/components/group_style.dart
++++ b/lib/Features/Home/Home/components/group_style.dart
+@@ -1,90 +1,155 @@
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_screenutil/flutter_screenutil.dart';
+ import 'package:near_me_new_version/Features/Notifications/Screens/group_notifications.dart';
+-import '../../../../core/constants.dart';
+-import '../../../group_profile/screens/group_inside.dart';
++import 'package:near_me_new_version/core/constants.dart';
++import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart';
++import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'round_image_widget.dart';
+ 
+-class GroupStyle extends StatelessWidget {
++class GroupStyle extends StatefulWidget {
+   final String? groupName;
+-  final String? groupId; 
++  final String? groupId;
+ 
+   const GroupStyle({super.key, this.groupName, this.groupId});
+ 
++  @override
++  _GroupStyleState createState() => _GroupStyleState();
++}
++
++class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateMixin {
++  late AnimationController _animationController;
++  late Animation<double> _scaleAnimation;
++  late Animation<Color?> _colorAnimation;
++  bool _isAlerted = false;
++
++  @override
++  void initState() {
++    super.initState();
++    _animationController = AnimationController(
++      vsync: this,
++      duration: Duration(milliseconds: 500),
++    )..addStatusListener((status) {
++      if (status == AnimationStatus.completed) {
++        _animationController.reverse();
++        // إعادة تعيين الـ Flag بعد الانتهاء
++        if (_isAlerted) {
++          FirebaseFirestore.instance
++              .collection('groups')
++              .doc(widget.groupId)
++              .update({'alert_triggered': false});
++        }
++      }
++    });
++    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(_animationController);
++    _colorAnimation = ColorTween(begin: Colors.white, end: Colors.red.withOpacity(0.3)).animate(_animationController);
++
++    // استمع لتغييرات alert_triggered
++    FirebaseFirestore.instance
++        .collection('groups')
++        .doc(widget.groupId)
++        .snapshots()
++        .listen((snapshot) {
++      if (snapshot.exists) {
++        final triggered = snapshot.data()?['alert_triggered'] ?? false;
++        if (triggered && !_isAlerted) {
++          setState(() {
++            _isAlerted = true;
++            _animationController.forward();
++          });
++        }
++      }
++    });
++  }
++
++  @override
++  void dispose() {
++    _animationController.dispose();
++    super.dispose();
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     double screenHeight = MediaQuery.of(context).size.height;
+     double screenWidth = MediaQuery.of(context).size.width;
+ 
+     double spaceWithRows = screenWidth * 0.07.w;
+-    return Container(
+-      decoration: BoxDecoration(
+-        borderRadius: BorderRadius.circular(10),
+-        color: Colors.white,
+-        boxShadow: [
+-          BoxShadow(
+-            color: Color.fromARGB(255, 74, 72, 72).withOpacity(0.2),
+-            blurRadius: 6,
+-            spreadRadius: 2,
+-            offset: const Offset(0, 3),
++    return AnimatedBuilder(
++      animation: _animationController,
++      builder: (context, child) {
++        return Container(
++          decoration: BoxDecoration(
++            borderRadius: BorderRadius.circular(10),
++            color: _isAlerted ? _colorAnimation.value : Colors.white,
++            boxShadow: [
++              BoxShadow(
++                color: Color.fromARGB(255, 74, 72, 72).withOpacity(0.2),
++                blurRadius: 6,
++                spreadRadius: 2,
++                offset: const Offset(0, 3),
++              ),
++            ],
+           ),
+-        ],
+-      ),
+-      width: screenWidth * .2.w,
+-      height: screenHeight * .09.h,
+-      child: Column(
+-        mainAxisAlignment: MainAxisAlignment.center,
+-        children: [
+-          Padding(
+-            padding: const EdgeInsets.only(left: 8, right: 8),
+-            child: Row(
++          width: screenWidth * .2.w,
++          height: screenHeight * .09.h,
++          child: Transform.scale(
++            scale: _isAlerted ? _scaleAnimation.value : 1.0,
++            child: Column(
++              mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+-                GestureDetector(
+-                  onTap: (() {
+-                    Navigator.pushNamed(
+-                      context,
+-                      GroupInsideScreen.groupInsideScreenKey,
+-                      arguments: groupId, 
+-                    );
+-                  }),
+-                  child: RoundImageWidget(
+-                    name: 'assets/images/group.jpg',
+-                    width: screenWidth * .14.w,
+-                    height: screenHeight * .07.h,
+-                  ),
+-                ),
+-                const SizedBox(width: 20),
+-                Expanded(
+-                  child: Text(
+-                    groupName ?? '',
+-                    style: TextStyle(
+-                      fontSize: 20.sp,
+-                      fontFamily: kFontRegular,
+-                      color: kFontColor,
+-                    ),
+-                    overflow: TextOverflow.ellipsis,
+-                  ),
+-                ),
+-                SizedBox(width: 8.w),
+-                IconButton(
+-                  onPressed: (() {
+-                    Navigator.pushNamed(
+-                      context,
+-                      GroupNotifications.groupNotificationsKey,
+-                      arguments: groupName,
+-                    );
+-                  }),
+-                  icon: Icon(
+-                    Icons.notifications_outlined,
+-                    size: 30.sp,
+-                    color: kPrimaryColor1,
++                Padding(
++                  padding: const EdgeInsets.only(left: 8, right: 8),
++                  child: Row(
++                    children: [
++                      GestureDetector(
++                        onTap: () {
++                          Navigator.pushNamed(
++                            context,
++                            GroupInsideScreen.groupInsideScreenKey,
++                            arguments: widget.groupId,
++                          );
++                        },
++                        child: RoundImageWidget(
++                          name: 'assets/images/group.jpg',
++                          width: screenWidth * .14.w,
++                          height: screenHeight * .07.h,
++                        ),
++                      ),
++                      const SizedBox(width: 20),
++                      Expanded(
++                        child: Text(
++                          widget.groupName ?? '',
++                          style: TextStyle(
++                            fontSize: 20.sp,
++                            fontFamily: kFontRegular,
++                            color: kFontColor,
++                          ),
++                          overflow: TextOverflow.ellipsis,
++                        ),
++                      ),
++                      SizedBox(width: 8.w),
++                      IconButton(
++                        onPressed: () {
++                          Navigator.pushNamed(
++                            context,
++                            GroupNotifications.groupNotificationsKey,
++                            arguments: widget.groupName,
++                          );
++                        },
++                        icon: Icon(
++                          Icons.notifications_outlined,
++                          size: 30.sp,
++                          color: kPrimaryColor1,
++                        ),
++                      ),
++                    ],
+                   ),
+                 ),
+               ],
+             ),
+           ),
+-        ],
+-      ),
++        );
++      },
+     );
+   }
+ }
+\ No newline at end of file
+diff --git a/lib/Features/Settings/components/alert_helper.dart b/lib/Features/Settings/components/alert_helper.dart
+new file mode 100644
+index 0000000..e875f50
+--- /dev/null
++++ b/lib/Features/Settings/components/alert_helper.dart
+@@ -0,0 +1,24 @@
++import 'package:cloud_firestore/cloud_firestore.dart';
++
++Future<List<String>> getSelectedGroupsFromFirebase(String userId) async {
++  final doc = await FirebaseFirestore.instance
++      .collection('selected_alert_groups')
++      .doc(userId)
++      .get();
++
++  if (doc.exists) {
++    final data = doc.data();
++    if (data != null && data['groups'] is List) {
++      return List<String>.from(data['groups']);
++    }
++  }
++  return [];
++}
++Future<void> sendAlertToGroups(List<String> groupIds) async {
++  for (final groupId in groupIds) {
++    await FirebaseFirestore.instance
++        .collection('groups')
++        .doc(groupId)
++        .update({'alert': true});
++  }
++}
+diff --git a/lib/Features/Settings/components/group_selection_widget.dart b/lib/Features/Settings/components/group_selection_widget.dart
+new file mode 100644
+index 0000000..950a683
+--- /dev/null
++++ b/lib/Features/Settings/components/group_selection_widget.dart
+@@ -0,0 +1,318 @@
++import 'package:firebase_auth/firebase_auth.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_screenutil/flutter_screenutil.dart';
++import 'package:near_me_new_version/core/constants.dart';
++import 'package:cloud_firestore/cloud_firestore.dart';
++
++class GroupSelectionWidget extends StatefulWidget {
++  final List<String> groups;
++  final List<String>? initiallySelectedGroups;
++
++  const GroupSelectionWidget({
++    super.key,
++    required this.groups,
++    this.initiallySelectedGroups,
++  });
++
++  @override
++  State<GroupSelectionWidget> createState() => _GroupSelectionWidgetState();
++}
++
++class _GroupSelectionWidgetState extends State<GroupSelectionWidget> {
++  late List<bool> selectedGroups;
++  bool _isLoading = true;
++
++  @override
++  void initState() {
++    super.initState();
++    _loadSelectedGroups();
++  }
++
++  Future<void> _loadSelectedGroups() async {
++    try {
++      final userId = FirebaseAuth.instance.currentUser?.uid;
++      if (userId != null) {
++        final doc =
++            await FirebaseFirestore.instance
++                .collection('selected_alert_groups')
++                .doc(userId)
++                .get();
++
++        if (doc.exists) {
++          final savedGroups = List<String>.from(doc.data()?['groups'] ?? []);
++          setState(() {
++            selectedGroups = List.generate(widget.groups.length, (index) {
++              return savedGroups.contains(widget.groups[index]) ||
++                  (widget.initiallySelectedGroups?.contains(
++                        widget.groups[index],
++                      ) ??
++                      false);
++            });
++            _isLoading = false;
++          });
++        } else {
++          _initializeSelectedGroups();
++        }
++      } else {
++        _initializeSelectedGroups();
++      }
++    } catch (e) {
++      _initializeSelectedGroups();
++    }
++  }
++
++  void _initializeSelectedGroups() {
++    setState(() {
++      selectedGroups = List.generate(widget.groups.length, (index) {
++        return widget.initiallySelectedGroups?.contains(widget.groups[index]) ??
++            false;
++      });
++      _isLoading = false;
++    });
++  }
++
++  void toggleSelection(int index) {
++    setState(() {
++      selectedGroups[index] = !selectedGroups[index];
++    });
++  }
++
++  Future<void> saveSelectedGroupsToFirebase(List<String> selectedGroups) async {
++    try {
++      final userId = FirebaseAuth.instance.currentUser?.uid;
++      if (userId == null) return;
++
++      await FirebaseFirestore.instance
++          .collection('selected_alert_groups')
++          .doc(userId)
++          .set({'groups': selectedGroups}, SetOptions(merge: true));
++    } catch (e) {
++      print('Error saving groups: $e');
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Container(
++      width: 347.w,
++      decoration: BoxDecoration(
++        borderRadius: BorderRadius.circular(16),
++        boxShadow: [
++          BoxShadow(
++            color: Colors.black.withOpacity(0.1),
++            blurRadius: 20,
++            offset: const Offset(0, 10),
++          ),
++        ],
++      ),
++      child: Material(
++        borderRadius: BorderRadius.circular(16),
++        color: Colors.white,
++        child: Padding(
++          padding: EdgeInsets.all(16.w),
++          child: Column(
++            mainAxisSize: MainAxisSize.min,
++            children: [
++              Padding(
++                padding: EdgeInsets.symmetric(vertical: 8.h),
++                child: Text(
++                  'Select the groups you want to send to',
++                  style: TextStyle(
++                    fontSize: 18.sp,
++                    fontWeight: FontWeight.normal,
++                    color: kFontColor,
++                  ),
++                ),
++              ),
++              Divider(height: 24.h, color: Colors.grey[200]),
++
++              if (_isLoading)
++                const Expanded(
++                  child: Center(child: CircularProgressIndicator()),
++                )
++              else if (widget.groups.isEmpty)
++                const Expanded(
++                  child: Center(child: Text('No groups available.')),
++                )
++              else
++                Flexible(
++                  child: ListView.separated(
++                    shrinkWrap: true,
++                    padding: EdgeInsets.zero,
++                    itemCount: widget.groups.length,
++                    separatorBuilder: (_, __) => SizedBox(height: 12.h),
++                    itemBuilder: (context, index) {
++                      // Fetch group name from Firestore to display
++                      return FutureBuilder<DocumentSnapshot>(
++                        future:
++                            FirebaseFirestore.instance
++                                .collection('groups')
++                                .doc(widget.groups[index])
++                                .get(),
++                        builder: (context, snapshot) {
++                          if (!snapshot.hasData) {
++                            return ListTile(title: Text(widget.groups[index]));
++                          }
++                          final groupName =
++                              snapshot.data?.get('name') as String? ??
++                              widget.groups[index];
++                          return AnimatedContainer(
++                            duration: const Duration(milliseconds: 300),
++                            curve: Curves.easeInOut,
++                            decoration: BoxDecoration(
++                              color:
++                                  selectedGroups[index]
++                                      ? const Color(
++                                        0xFF3D5300,
++                                      ).withOpacity(0.05)
++                                      : Colors.white,
++                              borderRadius: BorderRadius.circular(12),
++                              border: Border.all(
++                                color:
++                                    selectedGroups[index]
++                                        ? const Color(0xFF3D5300)
++                                        : Colors.grey[300]!,
++                                width: 1,
++                              ),
++                              boxShadow: [
++                                if (selectedGroups[index])
++                                  BoxShadow(
++                                    color: const Color(
++                                      0xFF3D5300,
++                                    ).withOpacity(0.2),
++                                    blurRadius: 8,
++                                    offset: const Offset(0, 2),
++                                  ),
++                              ],
++                            ),
++                            child: InkWell(
++                              borderRadius: BorderRadius.circular(12),
++                              onTap: () => toggleSelection(index),
++                              child: Padding(
++                                padding: EdgeInsets.all(12.w),
++                                child: Row(
++                                  children: [
++                                    Container(
++                                      width: 48.w,
++                                      height: 48.w,
++                                      decoration: BoxDecoration(
++                                        shape: BoxShape.circle,
++                                        color: Colors.grey[100],
++                                        image: const DecorationImage(
++                                          image: AssetImage(
++                                            'assets/images/group.jpg',
++                                          ),
++                                          fit: BoxFit.cover,
++                                        ),
++                                        border: Border.all(
++                                          color:
++                                              selectedGroups[index]
++                                                  ? const Color(0xFF3D5300)
++                                                  : Colors.grey[300]!,
++                                          width: 1.5,
++                                        ),
++                                      ),
++                                    ),
++                                    SizedBox(width: 16.w),
++                                    Expanded(
++                                      child: Text(
++                                        groupName,
++                                        style: TextStyle(
++                                          fontSize: 16.sp,
++                                          fontWeight: FontWeight.w600,
++                                          color: const Color(0xFF333333),
++                                        ),
++                                        maxLines: 1,
++                                        overflow: TextOverflow.ellipsis,
++                                      ),
++                                    ),
++                                    GestureDetector(
++                                      onTap: () => toggleSelection(index),
++                                      child: AnimatedContainer(
++                                        duration: const Duration(
++                                          milliseconds: 200,
++                                        ),
++                                        width: 24.w,
++                                        height: 24.w,
++                                        decoration: BoxDecoration(
++                                          shape: BoxShape.circle,
++                                          color:
++                                              selectedGroups[index]
++                                                  ? const Color(0xFF3D5300)
++                                                  : Colors.transparent,
++                                          border: Border.all(
++                                            color:
++                                                selectedGroups[index]
++                                                    ? const Color(0xFF3D5300)
++                                                    : Colors.grey[400]!,
++                                            width: 1.5,
++                                          ),
++                                        ),
++                                        child: Center(
++                                          child: AnimatedSwitcher(
++                                            duration: const Duration(
++                                              milliseconds: 200,
++                                            ),
++                                            child:
++                                                selectedGroups[index]
++                                                    ? Icon(
++                                                      Icons.check,
++                                                      size: 16.w,
++                                                      color: Colors.white,
++                                                    )
++                                                    : const SizedBox(),
++                                          ),
++                                        ),
++                                      ),
++                                    ),
++                                  ],
++                                ),
++                              ),
++                            ),
++                          );
++                        },
++                      );
++                    },
++                  ),
++                ),
++              SizedBox(height: 16.h),
++              SizedBox(
++                width: double.infinity,
++                child: ElevatedButton(
++                  style: ElevatedButton.styleFrom(
++                    backgroundColor: const Color(0xFF3D5300),
++                    padding: EdgeInsets.symmetric(vertical: 14.h),
++                    shape: RoundedRectangleBorder(
++                      borderRadius: BorderRadius.circular(12),
++                    ),
++                    elevation: 0,
++                  ),
++                  onPressed: () async {
++                    final selectedGroupIds = <String>[];
++                    for (int i = 0; i < selectedGroups.length; i++) {
++                      if (selectedGroups[i]) {
++                        selectedGroupIds.add(widget.groups[i]);
++                      }
++                    }
++                    await saveSelectedGroupsToFirebase(selectedGroupIds);
++                    if (mounted) {
++                      Navigator.pop(context, selectedGroupIds);
++                    }
++                  },
++                  child: Text(
++                    'Confirm Selection',
++                    style: TextStyle(
++                      fontSize: 16.sp,
++                      fontWeight: FontWeight.bold,
++                      color: Colors.white,
++                    ),
++                  ),
++                ),
++              ),
++            ],
++          ),
++        ),
++      ),
++    );
++  }
++}
+diff --git a/lib/Features/Settings/screens/settings_screen.dart b/lib/Features/Settings/screens/settings_screen.dart
+index 8a2db77..339b7bc 100644
+--- a/lib/Features/Settings/screens/settings_screen.dart
++++ b/lib/Features/Settings/screens/settings_screen.dart
+@@ -5,8 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
+ import 'package:google_sign_in/google_sign_in.dart';
+ import 'package:near_me_new_version/Features/Map_After_SignUp/Screens/map1.dart';
+ import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
++
+ import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
+ import 'package:near_me_new_version/core/messages.dart';
++import 'package:near_me_new_version/core/services/settings_service.dart';
+ import '../../../core/constants.dart';
+ 
+ import 'package:shared_preferences/shared_preferences.dart';
+@@ -47,20 +49,9 @@ class SettingsScreen extends StatelessWidget {
+                 },
+               ),
+               SizedBox(height: spaceBetweenRows),
+-              IconAndTextWidget(
+-                iconData: Icons.warning_amber_outlined,
+-                text: 'Quick Risk Alert',
+-                iconSize: 30.sp,
+-                fontSize: 24.sp,
+-                isExpandable: true,
+-                expandedContent: Column(
+-                  crossAxisAlignment: CrossAxisAlignment.start,
+-                  children: const [
+-                    Text('Risk Type 1'),
+-                    Text('Risk Type 2'),
+-                    Text('Risk Type 3'),
+-                  ],
+-                ),
++              Padding(
++                padding: const EdgeInsets.symmetric(horizontal: 10.0),
++                child: SettingsService(),
+               ),
+               SizedBox(height: spaceBetweenRows),
+               IconAndTextWidget(
+@@ -100,10 +91,12 @@ class SettingsScreen extends StatelessWidget {
+                           await FirebaseAuth.instance.signOut();
+ 
+                           GoogleSignIn googleSignIn = GoogleSignIn();
+-                          FirebaseAuth.instance.signOut();
+-                          // ignore: use_build_context_synchronously
++                          await googleSignIn.signOut();
++                          await FirebaseAuth.instance.signOut();
+                           Navigator.popAndPushNamed(
+-                              context, SignInScreen.signInScreenKey);
++                            context,
++                            SignInScreen.signInScreenKey,
++                          );
+                         },
+                       );
+                     },
+@@ -134,9 +127,10 @@ class SettingsScreen extends StatelessWidget {
+                   if (state is UserDeletedSuccessState) {
+                     Navigator.of(context, rootNavigator: true).pop();
+                     AppMessages().sendVerification(
+-                        context,
+-                        Colors.green.withOpacity(0.6),
+-                        'Your account deleted successfully');
++                      context,
++                      Colors.green.withOpacity(0.6),
++                      'Your account deleted successfully',
++                    );
+ 
+                     Navigator.pushNamedAndRemoveUntil(
+                       context,
+@@ -146,16 +140,17 @@ class SettingsScreen extends StatelessWidget {
+                   } else if (state is UserDeleteErrorState) {
+                     Navigator.of(context, rootNavigator: true).pop();
+                     return AppMessages().sendVerification(
+-                        context,
+-                        Colors.red.withOpacity(0.6),
+-                        'Failed to delete account: ${state.error}');
++                      context,
++                      Colors.red.withOpacity(0.6),
++                      'Failed to delete account: ${state.error}',
++                    );
+                   } else {
+                     showDialog(
+                       context: context,
+                       barrierDismissible: false,
+-                      builder: (context) => const Center(
+-                        child: CircularProgressIndicator(),
+-                      ),
++                      builder:
++                          (context) =>
++                              const Center(child: CircularProgressIndicator()),
+                     );
+                   }
+                 },
+@@ -193,8 +188,10 @@ class SettingsScreen extends StatelessWidget {
+                                     lineColor: Colors.grey,
+                                     controller: emailController,
+                                     hint: 'Email',
+-                                    prefixIcon: const Icon(Icons.email_outlined,
+-                                        color: Colors.grey),
++                                    prefixIcon: const Icon(
++                                      Icons.email_outlined,
++                                      color: Colors.grey,
++                                    ),
+                                     keyboardType: TextInputType.emailAddress,
+                                     validatior: ((p0) {
+                                       if (p0 == null || p0.isEmpty) {
+@@ -214,8 +211,10 @@ class SettingsScreen extends StatelessWidget {
+                                     lineColor: Colors.grey,
+                                     controller: passwordController,
+                                     hint: 'Password',
+-                                    prefixIcon: const Icon(Icons.lock_outline,
+-                                        color: Colors.grey),
++                                    prefixIcon: const Icon(
++                                      Icons.lock_outline,
++                                      color: Colors.grey,
++                                    ),
+                                     keyboardType: TextInputType.text,
+                                     isPassword: true,
+                                     validatior: ((p0) {
+@@ -245,8 +244,8 @@ class SettingsScreen extends StatelessWidget {
+                                       color: Colors.blue,
+                                     ),
+                                     child: TextButton(
+-                                      onPressed: () =>
+-                                          Navigator.of(context).pop(),
++                                      onPressed:
++                                          () => Navigator.of(context).pop(),
+                                       child: const Text(
+                                         "Cancel",
+                                         style: TextStyle(color: Colors.white),
+@@ -263,9 +262,9 @@ class SettingsScreen extends StatelessWidget {
+                                     child: TextButton(
+                                       onPressed: () {
+                                         if (formKey.currentState!.validate()) {
+-                                          BlocProvider.of<ProfileBloc>(context)
+-                                              .add(DeleteUserEvent(
+-                                                  pass!, email!));
++                                          BlocProvider.of<ProfileBloc>(
++                                            context,
++                                          ).add(DeleteUserEvent(pass!, email!));
+                                           Navigator.pop(context);
+                                         }
+                                       },
+@@ -277,9 +276,7 @@ class SettingsScreen extends StatelessWidget {
+                                   ),
+                                 ],
+                               ),
+-                              SizedBox(
+-                                height: 30.h,
+-                              )
++                              SizedBox(height: 30.h),
+                             ],
+                           );
+                         },
+diff --git a/lib/Features/group_profile/components/switch_widget.dart b/lib/Features/group_profile/components/switch_widget.dart
+index 0a11ab3..2a05328 100644
+--- a/lib/Features/group_profile/components/switch_widget.dart
++++ b/lib/Features/group_profile/components/switch_widget.dart
+@@ -3,8 +3,9 @@ import '../../../core/constants.dart';
+ 
+ class SwitchWidget extends StatefulWidget {
+   final bool initialFeatureStatus;
++  final ValueChanged<bool>? onChanged; 
+ 
+-  const SwitchWidget({super.key, this.initialFeatureStatus = false});
++  const SwitchWidget({super.key, this.initialFeatureStatus = false, this.onChanged});
+ 
+   @override
+   State<SwitchWidget> createState() => _SwitchWidgetState();
+@@ -27,8 +28,9 @@ class _SwitchWidgetState extends State<SwitchWidget> {
+         setState(() {
+           _featureEnabled = value;
+         });
++        if (widget.onChanged != null) widget.onChanged!(value); 
+       },
+       activeColor: kPrimaryColor1,
+     );
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/lib/core/data/models/group_risk_alert.dart b/lib/core/data/models/group_risk_alert.dart
+index 1f42db9..1d52fd4 100644
+--- a/lib/core/data/models/group_risk_alert.dart
++++ b/lib/core/data/models/group_risk_alert.dart
+@@ -2,23 +2,43 @@ import 'package:cloud_firestore/cloud_firestore.dart';
+ 
+ class GroupRiskAlert {
+   final String id;
+-  final String groupId;
+-  final String riskAlertId;
+-  final Timestamp assignedAt;
++  final List<String> groupIds;
++  final String userId;
++  final Timestamp timestamp;
++  final String status;
++  final List<String>? groupNames;
+ 
+   GroupRiskAlert({
+     required this.id,
+-    required this.groupId,
+-    required this.riskAlertId,
+-    required this.assignedAt,
++    required this.groupIds,
++    required this.userId,
++    required this.timestamp,
++    this.status = 'active',
++    this.groupNames,
+   });
+ 
+-  factory GroupRiskAlert.fromJson(Map<String, dynamic> json,String id) {
++  factory GroupRiskAlert.fromFirestore(DocumentSnapshot doc) {
++    final data = doc.data() as Map<String, dynamic>;
+     return GroupRiskAlert(
+-      id: id,
+-      groupId: json['groupId'] as String,
+-      riskAlertId: json['riskAlertId'] as String,
+-      assignedAt: json['assignedAt'] as Timestamp,
++      id: doc.id,
++      groupIds: List<String>.from(data['groupIds']),
++      userId: data['userId'] as String,
++      timestamp: data['timestamp'] as Timestamp,
++      status: data['status'] as String? ?? 'active',
++      groupNames:
++          data['groupNames'] != null
++              ? List<String>.from(data['groupNames'])
++              : null,
+     );
+   }
++
++  Map<String, dynamic> toMap() {
++    return {
++      'groupIds': groupIds,
++      'userId': userId,
++      'timestamp': timestamp,
++      'status': status,
++      if (groupNames != null) 'groupNames': groupNames,
++    };
++  }
+ }
+diff --git a/lib/core/services/settings_service.dart b/lib/core/services/settings_service.dart
+new file mode 100644
+index 0000000..7bb9180
+--- /dev/null
++++ b/lib/core/services/settings_service.dart
+@@ -0,0 +1,140 @@
++
++import 'package:cloud_firestore/cloud_firestore.dart';
++import 'package:firebase_auth/firebase_auth.dart';
++import 'package:flutter/material.dart';
++import 'package:flutter_screenutil/flutter_screenutil.dart';
++import 'package:near_me_new_version/Features/Settings/components/group_selection_widget.dart';
++import 'package:near_me_new_version/Features/group_profile/components/switch_widget.dart';
++import 'package:near_me_new_version/core/constants.dart';
++
++class SettingsService extends StatefulWidget {
++  const SettingsService({super.key});
++
++  @override
++  _SettingsServiceState createState() => _SettingsServiceState();
++}
++
++class _SettingsServiceState extends State<SettingsService> {
++  bool isAlertActive = false;
++  bool isListExpanded = false;
++  List<String> groupIds = []; 
++  List<String> selectedGroupIds = []; 
++
++  final FirebaseAuth _auth = FirebaseAuth.instance;
++  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
++
++  @override
++  void initState() {
++    super.initState();
++    _fetchGroups();
++  }
++
++  Future<void> _fetchGroups() async {
++    try {
++      String? userId = _auth.currentUser?.uid;
++      if (userId == null) return;
++
++      QuerySnapshot groupSnapshot = await _firestore
++          .collection('groups')
++          .where('members', arrayContains: userId)
++          .get();
++
++      setState(() {
++        groupIds = groupSnapshot.docs.map((doc) => doc.id).toList(); 
++        print('Fetched groupIds: $groupIds');
++      });
++    } catch (e) {
++      print('Error fetching groups: $e');
++    }
++  }
++
++  void _openGroupSelection() async {
++    final result = await showModalBottomSheet<List<String>>(
++      context: context,
++      isScrollControlled: true,
++      builder: (_) => GroupSelectionWidget(
++        groups: groupIds, 
++        initiallySelectedGroups: selectedGroupIds,
++      ),
++    );
++
++    if (result != null) {
++      setState(() {
++        selectedGroupIds = result;
++        _saveSelectedGroupsToFirebase(); 
++      });
++    }
++  }
++
++  Future<void> _saveSelectedGroupsToFirebase() async {
++    try {
++      final userId = _auth.currentUser?.uid;
++      if (userId == null) return;
++
++      await _firestore
++          .collection('selected_alert_groups')
++          .doc(userId)
++          .set({'groups': selectedGroupIds}, SetOptions(merge: true));
++      print('Saved selectedGroupIds to Firestore: $selectedGroupIds');
++    } catch (e) {
++      print('Error saving selected groups: $e');
++    }
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Padding(
++      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
++      child: Column(
++        crossAxisAlignment: CrossAxisAlignment.start,
++        children: [
++          Row(
++            mainAxisAlignment: MainAxisAlignment.spaceBetween,
++            crossAxisAlignment: CrossAxisAlignment.center,
++            children: [
++              GestureDetector(
++                onTap: () {
++                  setState(() {
++                    isListExpanded = !isListExpanded;
++                  });
++                  if (isListExpanded) {
++                    _openGroupSelection();
++                  }
++                },
++                child: Row(
++                  children: [
++                    Icon(
++                      isListExpanded ? Icons.arrow_drop_down : Icons.arrow_drop_up_outlined,
++                      size: 30.sp,
++                      color: kPrimaryColor1,
++                    ),
++                    SizedBox(width: 10.w),
++                    Text(
++                      'Quick Risk Alert',
++                      style: TextStyle(
++                        color: const Color.fromRGBO(55, 55, 55, 1),
++                        fontFamily: 'Open Sans',
++                        fontSize: 24.sp,
++                        fontWeight: FontWeight.normal,
++                        height: 0.9166,
++                      ),
++                    ),
++                  ],
++                ),
++              ),
++              SwitchWidget(
++                initialFeatureStatus: isAlertActive,
++                onChanged: (value) {
++                  setState(() {
++                    isAlertActive = value;
++                    if (!isAlertActive) isListExpanded = false;
++                  });
++                },
++              ),
++            ],
++          ),
++        ],
++      ),
++    );
++  }
++}
+diff --git a/lib/main.dart b/lib/main.dart
+index 8a010e8..1cf845f 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -41,6 +41,9 @@ import 'Features/chat_group/components/message_bubble.dart';
+ import 'Features/group_profile/screens/group_inside.dart';
+ import 'Features/group_profile/screens/group_profile_screen.dart';
+ import 'Features/group_profile/screens/media.dart';
++import 'package:flutter/services.dart';
++
++const platform = MethodChannel('com.example.near_me_new_version/floating_button');
+ 
+ // Use only one import path
+ 
+-- 
+2.42.0.windows.2
+
