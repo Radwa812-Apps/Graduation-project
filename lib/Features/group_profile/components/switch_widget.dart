@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:flutter/services.dart';
 import 'package:location/location.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ class SwitchWidget extends StatefulWidget {
   final Function(bool)? onToggle; // ← New callback
   final String id; // ← New parameter
   final bool isLiveTrackingOn; // ← New parameter
+  final bool isRiskPresserd;
   SwitchWidget({
     super.key,
     this.initialFeatureStatus = false,
@@ -21,6 +23,7 @@ class SwitchWidget extends StatefulWidget {
     this.onToggle,
     this.isLiveTrackingOn = false, // ← New param
     this.id = '', // ← New parameter
+    this.isRiskPresserd = false,
   });
 
   @override
@@ -56,7 +59,7 @@ class _SwitchWidgetState extends State<SwitchWidget> {
     return Switch(
       value: _featureEnabled,
 
-      onChanged: (bool value) {
+      onChanged: (bool value) async {
         setState(() {
           _featureEnabled = value;
           context.read<TrackingUserOnCubit>().updateValue(value);
@@ -70,7 +73,9 @@ class _SwitchWidgetState extends State<SwitchWidget> {
         //Invoke the callback from parent
         if (widget.onToggle != null) {
           log("Calling parent's toggleLiveTracking with value: $value");
-          widget.onToggle!(value); // ← Call parent's _hanldeLiveLocationInstance
+          widget.onToggle!(
+            value,
+          ); // ← Call parent's _hanldeLiveLocationInstance
         }
         
       },

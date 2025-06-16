@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  audioplayers_windows
   cloud_firestore
   connectivity_plus
   emoji_picker_flutter
@@ -10,9 +11,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   firebase_storage
+  flutter_secure_storage_windows
   fullscreen_window
   geolocator_windows
   permission_handler_windows
+  record_windows
   video_player_win
 )
 

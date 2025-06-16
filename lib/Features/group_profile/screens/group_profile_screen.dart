@@ -48,7 +48,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   }
 
   void getMapPofileArgs() {
-     final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null) {
       groupId = args['id'];
       log("id received: $groupId");
@@ -59,8 +59,6 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
           isLiveTrackingOn = args['isLiveTrackingOn'];
         });
       }
-      
-    
     }
   }
 
@@ -100,46 +98,48 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
     final Offset offset = renderBox.localToGlobal(Offset.zero);
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => GestureDetector(
-        onTap: () {
-          _overlayEntry?.remove();
-          _overlayEntry = null;
-        },
-        behavior: HitTestBehavior.translucent,
-        child: Container(
-          color: Colors.transparent,
-          child: Stack(
-            children: [
-              Positioned(
-                top: 100,
-                left: 200,
-                child: Material(
-                  color: Colors.transparent,
-                  child: LeaveGroup(
-                    onLeaveGroupPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return ConfirmMessageWidget(
-                            message: 'Are you sure you want to leave the group?',
-                            onCancel: () {
-                              Navigator.of(context).pop();
-                            },
-                            onConfirm: () {
-                              Navigator.of(context).pop();
-                              print('User confirmed leaving the group');
+      builder:
+          (context) => GestureDetector(
+            onTap: () {
+              _overlayEntry?.remove();
+              _overlayEntry = null;
+            },
+            behavior: HitTestBehavior.translucent,
+            child: Container(
+              color: Colors.transparent,
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 100,
+                    left: 200,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: LeaveGroup(
+                        onLeaveGroupPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ConfirmMessageWidget(
+                                message:
+                                    'Are you sure you want to leave the group?',
+                                onCancel: () {
+                                  Navigator.of(context).pop();
+                                },
+                                onConfirm: () {
+                                  Navigator.of(context).pop();
+                                  print('User confirmed leaving the group');
+                                },
+                              );
                             },
                           );
                         },
-                      );
-                    },
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
 
     Overlay.of(context)?.insert(_overlayEntry!);
@@ -165,29 +165,30 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                 bool isCollapsed = appBarHeight <= kToolbarHeight + 50;
 
                 return FlexibleSpaceBar(
-                  title: isCollapsed
-                      ? Row(
-                          children: [
-                            const CircleAvatar(
-                              radius: 20,
-                              backgroundImage: AssetImage(kDefaultGroupImge),
-                            ),
-                            const SizedBox(width: 10),
-                            Padding(
-                              padding: const EdgeInsets.only(top: 3, left: 5),
-                              child: Text(
-                                _group?.name ?? "Loading...",
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontFamily: kFontBold,
-                                  fontWeight: FontWeight.bold,
-                                  color: kFontColor,
+                  title:
+                      isCollapsed
+                          ? Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 20,
+                                backgroundImage: AssetImage(kDefaultGroupImge),
+                              ),
+                              const SizedBox(width: 10),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 3, left: 5),
+                                child: Text(
+                                  _group?.name ?? "Loading...",
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontFamily: kFontBold,
+                                    fontWeight: FontWeight.bold,
+                                    color: kFontColor,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        )
-                      : null,
+                            ],
+                          )
+                          : null,
                   background: Stack(
                     alignment: Alignment.center,
                     children: [
@@ -256,14 +257,18 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                FeaturesOne(onToggle: onToggle, isLiveTrackingOn: isLiveTrackingOn, id: groupId),
+                FeaturesOne(
+                  onToggle: onToggle,
+                  isLiveTrackingOn: isLiveTrackingOn,
+                  id: groupId,
+                ),
                 SplitBetweenFeatures(),
                 const SizedBox(height: 10),
                 RowAddMember(
                   screenWidth: screenWidth,
                   onSearchPressed: _toggleSearch,
                   groupId: _group?.id ?? '',
-                  onReturn: _loadGroupData, 
+                  onReturn: _loadGroupData,
                 ),
                 if (_isSearchExpanded) const SearchTextWidget(),
                 const SizedBox(height: 30),
@@ -280,7 +285,8 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                     (uid) => FutureBuilder<Map<String, String>?>(
                       future: _groupService.getUserData(uid),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const SizedBox.shrink();
                         }
                         if (snapshot.hasData && snapshot.data != null) {
@@ -309,7 +315,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
           Navigator.pushNamed(
             context,
             GroupChat.groupChatKey,
-            arguments: _group?.name,
+            arguments: {'groupId': _group!.id, 'groupName': _group!.name},
           );
         },
         backgroundColor: kPrimaryColor1,

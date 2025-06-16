@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -103,7 +104,7 @@ Future<BitmapDescriptor> createCircleMarkerWithImage(
   return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
 }
 
-Future<BitmapDescriptor> imageToBitmapDescriptor({
+Future<BitmapDescriptor?> imageToBitmapDescriptor({
   int targetWidth = 100,
 }) async {
   String imagePath = "assets/images/destination.jpeg";
@@ -111,7 +112,8 @@ Future<BitmapDescriptor> imageToBitmapDescriptor({
   final File imageFile = File(imagePath);
 
   if (!await imageFile.exists()) {
-    throw Exception('Image file not found at path: $imagePath');
+    log('Image file not found at path: $imagePath');
+    return null;
   }
 
   // 2. تحميل الصورة كـ bytes
@@ -131,9 +133,9 @@ Future<BitmapDescriptor> imageToBitmapDescriptor({
   );
 
   if (byteData == null) {
-    throw Exception('Failed to convert image to byte data');
+    log('Failed to convert image to byte data');
   }
 
   // 5. إنشاء BitmapDescriptor من البايتات
-  return BitmapDescriptor.bytes(byteData.buffer.asUint8List());
+  return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
 }

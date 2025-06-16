@@ -26,7 +26,7 @@ android {
         applicationId = "com.example.near_me_new_version"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = 24
         targetSdk =  33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -47,4 +47,6 @@ flutter {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0")) // 🔹 تأكد من استخدام `platform()`
     implementation("com.google.firebase:firebase-analytics") // 🔹 استخدام Kotlin DSL
+    implementation("com.google.firebase:firebase-auth")       // ✅ أضيفي دي
+    implementation("com.google.firebase:firebase-firestore")
 }

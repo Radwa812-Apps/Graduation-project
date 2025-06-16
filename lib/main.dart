@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/general_notifications.dart';
+import 'package:near_me_new_version/Features/Settings/components/risk_block.dart';
 import 'package:near_me_new_version/Features/Settings/screens/settings_screen.dart';
 import 'package:near_me_new_version/Features/Splash_page/Screens/after_splash.dart';
 import 'package:near_me_new_version/Features/Splash_page/Screens/splash_screen.dart';
@@ -44,6 +45,9 @@ import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
 import 'Features/group_profile/screens/group_inside.dart';
 import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
+import 'package:flutter/services.dart';
+
+const platform = MethodChannel('com.example.near_me_new_version/floating_button');
 
 // Use only one import path
 
@@ -73,6 +77,7 @@ void main() async {
             BlocProvider(create: (context) => CustomPlacesBloc(Services())),
             BlocProvider(create: (context) => ProfileBloc()),
             BlocProvider(create: (context) => TrackingUserOnCubit()),
+            BlocProvider(create: (context)=> RiskCubit()),
           ],
           child: NearMeApp(),
         );

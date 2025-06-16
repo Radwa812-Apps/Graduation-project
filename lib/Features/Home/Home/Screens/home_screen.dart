@@ -7,7 +7,7 @@ import 'package:near_me_new_version/Features/group_profile/screens/group_profile
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../core/constants.dart';
 import '../components/container_text_field_widget.dart';
 import '../components/floating_yellow_icon.dart';
