@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants.dart';
+
 class ThreeDotMenu extends StatelessWidget {
   final VoidCallback? onMutePressed;
   final VoidCallback? onClearChatPressed;
@@ -42,7 +43,7 @@ class ThreeDotMenu extends StatelessWidget {
         return [
           PopupMenuItem<String>(
             value: 'Mute',
-            child: _buildMenuItem(Icons.volume_off_outlined ,'Mute',),
+            child: _buildMenuItem(Icons.volume_off_outlined, 'Mute'),
           ),
           PopupMenuItem<String>(
             value: 'Clear Chat',
@@ -62,11 +63,11 @@ class ThreeDotMenu extends StatelessWidget {
       children: [
         Icon(icon, color: kPrimaryColor1, size: 20),
         SizedBox(width: 8),
-        Expanded( 
+        Expanded(
           child: Text(
             text,
             style: const TextStyle(
-              color:textColor,
+              color: textColor,
               fontSize: 16,
             ),
           ),

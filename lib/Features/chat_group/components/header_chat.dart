@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/chat_group/components/three_dots_manu.dart';
-
 import '../../../core/constants.dart';
 import '../../../core/font_style.dart';
 import '../../Notifications/Components/search_icon.dart';
@@ -13,6 +12,8 @@ class HeaderChat extends StatefulWidget {
   final String? circleAvatarImage;
   final VoidCallback onClearChatPressed;
   final String image;
+  final ValueChanged<String>? onSearchChanged; // Add callback for search
+  final VoidCallback? onGroupInfoPressed; // Add callback for group info
 
   const HeaderChat({
     Key? key,
@@ -21,7 +22,10 @@ class HeaderChat extends StatefulWidget {
     this.onBackPressed,
     this.showCircleAvatar = true,
     this.circleAvatarImage,
-    required this.onClearChatPressed, required this.image,
+    required this.onClearChatPressed,
+    required this.image,
+    this.onSearchChanged,
+    this.onGroupInfoPressed,
   }) : super(key: key);
 
   @override
@@ -42,11 +46,12 @@ class _HeaderChatState extends State<HeaderChat> {
     setState(() {
       _isSearchVisible = false;
       _searchController.clear();
+      widget.onSearchChanged?.call('');
     });
   }
 
   void _onSearch(String query) {
-    print("Searching for: $query");
+    widget.onSearchChanged?.call(query);
   }
 
   @override
@@ -87,16 +92,25 @@ class _HeaderChatState extends State<HeaderChat> {
                     ),
                     const SizedBox(width: 10),
                     if (widget.showCircleAvatar)
-                      CircleAvatar(
-                        backgroundImage: widget.circleAvatarImage != null
-                            ? AssetImage(widget.circleAvatarImage!)
-                            :  AssetImage(widget.image),
-                        radius: 20,
+                      GestureDetector(
+                        onTap: widget.onGroupInfoPressed,
+                        child: CircleAvatar(
+                          backgroundImage: widget.circleAvatarImage != null
+                              ? AssetImage("assets/images/group.jpg")
+                              : AssetImage("assets/images/group.jpg"),
+                          radius: 20,
+                        ),
                       ),
                     if (widget.showCircleAvatar) const SizedBox(width: 10),
-                    Text(
-                      widget.title,
-                      style: TextStyles.NotificationsTilteText,
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: widget.onGroupInfoPressed,
+                        child: Text(
+                          widget.title,
+                          style: TextStyles.NotificationsTilteText,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                     const Spacer(),
                     Row(

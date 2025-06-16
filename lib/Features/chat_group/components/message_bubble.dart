@@ -1,192 +1,65 @@
-/*import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-import '../../../core/constants.dart';
-
-
-import 'package:flutter/material.dart';
-
-class MessageBubble extends StatelessWidget {
-  final String message;
-  final String time;
-  final bool isMe;
-  final String senderName;
-  final bool isImage;
-  final String? imageUrl;
-
-  const MessageBubble({
-    Key? key,
-    required this.message,
-    required this.time,
-    required this.isMe,
-    required this.senderName,
-    this.isImage = false,
-    this.imageUrl,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Column(
-        crossAxisAlignment: 
-            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          if (!isMe)
-            Padding(
-              padding: const EdgeInsets.only(left: 12, bottom: 2),
-              child: Text(
-                senderName,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75,
-            ),
-            decoration: BoxDecoration(
-              color: isMe ? kPrimaryColor1 : Colors.grey[200], // WhatsApp-like colors
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(isMe ? 12 : 0),
-                topRight: Radius.circular(isMe ? 0 : 12),
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isImage && imageUrl != null)
-                  _buildImageContent()
-                else
-                  _buildTextContent(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
- Widget _buildTextContent() {
-  return IntrinsicWidth(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (!isMe)
-          Text(
-            senderName,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        Text(
-          message,
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black,
-            fontSize: 16,
-          ),
-        ),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              _formatTimestamp(time),
-              style: TextStyle(
-                color: isMe ? Colors.white70 : Colors.grey[600],
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-String _formatTimestamp(dynamic timestamp) {
-  if (timestamp == null) return 'Just now';
-  if (timestamp is Timestamp) {
-    final date = timestamp.toDate();
-    return DateFormat('HH:mm').format(date);
-  }
-  return timestamp.toString();
-}
-
-  Widget _buildImageContent() {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            imageUrl!,
-            width: double.infinity,
-            height: 200,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Align(
-            alignment: Alignment.bottomRight,
-            child: Text(
-              time,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}*/
-import 'package:flutter/material.dart';
+import 'package:near_me_new_version/core/constants.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:intl/intl.dart';
-import '../../../core/constants.dart';
+import 'package:near_me_new_version/Features/chat_group/components/full_screen_image_viewer.dart';
+import 'package:near_me_new_version/Features/chat_group/components/video_player_widget.dart';
 
 class MessageBubble extends StatefulWidget {
   final String message;
-  final String time;
+  final dynamic timestamp;
   final bool isMe;
   final String senderName;
-  final bool isImage;
   final String? imageUrl;
-  final bool isVoice; // Added for voice messages
-  final String? voiceUrl; // Added for voice messages
+  final String? videoUrl;
+  final String? voiceUrl;
 
   const MessageBubble({
     Key? key,
     required this.message,
-    required this.time,
+    required this.timestamp,
     required this.isMe,
     required this.senderName,
-    this.isImage = false,
     this.imageUrl,
-    this.isVoice = false,
+    this.videoUrl,
     this.voiceUrl,
   }) : super(key: key);
 
   @override
-  _MessageBubbleState createState() => _MessageBubbleState();
+  State<MessageBubble> createState() => _MessageBubbleState();
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = AudioPlayer();
+    _setupAudioPlayer();
+  }
+
+  void _setupAudioPlayer() {
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() => _isPlaying = state == PlayerState.playing);
+      }
+    });
+    _audioPlayer.onDurationChanged.listen((duration) {
+      if (mounted) {
+        setState(() => _duration = duration);
+      }
+    });
+    _audioPlayer.onPositionChanged.listen((position) {
+      if (mounted) {
+        setState(() => _position = position);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -194,177 +67,261 @@ class _MessageBubbleState extends State<MessageBubble> {
     super.dispose();
   }
 
-  void _playPauseVoiceMessage() async {
-    if (_isPlaying) {
-      await _audioPlayer.pause();
-      setState(() => _isPlaying = false);
-    } else {
-      if (widget.voiceUrl != null) {
-        await _audioPlayer.play(UrlSource(widget.voiceUrl!));
-        setState(() => _isPlaying = true);
-        _audioPlayer.onPlayerComplete.listen((event) {
-          setState(() => _isPlaying = false);
-        });
-      }
+  String _formatTimestamp() {
+    if (widget.timestamp == null) return 'Just now';
+    if (widget.timestamp is Timestamp) {
+      final date = widget.timestamp.toDate();
+      return DateFormat('HH:mm').format(date);
     }
+    return widget.timestamp.toString();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Column(
-        crossAxisAlignment:
-            widget.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          if (!widget.isMe)
-            Padding(
-              padding: const EdgeInsets.only(left: 12, bottom: 2),
-              child: Text(
-                widget.senderName,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75,
-            ),
-            decoration: BoxDecoration(
-              color: widget.isMe ? kPrimaryColor1 : Colors.grey[200],
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(widget.isMe ? 12 : 0),
-                topRight: Radius.circular(widget.isMe ? 0 : 12),
-                bottomLeft: Radius.circular(12),
-                bottomRight: Radius.circular(12),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.isVoice && widget.voiceUrl != null)
-                  _buildVoiceContent()
-                else if (widget.isImage && widget.imageUrl != null)
-                  _buildImageContent()
-                else
-                  _buildTextContent(),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildTimestamp() {
+    return Text(
+      _formatTimestamp(),
+      style: TextStyle(
+        color: widget.isMe ? Colors.white70 : Colors.grey[600],
+        fontSize: 11,
       ),
     );
   }
 
   Widget _buildTextContent() {
-    return IntrinsicWidth(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.message,
-            style: TextStyle(
-              color: widget.isMe ? Colors.white : Colors.black,
-              fontSize: 16,
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                _formatTimestamp(widget.time),
-                style: TextStyle(
-                  color: widget.isMe ? Colors.white70 : Colors.grey[600],
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImageContent() {
+    if (widget.message.isEmpty) return const SizedBox.shrink();
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            widget.imageUrl!,
-            width: double.infinity,
-            height: 200,
-            fit: BoxFit.cover,
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
+        Text(
+          widget.message,
+          style: TextStyle(
+            color: widget.isMe ? Colors.white : Colors.black,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Align(
-            alignment: Alignment.bottomRight,
-            child: Text(
-              widget.time,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 11,
-              ),
-            ),
-          ),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: _buildTimestamp(),
         ),
       ],
     );
   }
 
-  Widget _buildVoiceContent() {
-    return IntrinsicWidth(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: Icon(
-                  _isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: widget.isMe ? Colors.white : Colors.black,
-                ),
-                onPressed: _playPauseVoiceMessage,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Voice Message',
-                style: TextStyle(
-                  color: widget.isMe ? Colors.white : Colors.black,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                _formatTimestamp(widget.time),
-                style: TextStyle(
-                  color: widget.isMe ? Colors.white70 : Colors.grey[600],
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
-        ],
+  void _showFullImage(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenImageViewer(imageUrl: imageUrl),
       ),
     );
   }
 
-  String _formatTimestamp(String time) {
-    // Since the time is already a string in HH:mm format, just return it
-    return time;
+  Widget _buildImageContent() {
+    if (widget.imageUrl == null || widget.imageUrl!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
+        GestureDetector(
+          onTap: () => _showFullImage(context, widget.imageUrl!),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              widget.imageUrl!,
+              width: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                print('Image load error: $error');
+                return Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: const Center(child: Icon(Icons.error)),
+                );
+              },
+            ),
+          ),
+        ),
+        _buildTimestamp(),
+      ],
+    );
+  }
+
+  Widget _buildVideoContent() {
+    if (widget.videoUrl == null || widget.videoUrl!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
+        SizedBox(
+          height: 200,
+          child: VideoPlayerWidget(url: widget.videoUrl!),
+        ),
+        _buildTimestamp(),
+      ],
+    );
+  }
+
+  Widget _buildVoiceContent() {
+    if (widget.voiceUrl == null || widget.voiceUrl!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
+        Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow,
+                color: widget.isMe ? Colors.white : Colors.blue,
+              ),
+              onPressed: () async {
+                try {
+                  if (_isPlaying) {
+                    await _audioPlayer.pause();
+                  } else {
+                    await _audioPlayer.play(UrlSource(widget.voiceUrl!));
+                  }
+                  if (mounted) setState(() {});
+                } catch (e) {
+                  print('Voice playback error: $e');
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to play voice message: $e')),
+                    );
+                  }
+                }
+              },
+            ),
+            Expanded(
+              child: Slider(
+                min: 0,
+                max: _duration.inSeconds.toDouble(),
+                value: _position.inSeconds.toDouble().clamp(0, _duration.inSeconds.toDouble()),
+                onChanged: (seconds) async {
+                  try {
+                    await _audioPlayer.seek(Duration(seconds: seconds.toInt()));
+                    if (mounted) setState(() {});
+                  } catch (e) {
+                    print('Voice seek error: $e');
+                  }
+                },
+                activeColor: widget.isMe ? Colors.white70 : kPrimaryColor1,
+                inactiveColor: widget.isMe ? Colors.white30 : Colors.grey,
+              ),
+            ),
+            Text(
+              '${_position.inMinutes}:${(_position.inSeconds % 60).toString().padLeft(2, '0')}',
+              style: TextStyle(
+                color: widget.isMe ? Colors.white70 : Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        _buildTimestamp(),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.message.isEmpty &&
+        (widget.imageUrl == null || widget.imageUrl!.isEmpty) &&
+        (widget.videoUrl == null || widget.videoUrl!.isEmpty) &&
+        (widget.voiceUrl == null || widget.voiceUrl!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Align(
+        alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
+        child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty ||
+                widget.videoUrl != null && widget.videoUrl!.isNotEmpty ||
+                widget.voiceUrl != null && widget.voiceUrl!.isNotEmpty
+            ? ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                child: _buildContent(),
+              )
+            : ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                child: _buildContent(),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.isMe ? kPrimaryColor1 : Colors.grey[200],
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(widget.isMe ? 12 : 0),
+          topRight: Radius.circular(widget.isMe ? 0 : 12),
+          bottomLeft: const Radius.circular(12),
+          bottomRight: const Radius.circular(12),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+            _buildImageContent()
+          else if (widget.videoUrl != null && widget.videoUrl!.isNotEmpty)
+            _buildVideoContent()
+          else if (widget.voiceUrl != null && widget.voiceUrl!.isNotEmpty)
+            _buildVoiceContent()
+          else
+            _buildTextContent(),
+        ],
+      ),
+    );
   }
 }

@@ -68,6 +68,13 @@ class MainActivity : FlutterActivity() {
                 "toggleFloatingButton" -> {
                     val enable = call.argument<Boolean>("enable") ?: false
                     Log.d(TAG, "toggleFloatingButton called with enable: $enable")
+                    if (!enable) {
+            val intent = Intent(this, FloatingButtonService::class.java)
+            stopService(intent)
+            isServiceRunning = false
+            result.success("Floating button stopped")
+            Log.d(TAG, "Service forcefully stopped")
+        }
                     if (enable && !isServiceRunning) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
                             result.error("PERMISSION_DENIED", "Overlay permission not granted", null)

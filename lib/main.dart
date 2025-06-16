@@ -71,7 +71,7 @@ void main() async {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ChatModelTemp()),
-            Provider<ChatService>(create: (_) => ChatService()),
+            //Provider<ChatService>(create: (_) => ChatService()),
             // Your existing BLoC providers
             BlocProvider(create: (context) => AuthBloc(Services())),
             BlocProvider(create: (context) => CustomPlacesBloc(Services())),

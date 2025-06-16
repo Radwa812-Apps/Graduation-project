@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Settings/components/group_selection_widget.dart';
 import 'package:near_me_new_version/Features/Settings/components/risk_block.dart';
 import 'package:near_me_new_version/core/constants.dart';
+import 'package:near_me_new_version/main.dart';
 
 class SettingsService extends StatefulWidget {
   const SettingsService({super.key});
@@ -133,7 +135,6 @@ class _SettingsServiceState extends State<SettingsService> {
               Switch(
                 value: isAlertActive,
                 onChanged: (value) async {
-                  await _handleRiskbutton(value);
                   setState(() {
                     isAlertActive = value;
                     log("isAlertActive: $isAlertActive");
@@ -146,6 +147,15 @@ class _SettingsServiceState extends State<SettingsService> {
                       context.read<RiskCubit>().updateValue(false);
                     }
                   });
+                  //await _handleRiskbutton(value);
+                  try {
+                    final result = await MethodChannel(
+                      'com.example.near_me_new_version/floating_button',
+                    ).invokeMethod('toggleFloatingButton', {'enable': value});
+                    print(result);
+                  } catch (e) {
+                    print("Error toggling floating button: $e");
+                  }
                 },
               ),
             ],
@@ -156,17 +166,42 @@ class _SettingsServiceState extends State<SettingsService> {
   }
 
   Future<void> _handleRiskbutton(bool value) async {
-    log("_handle risk butoon ...........$value");
+    // if (value) {
+    //   // ✅ تشغيل الخدمة
+    //   final androidIntent = AndroidIntent(
+    //     action: 'android.intent.action.START_SERVICE',
+    //     package: 'com.example.near_me_new_version',
+    //     componentName: 'com.example.near_me_new_version.FloatingButtonService',
+    //     arguments: {'enable': true}, // ترسل له انه يشتغل
+    //   );
+    //   await androidIntent.launch();
+    // } else {
+    //   // ⛔️ إيقاف الخدمة
+    //   final androidIntent = AndroidIntent(
+    //     action: 'android.intent.action.STOP_SERVICE',
+    //     package: 'com.example.near_me_new_version',
+    //     componentName: 'com.example.near_me_new_version.FloatingButtonService',
+    //     arguments: {'force_stop': true}, // تبعتله انه يقفل نفسه
+    //   );
+    //   await androidIntent.launch();
+    // }
+
     if (value) {
-      final dynamic result = await MethodChannel(
-        'com.example.near_me_new_version/floating_button',
-      ).invokeMethod('toggleFloatingButton', {'enable': true});
-      print(result);
+      await platform.invokeMethod('startService');
     } else {
-      final dynamic result = await MethodChannel(
-        'com.example.near_me_new_version/floating_button',
-      ).invokeMethod('toggleFloatingButton', {'enable': false});
-      print(result);
+      await platform.invokeMethod('stopService');
     }
+    // log("_handle risk butoon ...........$value");
+    // if (value) {
+    //   final dynamic result = await MethodChannel(
+    //     'com.example.near_me_new_version/floating_button',
+    //   ).invokeMethod('toggleFloatingButton', {'enable': true});
+    //   print(result);
+    // } else {
+    //   final dynamic result = await MethodChannel(
+    //     'com.example.near_me_new_version/floating_button',
+    //   ).invokeMethod('toggleFloatingButton', {'enable': false});
+    //   print(result);
+    // }
   }
 }
