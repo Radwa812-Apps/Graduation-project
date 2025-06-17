@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -30,6 +31,7 @@ import 'package:near_me_new_version/core/data/models/chat_model_temp.dart';
 import 'package:near_me_new_version/core/services/Auth_functions.dart';
 import 'package:near_me_new_version/core/services/chat_services.dart'
     show ChatService;
+import 'package:near_me_new_version/core/services/cloudinary_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Features/Home/Home/Screens/home_screen.dart';
@@ -65,14 +67,30 @@ void main() async {
       child: ChangeNotifierProvider(create: (_) => ChatModelTemp()),
     ),
   );*/
+     const encryptionKey = 'your-256-bit-super-secret-key!!';
+
   runApp(
     ScreenUtilInit(
       builder: (BuildContext context, Widget? child) {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ChatModelTemp()),
-            //Provider<ChatService>(create: (_) => ChatService()),
-            // Your existing BLoC providers
+           
+            Provider<CloudinaryService>(
+              create: (_) => CloudinaryService(
+                auth: FirebaseAuth.instance,
+                encryptionKey: encryptionKey,
+              ),
+            ),
+            
+            Provider<ChatService>(
+              create: (context) => ChatService(
+                cloudinary: context.read<CloudinaryService>(),
+                encryptionKey: encryptionKey,
+              ),
+            ),
+            ChangeNotifierProvider(create: (_) => ChatModelTemp()),
+            Provider<ChatService>(create: (_) => ChatService(encryptionKey: encryptionKey)),
             BlocProvider(create: (context) => AuthBloc(Services())),
             BlocProvider(create: (context) => CustomPlacesBloc(Services())),
             BlocProvider(create: (context) => ProfileBloc()),
