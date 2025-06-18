@@ -1,8 +1,10 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:near_me_new_version/Features/group_profile/components/search_text_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/components/split_between_features.dart';
+import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:near_me_new_version/Features/Settings/components/confirm_message_widget.dart';
 import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
@@ -10,6 +12,7 @@ import 'package:near_me_new_version/Features/group_profile/components/features_o
 import 'package:near_me_new_version/Features/group_profile/components/leave_group.dart';
 import 'package:near_me_new_version/Features/group_profile/components/members_style_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/components/row_add_member.dart';
+import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 
@@ -28,7 +31,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   final GroupService _groupService = GroupService();
   Group? _group;
   bool _isDataLoaded = false;
-
+  FirebaseController _firebaseController = FirebaseController();
   @override
   void initState() {
     super.initState();
@@ -143,6 +146,16 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
     );
 
     Overlay.of(context)?.insert(_overlayEntry!);
+  }
+
+  void checkIfGroupHasUserLiveLocations() async {
+    final hasUserLiveLocations = await _firebaseController
+        .checkIfGroupHasUserLiveLocations(groupId);
+    if (hasUserLiveLocations != null && hasUserLiveLocations) {
+      setState(() {
+        isLiveTrackingOn = true;
+      });
+    }
   }
 
   @override
@@ -262,6 +275,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                   isLiveTrackingOn: isLiveTrackingOn,
                   id: groupId,
                 ),
+
                 SplitBetweenFeatures(),
                 const SizedBox(height: 10),
                 RowAddMember(

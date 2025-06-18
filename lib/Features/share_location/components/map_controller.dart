@@ -9,10 +9,6 @@ class MapController {
   LatLng initialPosition = LatLng(30.0444, 31.2357);
   Set<Marker> markers = {};
 
-  
-
-  
-
   void onMapCreated(GoogleMapController controller) {
     mapController = controller;
     isMapReady = true;
@@ -20,11 +16,15 @@ class MapController {
 
   void updateCameraPosition(LatLng position, {double zoom = 14.0}) {
     log("Updating camera position to: $position with zoom: $zoom");
-    mapController?.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(target: position, zoom: zoom),
-      ),
-    );
+    try {
+      mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: position, zoom: zoom),
+        ),
+      );
+    } catch (e) {
+      log(e.toString());
+    }
   }
 
   void updateMarkers(Set<Marker> newMarkers) {

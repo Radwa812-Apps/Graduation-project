@@ -12,6 +12,9 @@ import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
+import io.flutter.plugin.common.MethodChannel
 
 class FloatingButtonService : Service() {
     private lateinit var windowManager: WindowManager
@@ -19,6 +22,9 @@ class FloatingButtonService : Service() {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val TAG = "FloatingButtonService"
+    private var isButtonVisible = false
+    private var methodChannel: MethodChannel? = null
+
 
     override fun onCreate() {
         super.onCreate()
@@ -27,6 +33,15 @@ class FloatingButtonService : Service() {
     }
 
     private fun setupFloatingButton() {
+        if (isButtonVisible) {
+        Log.d(TAG, "Floating button already visible, skipping setup")
+        return
+        }
+        val flutterEngine = FlutterEngineCache.getInstance().get("my_engine_id")
+if (flutterEngine != null) {
+    methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.near_me_new_version/floating_button")
+}
+
         Log.d(TAG, "setupFloatingButton called")
         floatingButton = LayoutInflater.from(this).inflate(R.layout.floating_button_layout, null)
         Log.d(TAG, "Inflated floating button layout: ${floatingButton != null}")
@@ -53,6 +68,7 @@ class FloatingButtonService : Service() {
         try {
             windowManager.addView(floatingButton, params)
             Log.d(TAG, "Floating button added to window successfully")
+            isButtonVisible = true
         } catch (e: Exception) {
             Log.e(TAG, "Error adding floating button: ${e.message}", e)
         }
@@ -87,6 +103,8 @@ class FloatingButtonService : Service() {
         // ✅ الضغط على الزر يرسل التنبيهات
         floatingButton.findViewById<Button>(R.id.floating_button)?.setOnClickListener {
             Log.d(TAG, "Floating button clicked")
+            methodChannel?.invokeMethod("onFloatingButtonPressed", null)
+            
             sendAlertToSelectedGroups()
         } ?: Log.e(TAG, "Floating button view not found with ID: R.id.floating_button")
     }
@@ -181,6 +199,7 @@ class FloatingButtonService : Service() {
             try {
                 windowManager.removeView(floatingButton)
                 Log.d(TAG, "Floating button removed from window")
+                isButtonVisible = false
             } catch (e: Exception) {
                 Log.e(TAG, "Error removing floating button: ${e.message}", e)
             }
@@ -189,10 +208,14 @@ class FloatingButtonService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand called with intent: $intent")
-        if (intent?.getBooleanExtra("enable", false) == true) {
-            Log.d(TAG, "Service starting with enable = true")
-            setupFloatingButton()
+        val shouldEnable = intent?.getBooleanExtra("enable", false) ?: false
+        if (!shouldEnable) {
+            Log.w(TAG, "Service started without enable = true, stopping...")
+            stopSelf()
+            return START_NOT_STICKY
         }
+
+        setupFloatingButton()
         return START_STICKY
     }
 

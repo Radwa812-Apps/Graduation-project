@@ -4,6 +4,7 @@ import 'package:location/location.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import '../../../core/constants.dart';
 
@@ -31,26 +32,38 @@ class SwitchWidget extends StatefulWidget {
 }
 
 class _SwitchWidgetState extends State<SwitchWidget> {
-  late bool _featureEnabled;
+  bool _featureEnabled = false;
 
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
   LocationData? currentLocation;
   late Location location;
-
+  FirebaseController _firebaseController = FirebaseController();
   @override
   void initState() {
     super.initState();
-    if (widget.isLiveTrackingOn) {
+    // if (widget.isLiveTrackingOn) {
+    //   log("Live tracking is enabled");
+    //   _featureEnabled = true;
+    // } else {
+    //   log("Live tracking is disabled");
+    //   _featureEnabled = widget.initialFeatureStatus;
+    // }
+    isUserLiveLocationOn();
+  }
+
+  void isUserLiveLocationOn() async {
+    final hasUserLiveLocations = await _firebaseController
+        .checkIfGroupHasUserLiveLocations(widget.id);
+    if (hasUserLiveLocations != null && hasUserLiveLocations) {
+      _featureEnabled = true;
+    } else if (widget.isLiveTrackingOn) {
       log("Live tracking is enabled");
       _featureEnabled = true;
     } else {
       log("Live tracking is disabled");
       _featureEnabled = widget.initialFeatureStatus;
     }
-  }
-
-  Future<void> _initLocation() async {
-    currentLocation = await location.getLocation();
+    log("??????????????????????? $_featureEnabled");
     setState(() {});
   }
 
@@ -58,7 +71,6 @@ class _SwitchWidgetState extends State<SwitchWidget> {
   Widget build(BuildContext context) {
     return Switch(
       value: _featureEnabled,
-
       onChanged: (bool value) async {
         setState(() {
           _featureEnabled = value;
@@ -77,7 +89,6 @@ class _SwitchWidgetState extends State<SwitchWidget> {
             value,
           ); // ← Call parent's _hanldeLiveLocationInstance
         }
-        
       },
       activeColor: kPrimaryColor1,
     );

@@ -54,14 +54,15 @@ class _Map1shimaaState extends State<Map1shimaa> {
             },
           ),
           Positioned(
-              top: 40,
-              left: 20,
-              right: 20,
-              child: AutoCompleteSearch(
-                GetSearchedPlace: GetSearchedPlace,
-                controller: controller,
-                service: service,
-              ))
+            top: 40,
+            left: 20,
+            right: 20,
+            child: AutoCompleteSearch(
+              GetSearchedPlace: GetSearchedPlace,
+              controller: controller,
+              service: service,
+            ),
+          ),
         ],
       ),
     );
@@ -72,22 +73,38 @@ class _Map1shimaaState extends State<Map1shimaa> {
     LatLng? searchedPlaceLatLng = await service.getPlaceLatLng(value);
     log(searchedPlaceLatLng.toString());
     if (searchedPlaceLatLng != null) {
-      onCreatedmapController.animateCamera(CameraUpdate.newCameraPosition(
-          CameraPosition(
-              target: LatLng(
-                  searchedPlaceLatLng.latitude, searchedPlaceLatLng.longitude),
-              zoom: 17.0)));
-      setState(() {
-        markers.add(Marker(
-            markerId: MarkerId(searchedPlaceLatLng.toString()),
-            draggable: false,
-            position: LatLng(
-                searchedPlaceLatLng.latitude, searchedPlaceLatLng.longitude)));
-      });
+      try {
+        if (onCreatedmapController != null) {
+          onCreatedmapController.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: LatLng(
+                  searchedPlaceLatLng.latitude,
+                  searchedPlaceLatLng.longitude,
+                ),
+                zoom: 17.0,
+              ),
+            ),
+          );
+        }
+
+        setState(() {
+          markers.add(
+            Marker(
+              markerId: MarkerId(searchedPlaceLatLng.toString()),
+              draggable: false,
+              position: LatLng(
+                searchedPlaceLatLng.latitude,
+                searchedPlaceLatLng.longitude,
+              ),
+            ),
+          );
+        });
+      } catch (e) {
+        log("error while animating camera" + e.toString());
+      }
     } else {
       log('no searched place');
     }
   }
-
-  
 }

@@ -16,6 +16,7 @@ import 'package:near_me_new_version/Features/share_location/components/is_tracki
 import 'package:near_me_new_version/Features/share_location/components/location_controller.dart';
 import 'package:near_me_new_version/Features/share_location/components/map_controller.dart';
 import 'package:near_me_new_version/Features/share_location/components/map_widget.dart';
+import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 
 class OrderTrackingPage extends StatefulWidget {
@@ -55,6 +56,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   void initState() {
     log("initState............");
     super.initState();
+    initialization();
+  }
+
+  void initialization() {
     _createFixedMarker();
     _createFixedSourceMarker();
     user = firebase_auth.FirebaseAuth.instance.currentUser;
@@ -118,8 +123,8 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         .checkIfGroupHasLiveLocations(widget.groupId);
     final hasUserLiveLocations = await _firebaseController
         .checkIfGroupHasUserLiveLocations(widget.groupId);
-
-    setState(() {
+if(mounted){
+setState(() {
       isLiveTrackingOn = hasLiveLocations ?? false;
       isUserLiveTrackingOn = hasUserLiveLocations ?? false;
       log("Live tracking status: $isLiveTrackingOn");
@@ -132,11 +137,16 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         log("Initial position set to: ${_mapController.initialPosition}");
       }
     });
+}
+    
   }
 
   void _toggleLiveTracking(bool isEnabled, bool userLiveTracking) async {
     log("Toggling live tracking: $isEnabled");
-    setState(() => isLiveTrackingOn = isEnabled);
+    if(mounted){
+setState(() => isLiveTrackingOn = isEnabled);
+    }
+    
 
     if (isEnabled || userLiveTracking) {
       _startLiveTracking();
@@ -177,8 +187,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       LatLng(newLoc.latitude!, newLoc.longitude!),
       zoom: 13.5,
     );
-
-    setState(() {});
+if(mounted){
+setState(() {});
+}
+    
   }
 
   void _resetStaticMap() async {
@@ -197,7 +209,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       ),
       zoom: 13.5,
     );
-    setState(() {});
+    if(mounted){
+setState(() {});
+    }
+    
   }
 
   void _updateFirebaseLocation(bool isEnabled) {
@@ -233,11 +248,13 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     } else {
       _firebaseController.deleteLiveLocationFromFirestore(widget.groupId, user);
     }
+if(mounted){
 
     setState(() {
       isLiveTrackingOn = isEnabled;
       log("Live tracking instance handled: $isEnabled");
     });
+}
   }
 
   void _listenToGroupLiveLocations() {
@@ -246,7 +263,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     ) {
       final markers = _createMarkersFromSnapshot(snapshot);
       _mapController.updateMarkers(markers);
-      setState(() {});
+      if(mounted){
+setState(() {});
+      }
+      
     });
   }
 
@@ -287,20 +307,23 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       ]);
     }
     log("Markers created: ${markers.length}");
-    setState(() {
+    if(mounted){
+setState(() {
       _mapController.markers = markers;
       log("MapController markers updated: ${_mapController.markers.length}");
     });
+    }
+    
     return markers;
   }
 
-  @override
-  void dispose() {
-    log("Disposing OrderTrackingPage resources...");
-    _locationController.dispose();
-    _mapController.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   log("Disposing OrderTrackingPage resources...");
+  //   _locationController.dispose();
+  //   _mapController.dispose();
+  //   super.dispose();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -348,7 +371,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       _locationController.currentLocation!.latitude!,
       _locationController.currentLocation!.longitude!,
     );
-
+    if (osrmRoute == null) {
+      log("null routes......");
+      return;
+    }
     polylineCoordinates =
         osrmRoute
             .map((latLng) => LatLng(latLng.latitude, latLng.longitude))

@@ -10,7 +10,8 @@ import android.widget.Toast
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-
+import io.flutter.embedding.engine.FlutterEngineCache
+import io.flutter.embedding.engine.dart.DartExecutor
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.near_me_new_version/floating_button"
     private val ALERT_CHANNEL = "com.example.near_me_new_version/alert"
@@ -56,58 +57,46 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         Log.d(TAG, "Configuring Flutter engine")
 
+        FlutterEngineCache
+            .getInstance()
+            .put("my_engine_id", flutterEngine)
+
         val alertChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger!!, ALERT_CHANNEL)
         alertChannel.setMethodCallHandler { call, result ->
             Log.d(TAG, "Alert channel method call received: ${call.method}")
             result.success(null)
         }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger!!, CHANNEL).setMethodCallHandler { call, result ->
-            Log.d(TAG, "Method call received: ${call.method}")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger!!, CHANNEL)
+            .setMethodCallHandler { call, result ->
             when (call.method) {
-                "toggleFloatingButton" -> {
-                    val enable = call.argument<Boolean>("enable") ?: false
-                    Log.d(TAG, "toggleFloatingButton called with enable: $enable")
-                    if (!enable) {
-            val intent = Intent(this, FloatingButtonService::class.java)
-            stopService(intent)
-            isServiceRunning = false
-            result.success("Floating button stopped")
-            Log.d(TAG, "Service forcefully stopped")
-        }
-                    if (enable && !isServiceRunning) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                            result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
-                            val intent = Intent(
-                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:$packageName")
-                            )
-                            startActivity(intent)
-                        } else {
-                            val intent = Intent(this, FloatingButtonService::class.java)
-                            intent.putExtra("enable", true)
-                            startService(intent)
-                            isServiceRunning = true
-                            result.success("Floating button started")
-                            Log.d(TAG, "Floating button service started")
-                        }
-                    } else if (!enable && isServiceRunning) {
-                        val intent = Intent(this, FloatingButtonService::class.java)
-                        stopService(intent)
-                        isServiceRunning = false
-                        result.success("Floating button stopped")
-                        Log.d(TAG, "Floating button service stopped")
+            "toggleFloatingButton" -> {
+                val enable = call.argument<Boolean>("enable") ?: false
+                if (enable) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                        result.error("PERMISSION_DENIED", "Overlay permission not granted", null)
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+                        startActivity(intent)
                     } else {
-                        result.success(if (isServiceRunning) "Floating button is running" else "Floating button is stopped")
-                        Log.d(TAG, "Service state: ${if (isServiceRunning) "running" else "stopped"}")
+                        val intent = Intent(this, FloatingButtonService::class.java)
+                        intent.putExtra("enable", true)
+                        startService(intent)
+                        isServiceRunning = true
+                        result.success("Floating button started")
                     }
-                }
-                else -> {
-                    result.notImplemented()
-                    Log.d(TAG, "Method not implemented: ${call.method}")
+                } else {
+                    val intent = Intent(this, FloatingButtonService::class.java)
+                    stopService(intent)
+                    isServiceRunning = false
+                    result.success("Floating button stopped")
                 }
             }
         }
+
+    }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -115,10 +104,10 @@ class MainActivity : FlutterActivity() {
         Log.d(TAG, "onActivityResult called with requestCode: $requestCode")
         if (requestCode == 1234) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                val intent = Intent(this, FloatingButtonService::class.java)
-                intent.putExtra("enable", true)
-                startService(intent)
-                isServiceRunning = true
+                // val intent = Intent(this, FloatingButtonService::class.java)
+                // intent.putExtra("enable", true)
+                // startService(intent)
+                // isServiceRunning = true
                 Toast.makeText(this, "Floating button service started", Toast.LENGTH_SHORT).show()
                 Log.d(TAG, "Overlay permission granted, service started")
             } else {

@@ -68,8 +68,9 @@ class _Map1State extends State<Map1> {
   @override
   void initState() {
     super.initState();
-    _authListener =
-        FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    _authListener = FirebaseAuth.instance.authStateChanges().listen((
+      User? user,
+    ) {
       if (user == null) {
         print("User is signed out.");
       } else {
@@ -144,7 +145,15 @@ class _Map1State extends State<Map1> {
     });
 
     final GoogleMapController controller = await _controller.future;
-    controller.animateCamera(CameraUpdate.newCameraPosition(_cameraPosition!));
+    try {
+      if (controller != null) {
+        controller.animateCamera(
+          CameraUpdate.newCameraPosition(_cameraPosition!),
+        );
+      }
+    } catch (e) {
+      log(e.toString() + "error animating camera");
+    }
   }
 
   @override
@@ -155,15 +164,21 @@ class _Map1State extends State<Map1> {
         if (state is AddCustomPlacesSuccess ||
             state is DeleteCustomPlacesSuccess) {
           isLoad = false;
-          AppMessages().sendVerification(context, Colors.green.withOpacity(0.8),
-              'This Custom Place added successfully 😉');
+          AppMessages().sendVerification(
+            context,
+            Colors.green.withOpacity(0.8),
+            'This Custom Place added successfully 😉',
+          );
           setState(() {
             _loadCustomPlaces();
           });
         } else if (state is AddCustomPlacesFailure) {
           isLoad = false;
           AppMessages().sendVerification(
-              context, Colors.red.withOpacity(0.8), state.error);
+            context,
+            Colors.red.withOpacity(0.8),
+            state.error,
+          );
         } else {
           isLoad = false;
         }
@@ -198,16 +213,21 @@ class _Map1State extends State<Map1> {
                   ),
                 ),
                 Positioned(
-                    left: 10.w,
-                    top: 40.h,
-                    child: CompleteMapUi(
-                      service: service,
-                      GetSearchedPlace: getSearchedPlace,
-                      controller: controller,
-                      goToPlace: goToPlace,
-                    )),
+                  left: 10.w,
+                  top: 40.h,
+                  child: CompleteMapUi(
+                    service: service,
+                    GetSearchedPlace: getSearchedPlace,
+                    controller: controller,
+                    goToPlace: goToPlace,
+                  ),
+                ),
                 Positioned(
-                    bottom: 20.h, left: 270.w, right: 10.w, child: const SkipBtn()),
+                  bottom: 20.h,
+                  left: 270.w,
+                  right: 10.w,
+                  child: const SkipBtn(),
+                ),
               ],
             ),
           ),
@@ -225,13 +245,14 @@ class _Map1State extends State<Map1> {
       ),
       builder: (BuildContext context) {
         return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: ContainerAddCustom(
-              selectedLatLng: selectedLatLng!,
-              markers: markers,
-            ));
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: ContainerAddCustom(
+            selectedLatLng: selectedLatLng!,
+            markers: markers,
+          ),
+        );
       },
     );
   }
@@ -241,18 +262,34 @@ class _Map1State extends State<Map1> {
     log(searchedPlaceLatLng.toString());
 
     if (searchedPlaceLatLng != null) {
-      await onCreatedmapController.animateCamera(CameraUpdate.newCameraPosition(
-          CameraPosition(
+      try {
+        if(onCreatedmapController != null){
+await onCreatedmapController.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
               target: LatLng(
-                  searchedPlaceLatLng.latitude, searchedPlaceLatLng.longitude),
-              zoom: 17.0)));
+                searchedPlaceLatLng.latitude,
+                searchedPlaceLatLng.longitude,
+              ),
+              zoom: 17.0,
+            ),
+          ),
+        );
+        }
+        
+      } catch (e) {
+        log("error animate camera" + e.toString());
+      }
+
       setState(() {
         markers.clear();
         markers.add(
           Marker(
             markerId: MarkerId(searchedPlaceLatLng.toString()),
             position: LatLng(
-                searchedPlaceLatLng.latitude, searchedPlaceLatLng.longitude),
+              searchedPlaceLatLng.latitude,
+              searchedPlaceLatLng.longitude,
+            ),
             infoWindow: InfoWindow(title: value),
           ),
         );
@@ -263,17 +300,28 @@ class _Map1State extends State<Map1> {
   }
 
   Future<void> goToPlace(
-      double latitude, double longitude, String docId) async {
+    double latitude,
+    double longitude,
+    String docId,
+  ) async {
     final GoogleMapController controller = await _controller.future;
-    await controller.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(latitude, longitude),
-          zoom: 40.0,
-          //tilt: 60.0,
+    try {
+      if(controller != null){
+await controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(latitude, longitude),
+            zoom: 40.0,
+            //tilt: 60.0,
+          ),
         ),
-      ),
-    );
+      );
+      }
+      
+    } catch (e) {
+      log(e.toString() + "failed animate camera");
+    }
+
     controller.showMarkerInfoWindow(MarkerId(docId));
 
     setState(() {

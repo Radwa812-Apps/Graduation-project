@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,9 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:location/location.dart' as Location;
 import 'package:near_me_new_version/Features/Settings/components/group_selection_widget.dart';
 import 'package:near_me_new_version/Features/Settings/components/risk_block.dart';
+import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/core/constants.dart';
+import 'package:near_me_new_version/core/data/models/location.dart';
+import 'package:near_me_new_version/core/services/risk_services.dart';
 import 'package:near_me_new_version/main.dart';
 
 class SettingsService extends StatefulWidget {
@@ -19,6 +22,10 @@ class SettingsService extends StatefulWidget {
   _SettingsServiceState createState() => _SettingsServiceState();
 }
 
+const _channel = MethodChannel(
+  'com.example.near_me_new_version/floating_button',
+);
+
 class _SettingsServiceState extends State<SettingsService> {
   bool isAlertActive = false;
   bool isListExpanded = false;
@@ -27,11 +34,13 @@ class _SettingsServiceState extends State<SettingsService> {
   bool isRiskpressed = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
+  RiskServices _riskServices = RiskServices();
   @override
   void initState() {
     super.initState();
+    log("init........");
     _fetchGroups();
+    _handleRiskSwitch();
   }
 
   Future<void> _fetchGroups() async {
@@ -54,7 +63,44 @@ class _SettingsServiceState extends State<SettingsService> {
     }
   }
 
+  Future<void> resetUserRiskSwitches() async {
+    String? userId = _auth.currentUser?.uid;
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('settings')
+          .doc('risk_preferences')
+          .update({
+            'risk_switch': false,
+            'last_updated': FieldValue.serverTimestamp(),
+          });
+      setState(() {
+        _handleRiskSwitch();
+      });
+      final userDoc = FirebaseFirestore.instance
+          .collection('selected_alert_groups')
+          .doc(userId);
+
+      final WriteBatch batch = FirebaseFirestore.instance.batch();
+
+      batch.delete(userDoc);
+
+      await batch.commit();
+
+      print('Successfully reset ${groupIds.length} groups and removed user');
+    } catch (e) {
+      print('Error in resetUserRiskSwitches: $e');
+    }
+  }
+
+  void _handleRiskSwitch() async {
+    isAlertActive = await _riskServices.checkRiskSwitch() ?? false;
+    setState(() {});
+  }
+
   void _openGroupSelection() async {
+    final userId = _auth.currentUser?.uid;
     final result = await showModalBottomSheet<List<String>>(
       context: context,
       isScrollControlled: true,
@@ -64,13 +110,32 @@ class _SettingsServiceState extends State<SettingsService> {
             initiallySelectedGroups: selectedGroupIds,
           ),
     );
-
+    log("result...$result");
     if (result != null) {
       setState(() {
         selectedGroupIds = result;
         _saveSelectedGroupsToFirebase();
       });
     }
+    // Create a batch to update all selected groups
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('settings')
+        .doc('risk_preferences')
+        .set({
+          'risk_switch': true,
+          'last_updated': FieldValue.serverTimestamp(),
+        });
+    log("risk activated on firebase");
+
+    await batch.commit();
+    setState(() {
+      _handleRiskSwitch();
+    });
+    log("open group selection: isAlertactive: $isAlertActive");
   }
 
   Future<void> _saveSelectedGroupsToFirebase() async {
@@ -89,8 +154,9 @@ class _SettingsServiceState extends State<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    isAlertActive = context.read<RiskCubit>().state;
-    log("isAlertActive: $isAlertActive");
+    //isAlertActive = context.read<RiskCubit>().state;
+    //checkRiskSwitch();
+    log("widget: isAlertActive: $isAlertActive");
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
       child: Column(
@@ -137,25 +203,18 @@ class _SettingsServiceState extends State<SettingsService> {
                 onChanged: (value) async {
                   setState(() {
                     isAlertActive = value;
-                    log("isAlertActive: $isAlertActive");
+                    log("onchanged: isAlertActive: $isAlertActive");
                     if (isAlertActive) {
                       context.read<RiskCubit>().updateValue(true);
                       _openGroupSelection();
-                      _saveSelectedGroupsToFirebase();
                     } else {
                       selectedGroupIds.clear();
                       context.read<RiskCubit>().updateValue(false);
+                      resetUserRiskSwitches();
                     }
                   });
                   //await _handleRiskbutton(value);
-                  try {
-                    final result = await MethodChannel(
-                      'com.example.near_me_new_version/floating_button',
-                    ).invokeMethod('toggleFloatingButton', {'enable': value});
-                    print(result);
-                  } catch (e) {
-                    print("Error toggling floating button: $e");
-                  }
+                  await _riskServices.toggleFloatingButton(value);
                 },
               ),
             ],
@@ -165,43 +224,4 @@ class _SettingsServiceState extends State<SettingsService> {
     );
   }
 
-  Future<void> _handleRiskbutton(bool value) async {
-    // if (value) {
-    //   // ✅ تشغيل الخدمة
-    //   final androidIntent = AndroidIntent(
-    //     action: 'android.intent.action.START_SERVICE',
-    //     package: 'com.example.near_me_new_version',
-    //     componentName: 'com.example.near_me_new_version.FloatingButtonService',
-    //     arguments: {'enable': true}, // ترسل له انه يشتغل
-    //   );
-    //   await androidIntent.launch();
-    // } else {
-    //   // ⛔️ إيقاف الخدمة
-    //   final androidIntent = AndroidIntent(
-    //     action: 'android.intent.action.STOP_SERVICE',
-    //     package: 'com.example.near_me_new_version',
-    //     componentName: 'com.example.near_me_new_version.FloatingButtonService',
-    //     arguments: {'force_stop': true}, // تبعتله انه يقفل نفسه
-    //   );
-    //   await androidIntent.launch();
-    // }
-
-    if (value) {
-      await platform.invokeMethod('startService');
-    } else {
-      await platform.invokeMethod('stopService');
-    }
-    // log("_handle risk butoon ...........$value");
-    // if (value) {
-    //   final dynamic result = await MethodChannel(
-    //     'com.example.near_me_new_version/floating_button',
-    //   ).invokeMethod('toggleFloatingButton', {'enable': true});
-    //   print(result);
-    // } else {
-    //   final dynamic result = await MethodChannel(
-    //     'com.example.near_me_new_version/floating_button',
-    //   ).invokeMethod('toggleFloatingButton', {'enable': false});
-    //   print(result);
-    // }
-  }
 }

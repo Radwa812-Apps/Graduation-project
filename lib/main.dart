@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -25,13 +27,16 @@ import 'package:near_me_new_version/Features/share_location/screens/live_locatio
 import 'package:near_me_new_version/Features/share_location/screens/test.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
+import 'package:near_me_new_version/core/data/bloc/Risk/bloc_singletons.dart';
 import 'package:near_me_new_version/core/data/bloc/custom_places/custom_places_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
+import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/data/models/chat_model_temp.dart';
 import 'package:near_me_new_version/core/services/Auth_functions.dart';
 import 'package:near_me_new_version/core/services/chat_services.dart'
     show ChatService;
 import 'package:near_me_new_version/core/services/cloudinary_service.dart';
+import 'package:near_me_new_version/core/services/risk_services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Features/Home/Home/Screens/home_screen.dart';
@@ -49,14 +54,15 @@ import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
 import 'package:flutter/services.dart';
 
-const platform = MethodChannel('com.example.near_me_new_version/floating_button');
-
+const platform = MethodChannel(
+  'com.example.near_me_new_version/floating_button',
+);
+RiskServices _riskServices = RiskServices();
 // Use only one import path
 
 void main() async {
   // debugPaintSizeEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp();
 
   /*runApp(
@@ -67,7 +73,7 @@ void main() async {
       child: ChangeNotifierProvider(create: (_) => ChatModelTemp()),
     ),
   );*/
-     const encryptionKey = 'your-256-bit-super-secret-key!!';
+  const encryptionKey = 'your-256-bit-super-secret-key!!';
 
   runApp(
     ScreenUtilInit(
@@ -75,27 +81,32 @@ void main() async {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider(create: (_) => ChatModelTemp()),
-           
+
             Provider<CloudinaryService>(
-              create: (_) => CloudinaryService(
-                auth: FirebaseAuth.instance,
-                encryptionKey: encryptionKey,
-              ),
+              create:
+                  (_) => CloudinaryService(
+                    auth: FirebaseAuth.instance,
+                    encryptionKey: encryptionKey,
+                  ),
             ),
-            
+
             Provider<ChatService>(
-              create: (context) => ChatService(
-                cloudinary: context.read<CloudinaryService>(),
-                encryptionKey: encryptionKey,
-              ),
+              create:
+                  (context) => ChatService(
+                    cloudinary: context.read<CloudinaryService>(),
+                    encryptionKey: encryptionKey,
+                  ),
             ),
             ChangeNotifierProvider(create: (_) => ChatModelTemp()),
-            Provider<ChatService>(create: (_) => ChatService(encryptionKey: encryptionKey)),
+            Provider<ChatService>(
+              create: (_) => ChatService(encryptionKey: encryptionKey),
+            ),
             BlocProvider(create: (context) => AuthBloc(Services())),
             BlocProvider(create: (context) => CustomPlacesBloc(Services())),
             BlocProvider(create: (context) => ProfileBloc()),
             BlocProvider(create: (context) => TrackingUserOnCubit()),
-            BlocProvider(create: (context)=> RiskCubit()),
+            BlocProvider(create: (context) => RiskCubit()),
+            BlocProvider.value(value: alertBloc, child: NearMeApp()),
           ],
           child: NearMeApp(),
         );
@@ -103,12 +114,34 @@ void main() async {
       child: Container(), // Empty container since providers are now above
     ),
   );
+  platform.setMethodCallHandler((call) async {
+    if (call.method == 'onFloatingButtonPressed') {
+      print('Floating button pressed from Android!');
+      _riskServices.handleRiskbutton();
+    }
+  });
 }
 
 // ignore: must_be_immutable
-class NearMeApp extends StatelessWidget {
+class NearMeApp extends StatefulWidget {
   NearMeApp({super.key});
+
+  @override
+  State<NearMeApp> createState() => _NearMeAppState();
+}
+
+class _NearMeAppState extends State<NearMeApp> {
   bool isUserLoggedIn = false;
+  @override
+  void initState() {
+    log("main init");
+    _handleRiskSwitch();
+  }
+
+  void _handleRiskSwitch() async {
+    bool isAlertActive = await _riskServices.checkRiskSwitch() ?? false;
+    _riskServices.toggleFloatingButton(isAlertActive);
+  }
 
   @override
   Widget build(BuildContext context) {
