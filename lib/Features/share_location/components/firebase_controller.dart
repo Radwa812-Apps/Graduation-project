@@ -42,6 +42,13 @@ class FirebaseController {
     }
   }
 
+  void stopAlertAnimation(String groupId) {
+    FirebaseFirestore.instance
+    .collection('groups')
+    .doc(groupId)
+    .update({'alert_triggered': false});
+  }
+  
   Future<void> updateLiveLocation(
     String groupId,
     firebase_auth.User? user,

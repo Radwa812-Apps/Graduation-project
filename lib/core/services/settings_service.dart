@@ -211,6 +211,7 @@ class _SettingsServiceState extends State<SettingsService> {
                       selectedGroupIds.clear();
                       context.read<RiskCubit>().updateValue(false);
                       resetUserRiskSwitches();
+                      RiskServices().resetToggleAlert();
                     }
                   });
                   //await _handleRiskbutton(value);
@@ -223,5 +224,4 @@ class _SettingsServiceState extends State<SettingsService> {
       ),
     );
   }
-
 }

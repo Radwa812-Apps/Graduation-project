@@ -10,13 +10,15 @@ import android.view.*
 import android.widget.Button
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 import android.os.Handler
 import android.os.Looper
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
 class FloatingButtonService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var floatingButton: View
@@ -34,6 +36,16 @@ class FloatingButtonService : Service() {
     }
 
     private fun setupFloatingButton() {
+        // if (FirebaseApp.getApps(this).isEmpty()) {
+        //  FirebaseApp.initializeApp(this)
+        //  Log.d(TAG, "FirebaseApp initialized manually")
+        // }
+        // val firestore = FirebaseFirestore.getInstance()
+        // val settings = FirebaseFirestoreSettings.Builder()
+        //     .setPersistenceEnabled(true)
+        //     .build()
+        //firestore.firestoreSettings = settings
+
         if (isButtonVisible) {
         Log.d(TAG, "Floating button already visible, skipping setup")
         return
@@ -121,6 +133,15 @@ class FloatingButtonService : Service() {
         // ✅ الضغط على الزر يرسل التنبيهات
         floatingButton.findViewById<Button>(R.id.floating_button)?.setOnClickListener {
             Log.d(TAG, "Floating button clicked")
+            // if (FirebaseApp.getApps(this).isEmpty()) {
+            // FirebaseApp.initializeApp(this)
+            // Log.d(TAG, "FirebaseApp initialized manually")
+            // }
+            // val firestore = FirebaseFirestore.getInstance()
+            // val settings = FirebaseFirestoreSettings.Builder()
+            //     .setPersistenceEnabled(true)
+            //     .build()
+            // firestore.firestoreSettings = settings
             showEmergencyConfirmationDialog()
 
         } ?: Log.e(TAG, "Floating button view not found with ID: R.id.floating_button")
@@ -133,7 +154,7 @@ class FloatingButtonService : Service() {
         val noButton = dialogView.findViewById<Button>(R.id.btn_no)
 
         val params = WindowManager.LayoutParams(
-        600,  // ✅ العرض بالـ pixels – ممكن تخليه أقل أو أكتر حسب الحاجة
+        600,  
         WindowManager.LayoutParams.WRAP_CONTENT,
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -186,8 +207,8 @@ class FloatingButtonService : Service() {
         }
 
         Log.d(TAG, "Starting alert process for user: ${user.uid}")
-
-        firestore.collection("selected_alert_groups")
+        try{
+             firestore.collection("selected_alert_groups")
             .document(user.uid)
             .get()
             .addOnSuccessListener { document ->
@@ -213,7 +234,11 @@ class FloatingButtonService : Service() {
                 showToast("Failed to load groups")
                 Log.e(TAG, "Error loading groups for user: ${user.uid}, Error: ${e.message}", e)
             }
-    }
+    
+        }catch (e: IllegalStateException) {
+            Log.e(TAG, "Firestore client already terminated: ${e.message}")
+        }
+       }
 
     private fun sendAlertsToGroups(groupIds: List<String>) {
         Log.d(TAG, "sendAlertsToGroups called with ${groupIds.size} groups")
@@ -228,7 +253,8 @@ class FloatingButtonService : Service() {
                 "alert" to true,
                 "alert_timestamp" to timestamp,
                 "alert_color" to "#FF0000",
-                "last_alert_sender" to userId
+                "last_alert_sender" to userId,
+                "alert_triggered" to true
             ))
         }
 

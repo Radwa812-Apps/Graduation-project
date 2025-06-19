@@ -38,6 +38,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadGroups();
   }
 
+  bool _hasSubscribedToStream = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasSubscribedToStream) {
+      _hasSubscribedToStream = true;
+      _groupService.streamMyGroups().listen((fetchedGroups) {
+        if (mounted) {
+          setState(() {
+            _groups = fetchedGroups;
+          });
+        }
+      });
+    }
+  }
+
   void _loadGroups() async {
     List<Group> fetchedGroups = await _groupService.getMyGroups();
     setState(() {
@@ -149,14 +166,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     child: GestureDetector(
                                       onTap: () {
-                                        log("Navigating to group with ID: ${_groups[index].id}");
+                                        log(
+                                          "Navigating to group with ID: ${_groups[index].id}",
+                                        );
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder:
                                                 (context) => OrderTrackingPage(
                                                   groupId: _groups[index].id,
-                                                  groupName: _groups[index].name,
+                                                  groupName:
+                                                      _groups[index].name,
                                                 ),
                                           ),
                                         );

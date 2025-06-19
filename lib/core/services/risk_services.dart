@@ -11,6 +11,7 @@ import 'package:near_me_new_version/core/data/models/location.dart';
 
 class RiskServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseController _firebaseController = FirebaseController();
   Future<bool?> checkRiskSwitch() async {
     String? userId = _auth.currentUser?.uid;
     bool isAlertActive;
@@ -110,5 +111,20 @@ class RiskServices {
       }
     }
     alertBloc.add(ActivateAlert());
+  }
+
+  void resetToggleAlert() async {
+    User? user = _auth.currentUser;
+    if (user == null) {
+      return;
+    }
+    final List<String>? riskGroups = await _getSelectedRiskGroups(user.uid);
+    if (riskGroups != null) {
+      for (var groupId in riskGroups) {
+        _firebaseController.stopAlertAnimation(groupId);
+      }
+    } else {
+      log("no selected groups!!");
+    }
   }
 }

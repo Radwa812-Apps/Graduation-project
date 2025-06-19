@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
-import 'package:cloud_firestore/cloud_firestore.dart' show QuerySnapshot;
+import 'package:cloud_firestore/cloud_firestore.dart'
+    show FirebaseFirestore, QuerySnapshot;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -74,6 +75,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         });
       }
     });
+    _firebaseController.stopAlertAnimation(widget.groupId);
     _initializeTracking();
   }
 
@@ -123,30 +125,28 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         .checkIfGroupHasLiveLocations(widget.groupId);
     final hasUserLiveLocations = await _firebaseController
         .checkIfGroupHasUserLiveLocations(widget.groupId);
-if(mounted){
-setState(() {
-      isLiveTrackingOn = hasLiveLocations ?? false;
-      isUserLiveTrackingOn = hasUserLiveLocations ?? false;
-      log("Live tracking status: $isLiveTrackingOn");
-      log("User live tracking status: $isUserLiveTrackingOn");
-      if (_locationController.currentLocation != null) {
-        _mapController.initialPosition = LatLng(
-          _locationController.currentLocation!.latitude!,
-          _locationController.currentLocation!.longitude!,
-        );
-        log("Initial position set to: ${_mapController.initialPosition}");
-      }
-    });
-}
-    
+    if (mounted) {
+      setState(() {
+        isLiveTrackingOn = hasLiveLocations ?? false;
+        isUserLiveTrackingOn = hasUserLiveLocations ?? false;
+        log("Live tracking status: $isLiveTrackingOn");
+        log("User live tracking status: $isUserLiveTrackingOn");
+        if (_locationController.currentLocation != null) {
+          _mapController.initialPosition = LatLng(
+            _locationController.currentLocation!.latitude!,
+            _locationController.currentLocation!.longitude!,
+          );
+          log("Initial position set to: ${_mapController.initialPosition}");
+        }
+      });
+    }
   }
 
   void _toggleLiveTracking(bool isEnabled, bool userLiveTracking) async {
     log("Toggling live tracking: $isEnabled");
-    if(mounted){
-setState(() => isLiveTrackingOn = isEnabled);
+    if (mounted) {
+      setState(() => isLiveTrackingOn = isEnabled);
     }
-    
 
     if (isEnabled || userLiveTracking) {
       _startLiveTracking();
@@ -187,10 +187,9 @@ setState(() => isLiveTrackingOn = isEnabled);
       LatLng(newLoc.latitude!, newLoc.longitude!),
       zoom: 13.5,
     );
-if(mounted){
-setState(() {});
-}
-    
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _resetStaticMap() async {
@@ -209,10 +208,9 @@ setState(() {});
       ),
       zoom: 13.5,
     );
-    if(mounted){
-setState(() {});
+    if (mounted) {
+      setState(() {});
     }
-    
   }
 
   void _updateFirebaseLocation(bool isEnabled) {
@@ -248,13 +246,12 @@ setState(() {});
     } else {
       _firebaseController.deleteLiveLocationFromFirestore(widget.groupId, user);
     }
-if(mounted){
-
-    setState(() {
-      isLiveTrackingOn = isEnabled;
-      log("Live tracking instance handled: $isEnabled");
-    });
-}
+    if (mounted) {
+      setState(() {
+        isLiveTrackingOn = isEnabled;
+        log("Live tracking instance handled: $isEnabled");
+      });
+    }
   }
 
   void _listenToGroupLiveLocations() {
@@ -263,10 +260,9 @@ if(mounted){
     ) {
       final markers = _createMarkersFromSnapshot(snapshot);
       _mapController.updateMarkers(markers);
-      if(mounted){
-setState(() {});
+      if (mounted) {
+        setState(() {});
       }
-      
     });
   }
 
@@ -307,13 +303,13 @@ setState(() {});
       ]);
     }
     log("Markers created: ${markers.length}");
-    if(mounted){
-setState(() {
-      _mapController.markers = markers;
-      log("MapController markers updated: ${_mapController.markers.length}");
-    });
+    if (mounted) {
+      setState(() {
+        _mapController.markers = markers;
+        log("MapController markers updated: ${_mapController.markers.length}");
+      });
     }
-    
+
     return markers;
   }
 

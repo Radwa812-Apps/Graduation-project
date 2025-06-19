@@ -80,6 +80,27 @@ class GroupService {
       print("Error adding group to user: $e");
     }
   }
+  Stream<List<Group>> streamMyGroups() {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    return const Stream.empty();
+  }
+
+  return FirebaseFirestore.instance
+      .collection('groups')
+      .where(
+        Filter.or(
+          Filter('members', arrayContains: user.uid),
+          Filter('createdBy', isEqualTo: user.uid),
+        ),
+      )
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs
+            .map((doc) => Group.fromJson(doc.data(), doc.id))
+            .toList();
+      });
+}
 
   // Get user's groups
   Future<List<Group>> getMyGroups() async {

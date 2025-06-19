@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +13,6 @@ import 'round_image_widget.dart';
 class GroupStyle extends StatefulWidget {
   final String? groupName;
   final String? groupId;
-  
 
   const GroupStyle({super.key, this.groupName, this.groupId});
 
@@ -19,12 +20,13 @@ class GroupStyle extends StatefulWidget {
   _GroupStyleState createState() => _GroupStyleState();
 }
 
-class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateMixin {
+class _GroupStyleState extends State<GroupStyle>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<Color?> _colorAnimation;
   bool _isAlerted = false;
-
+  late final StreamSubscription _subscription;
   @override
   void initState() {
     super.initState();
@@ -33,40 +35,55 @@ class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateM
       duration: Duration(milliseconds: 500),
     )..addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        _animationController.reverse();
+        _animationController.repeat(reverse: true);
+        log("animation..");
         // إعادة تعيين الـ Flag بعد الانتهاء
-        if (_isAlerted) {
-          FirebaseFirestore.instance
-              .collection('groups')
-              .doc(widget.groupId)
-              .update({'alert_triggered': false});
-        }
+        // if (_isAlerted) {
+        //   FirebaseFirestore.instance
+        //       .collection('groups')
+        //       .doc(widget.groupId)
+        //       .update({'alert_triggered': false});
+        // }
       }
     });
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(_animationController);
-    _colorAnimation = ColorTween(begin: Colors.white, end: Colors.red.withOpacity(0.3)).animate(_animationController);
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(_animationController);
+    _colorAnimation = ColorTween(
+      begin: Colors.white,
+      end: Colors.red.withOpacity(0.3),
+    ).animate(_animationController);
 
     // استمع لتغييرات alert_triggered
-    FirebaseFirestore.instance
+    _subscription = FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)
         .snapshots()
         .listen((snapshot) {
-      if (snapshot.exists) {
-        final triggered = snapshot.data()?['alert_triggered'] ?? false;
-        if (triggered && !_isAlerted) {
-          setState(() {
-            _isAlerted = true;
-            _animationController.forward();
-          });
-        }
-      }
-    });
+          if (snapshot.exists) {
+            final triggered = snapshot.data()?['alert_triggered'] ?? false;
+            if (mounted) {
+              setState(() {
+                _isAlerted = triggered;
+                _animationController.forward();
+              });
+            }
+
+            // if (triggered && !_isAlerted) {
+            //   setState(() {
+            //     _isAlerted = true;
+            //     _animationController.forward();
+            //   });
+            // }
+          }
+        });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _subscription.cancel();
     super.dispose();
   }
 
@@ -75,7 +92,7 @@ class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateM
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
 
-    double spaceWithRows = screenWidth * 0.07.w;
+    double spaceWithRows = screenWidth * 0.08.w;
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -106,14 +123,15 @@ class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateM
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                OrderTrackingPage(groupId: widget.groupId ?? '',
-                                  groupName: widget.groupName ?? '',),
-                      ),
-                    );
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => OrderTrackingPage(
+                                    groupId: widget.groupId ?? '',
+                                    groupName: widget.groupName ?? '',
+                                  ),
+                            ),
+                          );
                         },
                         child: RoundImageWidget(
                           name: 'assets/images/group.jpg',
@@ -121,7 +139,7 @@ class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateM
                           height: screenHeight * .07.h,
                         ),
                       ),
-                      
+
                       const SizedBox(width: 20),
                       Expanded(
                         child: Text(
