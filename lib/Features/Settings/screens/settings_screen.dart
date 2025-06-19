@@ -9,6 +9,7 @@ import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_in
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
 import 'package:near_me_new_version/core/messages.dart';
 import 'package:near_me_new_version/core/services/settings_service.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
                 'Settings',
                 style: TextStyle(
                   color: kFontColor,
-                  fontSize: 40.sp,
+                  fontSize: 35.sp,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -42,8 +43,8 @@ class SettingsScreen extends StatelessWidget {
               IconAndTextWidget(
                 iconData: Icons.location_on_outlined,
                 text: 'Add Place',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
+                iconSize: 25.sp,
+                fontSize: 22.sp,
                 onTap: () {
                   Navigator.pushNamed(context, Map1.map1Key);
                 },
@@ -57,24 +58,29 @@ class SettingsScreen extends StatelessWidget {
               IconAndTextWidget(
                 iconData: Icons.share_outlined,
                 text: 'Share',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
-                onTap: () {},
+                iconSize: 25.sp,
+                fontSize: 22.sp,
+                onTap: () {
+                  Share.share(
+                    'جربوا تطبيقي الجديد! ❤️\n(الرابط هيبقى هنا لما التطبيق ينزل)',
+                    subject: 'تطبيقي الجديد!',
+                  );
+                },
               ),
               SizedBox(height: spaceBetweenRows),
               IconAndTextWidget(
                 iconData: Icons.qr_code_2_outlined,
                 text: 'QR Code',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
+                iconSize: 25.sp,
+                fontSize: 22.sp,
                 onTap: () {},
               ),
               SizedBox(height: spaceBetweenRows),
               IconAndTextWidget(
                 iconData: Icons.logout_outlined,
                 text: 'Logout',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
+                iconSize: 25.sp,
+                fontSize: 22.sp,
                 onTap: () {
                   showDialog(
                     context: context,
@@ -107,16 +113,16 @@ class SettingsScreen extends StatelessWidget {
               IconAndTextWidget(
                 iconData: Icons.lock_outline,
                 text: 'Password',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
+                iconSize: 25.sp,
+                fontSize: 22.sp,
                 onTap: () {},
               ),
               SizedBox(height: spaceBetweenRows),
               IconAndTextWidget(
                 iconData: Icons.perm_device_information_sharp,
                 text: 'Permissions',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
+                iconSize: 25.sp,
+                fontSize: 22.sp,
                 onTap: () {
                   Navigator.pushNamed(context, '/permissions');
                 },
@@ -158,8 +164,8 @@ class SettingsScreen extends StatelessWidget {
                   return IconAndTextWidget(
                     iconData: Icons.delete_forever_outlined,
                     text: 'Delete Account',
-                    iconSize: 30.sp,
-                    fontSize: 24.sp,
+                    iconSize: 25.sp,
+                    fontSize: 22.sp,
                     onTap: () {
                       TextEditingController emailController =
                           TextEditingController();
@@ -171,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            backgroundColor: Color.fromARGB(255, 151, 199, 130),
+                            backgroundColor: kPrimaryColor2,
                             title: const Text(
                               "Confirm Account Deletion",
                               style: TextStyle(color: Colors.white),
@@ -241,7 +247,7 @@ class SettingsScreen extends StatelessWidget {
                                     width: 70.w,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(40),
-                                      color: Colors.blue,
+                                      color: kPrimaryColor1
                                     ),
                                     child: TextButton(
                                       onPressed:
@@ -284,14 +290,6 @@ class SettingsScreen extends StatelessWidget {
                     },
                   );
                 },
-              ),
-              SizedBox(height: spaceBetweenRows),
-              IconAndTextWidget(
-                iconData: Icons.copy_outlined,
-                text: 'Copy Link To Clipboard',
-                iconSize: 30.sp,
-                fontSize: 24.sp,
-                onTap: () {},
               ),
               SizedBox(height: spaceBetweenRows),
             ],

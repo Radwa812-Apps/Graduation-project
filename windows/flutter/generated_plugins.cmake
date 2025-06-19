@@ -16,6 +16,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   geolocator_windows
   permission_handler_windows
   record_windows
+  share_plus
+  url_launcher_windows
   video_player_win
 )
 

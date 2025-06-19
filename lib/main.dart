@@ -60,6 +60,7 @@ const platform = MethodChannel(
 RiskServices _riskServices = RiskServices();
 // Use only one import path
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // debugPaintSizeEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
@@ -172,7 +173,7 @@ class _NearMeAppState extends State<NearMeApp> {
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
               navigatorObservers: [routeObserver],
-              initialRoute: SplashPage.splashPageKey,
+              initialRoute: SplashPage.splashPageKey,  navigatorKey: navigatorKey,
               routes: {
                 '/': (context) => HomeScreen(),
                 SplashPage.splashPageKey: (context) => const SplashPage(),

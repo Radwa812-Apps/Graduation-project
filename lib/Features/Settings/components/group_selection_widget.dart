@@ -170,7 +170,7 @@ class _GroupSelectionWidgetState extends State<GroupSelectionWidget> {
                               border: Border.all(
                                 color:
                                     selectedGroups[index]
-                                        ? const Color(0xFF3D5300)
+                                        ? kPrimaryColor1
                                         : Colors.grey[300]!,
                                 width: 1,
                               ),
@@ -207,7 +207,7 @@ class _GroupSelectionWidgetState extends State<GroupSelectionWidget> {
                                         border: Border.all(
                                           color:
                                               selectedGroups[index]
-                                                  ? const Color(0xFF3D5300)
+                                                  ? kPrimaryColor1
                                                   : Colors.grey[300]!,
                                           width: 1.5,
                                         ),
@@ -238,12 +238,12 @@ class _GroupSelectionWidgetState extends State<GroupSelectionWidget> {
                                           shape: BoxShape.circle,
                                           color:
                                               selectedGroups[index]
-                                                  ? const Color(0xFF3D5300)
+                                                  ? kPrimaryColor1
                                                   : Colors.transparent,
                                           border: Border.all(
                                             color:
                                                 selectedGroups[index]
-                                                    ? const Color(0xFF3D5300)
+                                                    ? kPrimaryColor1
                                                     : Colors.grey[400]!,
                                             width: 1.5,
                                           ),
@@ -280,7 +280,7 @@ class _GroupSelectionWidgetState extends State<GroupSelectionWidget> {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3D5300),
+                    backgroundColor: kPrimaryColor1,
                     padding: EdgeInsets.symmetric(vertical: 14.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

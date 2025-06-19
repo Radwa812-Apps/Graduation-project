@@ -34,7 +34,7 @@ class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateM
     )..addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _animationController.reverse();
-        // إعادة تعيين الـ Flag بعد الانتهاء
+        
         if (_isAlerted) {
           FirebaseFirestore.instance
               .collection('groups')
@@ -46,7 +46,7 @@ class _GroupStyleState extends State<GroupStyle> with SingleTickerProviderStateM
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(_animationController);
     _colorAnimation = ColorTween(begin: Colors.white, end: Colors.red.withOpacity(0.3)).animate(_animationController);
 
-    // استمع لتغييرات alert_triggered
+    
     FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)

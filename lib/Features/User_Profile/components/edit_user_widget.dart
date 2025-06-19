@@ -136,10 +136,7 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                           focusedBorderColor: kFontColor,
                           hintStyleColor: kFontColor,
                           phoneNumberController: _phoneNumberController,
-                          widget: const Icon(
-                            Icons.edit,
-                            color: kPrimaryColor1,
-                          ),
+                          widget: const Icon(Icons.edit, color: kPrimaryColor1),
                           textColor: kFontColor,
                         ),
                         Padding(
@@ -174,8 +171,9 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                             ),
                             readOnly: true,
                             onTap: (() async {
-                              await selectDate(context, _dateController,
-                                  (selectedDate) {
+                              await selectDate(context, _dateController, (
+                                selectedDate,
+                              ) {
                                 dateOfBirth = selectedDate;
                                 birthDateController.text = selectedDate;
                               });
@@ -184,8 +182,9 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                             decoration: InputDecoration(
                               hintText: state.userModel.dateOfBirth,
                               prefixIcon: const Icon(
-                                  Icons.edit_calendar_rounded,
-                                  color: kPrimaryColor1),
+                                Icons.edit_calendar_rounded,
+                                color: kPrimaryColor1,
+                              ),
                               prefixIconConstraints: BoxConstraints(
                                 minWidth: 35.w,
                               ),
@@ -222,27 +221,34 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                             ButtonWidget(
                               name: "Save",
                               fontSize: 20.sp,
-                              onTap: isChanged
-                                  ? () {
-                                      // if (formKey.currentState!.validate()) {
-                                      BlocProvider.of<ProfileBloc>(context).add(
+                              onTap:
+                                  isChanged
+                                      ? () {
+                                        // if (formKey.currentState!.validate()) {
+                                        BlocProvider.of<ProfileBloc>(
+                                          context,
+                                        ).add(
                                           EditUserEvent(
-                                              fName: fName ??
-                                                  state.userModel.fName,
-                                              lName: lName ??
-                                                  state.userModel.lName,
-                                              email: email ??
-                                                  state.userModel.email,
-                                              phoneNumber: phoneNumber ??
-                                                  state.userModel.phoneNumber,
-                                              dateOfBirth: dateOfBirth ??
-                                                  state.userModel.dateOfBirth));
-                                      setState(() {
-                                        isChanged = false;
-                                      });
-                                      // }
-                                    }
-                                  : null,
+                                            fName:
+                                                fName ?? state.userModel.fName,
+                                            lName:
+                                                lName ?? state.userModel.lName,
+                                            email:
+                                                email ?? state.userModel.email,
+                                            phoneNumber:
+                                                phoneNumber ??
+                                                state.userModel.phoneNumber,
+                                            dateOfBirth:
+                                                dateOfBirth ??
+                                                state.userModel.dateOfBirth,
+                                          ),
+                                        );
+                                        setState(() {
+                                          isChanged = false;
+                                        });
+                                        // }
+                                      }
+                                      : null,
                               size: Size(100.w, 65.h),
                               isEnabled: isChanged,
                             ),
@@ -251,8 +257,9 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                               name: "Cancel",
                               fontSize: 20,
                               onTap: () {
-                                BlocProvider.of<ProfileBloc>(context)
-                                    .add(ShowUserInfoEvent());
+                                BlocProvider.of<ProfileBloc>(
+                                  context,
+                                ).add(ShowUserInfoEvent());
                                 Navigator.pop(context);
                               },
                               size: const Size(100, 65),
@@ -265,11 +272,15 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                 ),
                 Positioned(
                   top: widget.imagePositionTop,
-                  left: 120.w,
-                  child: RoundImageWidget(
-                    name: kDefaultUserImge,
-                    width: 110.w,
-                    height: 110.h,
+                  left: 0,
+                  right: 0,
+
+                  child: Center(
+                    child: RoundImageWidget(
+                      name: kDefaultUserImge,
+                      width: 110.w,
+                      height: 110.h,
+                    ),
                   ),
                 ),
               ],

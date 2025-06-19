@@ -90,16 +90,10 @@ class GroupService {
     }
 
     try {
-      var groupsQuery =
-          await FirebaseFirestore.instance
-              .collection('groups')
-              .where(
-                Filter.or(
-                  Filter('members', arrayContains: user.uid),
-                  Filter('createdBy', isEqualTo: user.uid),
-                ),
-              )
-              .get();
+      var groupsQuery = await FirebaseFirestore.instance
+          .collection('groups')
+          .where('members', arrayContains: user.uid)
+          .get();
 
       if (groupsQuery.docs.isEmpty) {
         print("No groups found for user!");
@@ -197,24 +191,28 @@ class GroupService {
         List<String> contactNumbers = [];
         for (var contact in contacts) {
           for (var phone in contact.phones) {
-            //log("Contact: ${contact.displayName}, Phone: ${phone.number}");
             String cleanedNumber = phone.number.replaceAll(
-              RegExp(r'[^0-9]'),
+              RegExp(r'[^0-9+]'),
               '',
             );
+
             if (cleanedNumber.isNotEmpty) {
               contactNumbers.add(cleanedNumber);
-              if (cleanedNumber.startsWith('0')) {
-                contactNumbers.add('+2$cleanedNumber');
+
+              if (cleanedNumber.startsWith('+')) {
+                contactNumbers.add(cleanedNumber.substring(1));
               }
-              if (cleanedNumber.startsWith('20')) {
-                contactNumbers.add(cleanedNumber.substring(2));
+
+              if (cleanedNumber.length > 9) {
+                String withoutCountryCode = cleanedNumber.substring(
+                  cleanedNumber.length - 10,
+                );
+                contactNumbers.add(withoutCountryCode);
               }
             }
-            log("contactNumbers: $contactNumbers");
           }
         }
-        //log("Total contact numbers: ${contactNumbers.length}");
+
         var usersSnapshot =
             await FirebaseFirestore.instance.collection('users').get();
 
@@ -222,6 +220,7 @@ class GroupService {
         for (var doc in usersSnapshot.docs) {
           var data = doc.data();
           String phoneNumber = '';
+
           if (data['phoneNumber'] != null) {
             if (data['phoneNumber'] is Map<String, dynamic>) {
               phoneNumber = (data['phoneNumber']['number'] ?? '').toString();
@@ -234,28 +233,43 @@ class GroupService {
               phoneNumber = data['phoneNumber'].toString();
             }
           }
+
           String cleanedPhoneNumber = phoneNumber.replaceAll(
-            RegExp(r'[^0-9]'),
+            RegExp(r'[^0-9+]'),
             '',
           );
-          //log("cleanedPhoneNumber: $cleanedPhoneNumber");
 
-          if (contactNumbers.contains(cleanedPhoneNumber)) {
+          Set<String> possiblePhoneForms = {
+            cleanedPhoneNumber,
+            cleanedPhoneNumber.startsWith('+')
+                ? cleanedPhoneNumber.substring(1)
+                : '',
+            cleanedPhoneNumber.length > 9
+                ? cleanedPhoneNumber.substring(cleanedPhoneNumber.length - 10)
+                : '',
+          };
+
+          possiblePhoneForms.removeWhere((e) => e.isEmpty);
+
+          if (contactNumbers.any(
+            (contactNum) => possiblePhoneForms.any(
+              (form) => contactNum.endsWith(form) || form.endsWith(contactNum),
+            ),
+          )) {
             matchedUsers.add({
               'uid': doc.id,
               'fName': data['fName'] ?? 'Unknown',
               'lName': data['lName'] ?? '',
               'phoneNumber': cleanedPhoneNumber,
             });
-            //log("Matched user: ${data['fName']} ${data['lName']} with phone $cleanedPhoneNumber");
           }
         }
-        //log("Total matched users: ${matchedUsers.length}");
         return matchedUsers;
       } else {
         return [];
       }
     } catch (e) {
+      log("Error in getUsersFromContacts: $e");
       return [];
     }
   }
@@ -272,6 +286,51 @@ class GroupService {
       print("Members added to group $groupId successfully!");
     } catch (e) {
       print("Error adding members to group: $e");
+    }
+  }
+
+  // Leave group and delete if empty
+  Future<void> leaveGroup(String groupId) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print("No user is logged in!");
+      return;
+    }
+
+    try {
+      // First remove user from group members
+      await FirebaseFirestore.instance.collection('groups').doc(groupId).update({
+        'members': FieldValue.arrayRemove([user.uid])
+      });
+
+      // Then check if group is now empty
+      var groupDoc = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .get();
+      
+      var groupData = groupDoc.data();
+      if (groupData != null) {
+        List<dynamic> members = groupData['members'] ?? [];
+        if (members.isEmpty) {
+          // Delete group if no members left
+          await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(groupId)
+              .delete();
+          print("Group $groupId deleted because it has no members left");
+        }
+      }
+
+      // Remove group from user's groups list
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'groups': FieldValue.arrayRemove([groupId])
+      });
+
+      print("User left group successfully");
+    } catch (e) {
+      print("Error leaving group: $e");
+      rethrow;
     }
   }
 }
