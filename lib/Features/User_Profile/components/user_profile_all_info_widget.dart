@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -30,6 +31,7 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
+
     return Center(
       child: Stack(
         clipBehavior: Clip.none,
@@ -81,9 +83,13 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
                         ),
                         SizedBox(height: widget.spaceWithRows),
                         UserProfileInfoWidget(
-                          info: state.userModel.email,
+                          info:
+                              state.userModel.email.length > 25
+                                  ? '${state.userModel.email.substring(0, 22)}...'
+                                  : state.userModel.email,
                           iconData: Icons.email_outlined,
                           size: 25.sp,
+                          
                         ),
                         SizedBox(height: widget.spaceWithRows),
                         UserProfileInfoWidget(
@@ -94,26 +100,31 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
                         SizedBox(height: screenWidth * 0.1.w),
                         ButtonWidget(
                           name: 'Edit',
-                          fontSize: 30.sp,
+                          fontSize: 23.sp,
                           onTap: () {
                             BlocProvider.of<ProfileBloc>(context).add(
-                                EditUserEvent(
-                                    dateOfBirth: state.userModel.dateOfBirth,
-                                    email: state.userModel.email,
-                                    lName: state.userModel.lName,
-                                    fName: state.userModel.fName,
-                                    phoneNumber: state.userModel.phoneNumber));
+                              EditUserEvent(
+                                dateOfBirth: state.userModel.dateOfBirth,
+                                email: state.userModel.email,
+                                lName: state.userModel.lName,
+                                fName: state.userModel.fName,
+                                phoneNumber: state.userModel.phoneNumber,
+                              ),
+                            );
                             Navigator.pushNamed(
-                                context, EditScreen.editScreenKey);
+                              context,
+                              EditScreen.editScreenKey,
+                            );
                           },
-                          size: Size(screenWidth * 0.7.w, screenHeight * .01.h),
+                          size: Size(screenWidth * 0.7.w, screenHeight * .06.h),
                         ),
                       ],
                     ),
                   );
                 } else if (state is UserInfoErrorState) {
                   return Center(
-                      child: Text('Something went wrong: ${state.error}'));
+                    child: Text('Something went wrong: ${state.error}'),
+                  );
                 } else {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -122,11 +133,15 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
           ),
           Positioned(
             top: widget.imagePositionTop,
-            left: 120.w,
-            child: RoundImageWidget(
-              name: kDefaultUserImge,
-              width: 110.w,
-              height: 110.h,
+            left: 0,
+            right: 0,
+
+            child: Center(
+              child: RoundImageWidget(
+                name: kDefaultUserImge,
+                width: 110.w,
+                height: 110.h,
+              ),
             ),
           ),
         ],

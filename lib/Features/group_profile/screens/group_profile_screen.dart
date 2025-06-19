@@ -1,12 +1,11 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:near_me_new_version/Features/Home/Home/Screens/home_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:near_me_new_version/Features/group_profile/components/search_text_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/components/split_between_features.dart';
 import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/Features/Settings/components/confirm_message_widget.dart';
 import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/Features/group_profile/components/features_one.dart';
 import 'package:near_me_new_version/Features/group_profile/components/leave_group.dart';
@@ -18,7 +17,6 @@ import 'package:near_me_new_version/core/services/group_services.dart';
 
 class GroupProfileScreen extends StatefulWidget {
   static String groupProfileScreenKey = '/groupProfileScreen';
-
   const GroupProfileScreen({super.key});
 
   @override
@@ -27,7 +25,9 @@ class GroupProfileScreen extends StatefulWidget {
 
 class _GroupProfileScreenState extends State<GroupProfileScreen> {
   bool _isSearchExpanded = false;
-  OverlayEntry? _overlayEntry;
+  bool isMenuVisible = false;
+
+
   final GroupService _groupService = GroupService();
   Group? _group;
   bool _isDataLoaded = false;
@@ -40,17 +40,19 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   Function(bool)? onToggle;
   late String groupId;
   bool isLiveTrackingOn = false;
+  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    getMapPofileArgs();
+    getMapProfileArgs();
     if (!_isDataLoaded) {
       _loadGroupData();
       _isDataLoaded = true;
     }
   }
 
-  void getMapPofileArgs() {
+  void getMapProfileArgs() {
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null) {
       groupId = args['id'];
@@ -67,25 +69,14 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
 
   void _loadGroupData() async {
     log("Loading group data...");
-    log("Group ID: $groupId");
-    if (groupId != null) {
+    if (groupId.isNotEmpty) {
       Group? group = await _groupService.getGroupById(groupId);
-      log("Group fetched: ${group?.name}");
       if (group != null) {
-        List<Map<String, String>> membersData = [];
-        for (String uid in group.members) {
-          Map<String, String>? userData = await _groupService.getUserData(uid);
-          if (userData != null) {
-            membersData.add(userData);
-          }
+        if (mounted) {
+          setState(() {
+            _group = group;
+          });
         }
-
-        setState(() {
-          _group = group;
-          log("Group data loaded: ${_group?.name}");
-        });
-      } else {
-        print("Group with ID $groupId not found!");
       }
     }
   }
@@ -96,67 +87,60 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
     });
   }
 
-  void _showMenu(BuildContext context) {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
+ void _showMenu(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: LeaveGroup(
+          groupId: groupId,
+          onSuccess: () {
+            Navigator.of(dialogContext).pop(); 
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              HomeScreen.homeScreenKey,
+              (route) => false,
+            );
+          },
+        ),
+      );
+    },
+  );
+}
 
-    _overlayEntry = OverlayEntry(
-      builder:
-          (context) => GestureDetector(
-            onTap: () {
-              _overlayEntry?.remove();
-              _overlayEntry = null;
-            },
-            behavior: HitTestBehavior.translucent,
-            child: Container(
-              color: Colors.transparent,
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 100,
-                    left: 200,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: LeaveGroup(
-                        onLeaveGroupPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return ConfirmMessageWidget(
-                                message:
-                                    'Are you sure you want to leave the group?',
-                                onCancel: () {
-                                  Navigator.of(context).pop();
-                                },
-                                onConfirm: () {
-                                  Navigator.of(context).pop();
-                                  print('User confirmed leaving the group');
-                                },
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
+/*void _showMenu(BuildContext context) {
+  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+  final RenderBox button = context.findRenderObject() as RenderBox;
+  final Offset position = button.localToGlobal(Offset.zero, ancestor: overlay);
 
-    Overlay.of(context)?.insert(_overlayEntry!);
-  }
-
-  void checkIfGroupHasUserLiveLocations() async {
-    final hasUserLiveLocations = await _firebaseController
-        .checkIfGroupHasUserLiveLocations(groupId);
-    if (hasUserLiveLocations != null && hasUserLiveLocations) {
-      setState(() {
-        isLiveTrackingOn = true;
-      });
-    }
-  }
+  showMenu(
+    context: context,
+    position: RelativeRect.fromLTRB(
+      position.dx+30,
+      position.dy + 40, 
+      overlay.size.width - position.dx - button.size.width,
+      0,
+    ),
+    items: [
+      PopupMenuItem(
+        enabled: true, 
+        child: LeaveGroup(
+          groupId: groupId,
+          onSuccess: () {
+            Navigator.of(context).pop(); 
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              HomeScreen.homeScreenKey,
+              (route) => false,
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
+*/
 
   @override
   Widget build(BuildContext context) {
@@ -173,9 +157,9 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
             floating: false,
             pinned: true,
             flexibleSpace: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                double appBarHeight = constraints.biggest.height;
-                bool isCollapsed = appBarHeight <= kToolbarHeight + 50;
+              builder: (context, constraints) {
+                bool isCollapsed =
+                    constraints.biggest.height <= kToolbarHeight + 50;
 
                 return FlexibleSpaceBar(
                   title:
@@ -202,36 +186,23 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                             ],
                           )
                           : null,
-                  background: Stack(
-                    alignment: Alignment.center,
+                  background: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const CircleAvatar(
-                            radius: 60,
-                            backgroundImage: AssetImage(kDefaultGroupImge),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _group?.name ?? "Loading...",
-                            style: const TextStyle(
-                              fontSize: 30,
-                              fontFamily: kFontBold,
-                              fontWeight: FontWeight.bold,
-                              color: kFontColor,
-                            ),
-                          ),
-                        ],
+                      const CircleAvatar(
+                        radius: 60,
+                        backgroundImage: AssetImage(kDefaultGroupImge),
                       ),
-                      if (isCollapsed)
-                        const Positioned(
-                          left: 10,
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundImage: AssetImage(kDefaultGroupImge),
-                          ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _group?.name ?? "Loading...",
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontFamily: kFontBold,
+                          fontWeight: FontWeight.bold,
+                          color: kFontColor,
                         ),
+                      ),
                     ],
                   ),
                 );
@@ -259,9 +230,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                     color: kPrimaryColor1,
                     size: 28,
                   ),
-                  onPressed: () {
-                    _showMenu(context);
-                  },
+                  onPressed: () => _showMenu(context),
                 ),
               ),
             ],
@@ -326,11 +295,13 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(
-            context,
-            GroupChat.groupChatKey,
-            arguments: {'groupId': _group!.id, 'groupName': _group!.name},
-          );
+          if (_group != null) {
+            Navigator.pushNamed(
+              context,
+              GroupChat.groupChatKey,
+              arguments: {'groupId': _group!.id, 'groupName': _group!.name},
+            );
+          }
         },
         backgroundColor: kPrimaryColor1,
         shape: RoundedRectangleBorder(

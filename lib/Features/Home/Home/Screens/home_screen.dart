@@ -16,7 +16,7 @@ import '../components/home_bar_widget.dart';
 import '../components/row_after_bar_chats_groups.dart';
 
 class HomeScreen extends StatefulWidget {
-  static String homeScreenKey = '/HomeScreen';
+  static const String homeScreenKey = '/HomeScreen';
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
