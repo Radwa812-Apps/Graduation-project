@@ -11,8 +11,10 @@
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:text="⚠"
+        android:textColor="#FFFFFF"
+        android:textSize="28sp"
         android:clickable="true"
         android:focusable="true"
         android:background="@drawable/circle_button_background"
-        android:textColor="#FFFFFF" />
+         />
 </FrameLayout>

@@ -116,7 +116,7 @@ void main() async {
   );
   platform.setMethodCallHandler((call) async {
     if (call.method == 'onFloatingButtonPressed') {
-      print('Floating button pressed from Android!');
+       print('Floating button pressed from Android!');
       _riskServices.handleRiskbutton();
     }
   });

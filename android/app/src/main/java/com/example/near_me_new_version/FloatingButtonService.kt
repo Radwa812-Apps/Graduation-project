@@ -1,5 +1,5 @@
 package com.example.near_me_new_version
-
+import kotlin.math.abs
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
@@ -15,7 +15,8 @@ import java.util.*
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
-
+import android.os.Handler
+import android.os.Looper
 class FloatingButtonService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var floatingButton: View
@@ -38,9 +39,9 @@ class FloatingButtonService : Service() {
         return
         }
         val flutterEngine = FlutterEngineCache.getInstance().get("my_engine_id")
-if (flutterEngine != null) {
-    methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.near_me_new_version/floating_button")
-}
+        if (flutterEngine != null) {
+            methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.near_me_new_version/floating_button")
+        }
 
         Log.d(TAG, "setupFloatingButton called")
         floatingButton = LayoutInflater.from(this).inflate(R.layout.floating_button_layout, null)
@@ -74,39 +75,107 @@ if (flutterEngine != null) {
         }
 
         // ✅ السحب والتحريك
-        floatingButton.setOnTouchListener(object : View.OnTouchListener {
+        floatingButton.findViewById<Button>(R.id.floating_button)?.setOnTouchListener(object : View.OnTouchListener {
             private var initialX = 0
             private var initialY = 0
             private var initialTouchX = 0f
             private var initialTouchY = 0f
-
-            override fun onTouch(v: View?, event: MotionEvent): Boolean {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        initialX = params.x
-                        initialY = params.y
-                        initialTouchX = event.rawX
-                        initialTouchY = event.rawY
-                        return true
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        params.x = initialX + (event.rawX - initialTouchX).toInt()
-                        params.y = initialY + (event.rawY - initialTouchY).toInt()
-                        windowManager.updateViewLayout(floatingButton, params)
-                        return true
-                    }
-                }
-                return false
+            private val clickThreshold = 5  
+        override fun onTouch(v: View?, event: MotionEvent): Boolean {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                initialX = params.x
+                initialY = params.y
+                initialTouchX = event.rawX
+                initialTouchY = event.rawY
+                return true
             }
+
+            MotionEvent.ACTION_MOVE -> {
+                val deltaX = event.rawX - initialTouchX
+                val deltaY = event.rawY - initialTouchY
+
+                
+                params.x = initialX + deltaX.toInt()
+                params.y = initialY + deltaY.toInt()
+                windowManager.updateViewLayout(floatingButton, params)
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+                val deltaX = (event.rawX - initialTouchX).toInt()
+                val deltaY = (event.rawY - initialTouchY).toInt()
+
+                if (abs(deltaX) < clickThreshold && abs(deltaY) < clickThreshold) {
+                    
+                    v?.performClick()
+                }
+                return true
+            }
+        }
+        return false
+        }
         })
+
 
         // ✅ الضغط على الزر يرسل التنبيهات
         floatingButton.findViewById<Button>(R.id.floating_button)?.setOnClickListener {
             Log.d(TAG, "Floating button clicked")
+            showEmergencyConfirmationDialog()
+
+        } ?: Log.e(TAG, "Floating button view not found with ID: R.id.floating_button")
+    }
+    private fun showEmergencyConfirmationDialog() {
+        val inflater = LayoutInflater.from(this)
+        val dialogView = inflater.inflate(R.layout.overlay_confirmation_dialog, null)
+
+        val yesButton = dialogView.findViewById<Button>(R.id.btn_yes)
+        val noButton = dialogView.findViewById<Button>(R.id.btn_no)
+
+        val params = WindowManager.LayoutParams(
+        600,  // ✅ العرض بالـ pixels – ممكن تخليه أقل أو أكتر حسب الحاجة
+        WindowManager.LayoutParams.WRAP_CONTENT,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        else
+            WindowManager.LayoutParams.TYPE_PHONE,
+        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+        PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+
+        val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        windowManager.addView(dialogView, params)
+
+        val handler = Handler(Looper.getMainLooper())
+        val timeoutRunnable = Runnable {
+            // No response within 2 minute
+            windowManager.removeView(dialogView)
+            //sendHelpRequest() // automatically
             methodChannel?.invokeMethod("onFloatingButtonPressed", null)
             
             sendAlertToSelectedGroups()
-        } ?: Log.e(TAG, "Floating button view not found with ID: R.id.floating_button")
+        }
+
+        // Start timeout
+        handler.postDelayed(timeoutRunnable, 120000)
+
+        yesButton.setOnClickListener {
+            handler.removeCallbacks(timeoutRunnable)
+            windowManager.removeView(dialogView)
+            //sendHelpRequest() // 
+            methodChannel?.invokeMethod("onFloatingButtonPressed", null)
+            
+            sendAlertToSelectedGroups()
+        }
+
+        noButton.setOnClickListener {
+            handler.removeCallbacks(timeoutRunnable)
+            windowManager.removeView(dialogView)
+            //  Cancelled
+        }
     }
 
     private fun sendAlertToSelectedGroups() {
