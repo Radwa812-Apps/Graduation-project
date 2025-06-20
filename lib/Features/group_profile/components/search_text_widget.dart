@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../../../core/constants.dart';
 
 class SearchTextWidget extends StatelessWidget {
+  final ValueChanged<String>? onChanged;
+
   const SearchTextWidget({
     super.key,
+    this.onChanged,
   });
 
   @override
@@ -42,11 +45,10 @@ class SearchTextWidget extends StatelessWidget {
             filled: true,
             fillColor: Colors.white.withOpacity(0.9),
           ),
-          style: const TextStyle(color: Colors.white),
-          onChanged: (value) {},
+          style: const TextStyle(color: Colors.black), // Changed text color to black for better visibility
+          onChanged: onChanged,
         ),
       ),
     );
-
-    }
+  }
 }

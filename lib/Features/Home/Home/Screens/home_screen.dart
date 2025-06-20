@@ -1,13 +1,12 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/group_profile_screen.dart';
+import 'package:near_me_new_version/Features/Private_chat/screens/private_chat_screen.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
-
+import 'package:provider/provider.dart';
+import 'package:near_me_new_version/core/services/chat_services.dart';
 import '../../../../core/constants.dart';
 import '../components/container_text_field_widget.dart';
 import '../components/floating_yellow_icon.dart';
@@ -30,12 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
       DraggableScrollableController();
   String _selectedTab = 'Groups';
   List<Group> _groups = [];
+  List<Map<String, dynamic>> _recentChats = [];
   final GroupService _groupService = GroupService();
+  late ChatService _chatService;
 
   @override
   void initState() {
     super.initState();
+    _chatService = Provider.of<ChatService>(context, listen: false);
     _loadGroups();
+    _loadRecentChats();
   }
 
   bool _hasSubscribedToStream = false;
@@ -52,6 +55,13 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         }
       });
+      _chatService.streamRecentChats().listen((recentChats) {
+        if (mounted) {
+          setState(() {
+            _recentChats = recentChats;
+          });
+        }
+      });
     }
   }
 
@@ -59,6 +69,13 @@ class _HomeScreenState extends State<HomeScreen> {
     List<Group> fetchedGroups = await _groupService.getMyGroups();
     setState(() {
       _groups = fetchedGroups;
+    });
+  }
+
+  void _loadRecentChats() async {
+    List<Map<String, dynamic>> recentChats = await _chatService.getRecentChats();
+    setState(() {
+      _recentChats = recentChats;
     });
   }
 
@@ -145,58 +162,94 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(height: 20.h),
                 Expanded(
-                  child:
-                      _selectedTab == 'Groups'
-                          ? (_groups.isEmpty
-                              ? Padding(
-                                padding: const EdgeInsets.only(top: 100),
-                                child: Image.asset(
-                                  'assets/images/noGroups.png',
-                                  width: screenWidth * .8.w,
-                                  height: screenHeight * .8.h,
-                                ),
-                              )
-                              : ListView.builder(
-                                itemCount: _groups.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 10.w,
-                                      vertical: 4.h,
-                                    ),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        log(
-                                          "Navigating to group with ID: ${_groups[index].id}",
-                                        );
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) => OrderTrackingPage(
-                                                  groupId: _groups[index].id,
-                                                  groupName:
-                                                      _groups[index].name,
-                                                ),
+                  child: _selectedTab == 'Groups'
+                      ? (_groups.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 100),
+                              child: Image.asset(
+                                'assets/images/noGroups.png',
+                                width: screenWidth * .8.w,
+                                height: screenHeight * .8.h,
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _groups.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w,
+                                    vertical: 4.h,
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      log("Navigating to live location map with group ID: ${_groups[index].id}");
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => OrderTrackingPage(
+                                            groupId: _groups[index].id,
+                                            groupName: _groups[index].name,
                                           ),
-                                        );
-                                      },
-                                      child: GroupStyle(
-                                        groupName: _groups[index].name,
-                                        groupId: _groups[index].id,
-                                      ),
+                                        ),
+                                      );
+                                    },
+                                    child: GroupStyle(
+                                      groupName: _groups[index].name,
+                                      groupId: _groups[index].id,
                                     ),
-                                  );
-                                },
-                              ))
-                          : Padding(
-                            padding: const EdgeInsets.only(top: 100),
-                            child: Image.asset(
-                              'assets/images/noChats.png',
-                              width: screenWidth * .8.w,
-                              height: screenHeight * .8.h,
-                            ),
-                          ),
+                                  ),
+                                );
+                              },
+                            ))
+                      : (_recentChats.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 100),
+                              child: Image.asset(
+                                'assets/images/noChats.png',
+                                width: screenWidth * .8.w,
+                                height: screenHeight * .8.h,
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _recentChats.length,
+                              itemBuilder: (context, index) {
+                                final chat = _recentChats[index];
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.w,
+                                    vertical: 4.h,
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PrivateChatScreen(
+                                            recipientId: chat['recipientId'],
+                                            recipientName: chat['recipientName'],
+                                            recipientImage: chat['recipientImage'],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundImage: chat['recipientImage'] != null
+                                            ? NetworkImage(chat['recipientImage'])
+                                            : const AssetImage('assets/images/user.jpg') as ImageProvider,
+                                      ),
+                                      title: Text(chat['recipientName'] ?? 'Unknown'),
+                                      subtitle: Text(
+                                        chat['lastMessage'] ?? '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      trailing: Text(chat['time'] ?? ''),
+                                    ),
+                                  ),
+                                );
+                              },
+                            )),
                 ),
               ],
             ),

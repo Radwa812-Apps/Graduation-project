@@ -21,6 +21,7 @@ import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/signUp_
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_up_screen.dart';
 import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
+import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart' as live_location_map;
 import 'package:near_me_new_version/Features/group_profile/screens/search_member.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
@@ -50,11 +51,12 @@ import 'Features/Private_chat/screens/private_chat_screen.dart';
 import 'Features/User_Profile/screens/edit_screen.dart';
 import 'Features/auth/Forgot_password/Screens/send_email_for_pass.dart';
 import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
-import 'Features/group_profile/screens/group_inside.dart';
+import 'Features/group_profile/screens/group_inside.dart' as group_inside;
 import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
 import 'package:flutter/services.dart';
-
+import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart'
+ as live_location;
 const platform = MethodChannel(
   'com.example.near_me_new_version/floating_button',
 );
@@ -224,18 +226,29 @@ class _NearMeAppState extends State<NearMeApp> {
                     (context) => const GroupNotifications(title: 'Alex Trip'),
                 PersonalNotifications.personalNotificationsKey:
                     (context) => PermissionLocation(),
-                PrivateChatScreen.privateChatScreenKey:
-                    (context) => const PrivateChatScreen(recipient: 'Radwa'),
+               PrivateChatScreen.privateChatScreenKey: (context) {
+              final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+              return PrivateChatScreen(
+                recipientId: args?['recipientId'] ?? '',
+                recipientName: args?['recipientName'] ?? 'Unknown',
+                recipientImage: args?['recipientImage'],
+              );
+            },
                 SearchMember.searchMemberKey: (context) => const SearchMember(),
                 SelectPlaceScreen.selectPlaceScreenKey:
                     ((context) => const SelectPlaceScreen()),
                 MediaScreen.mediaScreenKey: (context) => const MediaScreen(),
                 PasswordResetPage.passwordResetPageKey:
                     (context) => const PasswordResetPage(),
-                GroupInsideScreen.groupInsideScreenKey:
-                    (context) => GroupInsideScreen(),
-                OrderTrackingPage.orderTrackingScreenKey:
-                    (context) => OrderTrackingPage(),
+                
+                OrderTrackingPage.orderTrackingScreenKey: (context) {
+  final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+  return OrderTrackingPage(
+    groupId: args['groupId'] ?? '',
+    groupName: args['groupName'] ?? '',
+  );
+},
+
                 CustomMarkerMap.customMarkerMapScreenKey:
                     (context) => CustomMarkerMap(),
               },

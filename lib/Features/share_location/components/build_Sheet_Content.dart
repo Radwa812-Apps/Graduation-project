@@ -1,41 +1,71 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/member_group_inside.dart';
 import 'package:near_me_new_version/Features/share_location/components/build_search_field.dart';
+import 'package:near_me_new_version/Features/Private_chat/screens/private_chat_screen.dart';
 
 class BuildSheetContent extends StatefulWidget {
   final ScrollController scrollController;
-  final String userName; // Placeholder for user name
-  final String lastLocatin; // Placeholder for last location
-  final String distance; // Placeholder for distance
+  final String groupId;
+  final List<Map<String, dynamic>> groupMembers;
+
   const BuildSheetContent({
     required this.scrollController,
-    required this.userName,
-    required this.lastLocatin,
-    required this.distance,
+    required this.groupId,
+    required this.groupMembers,
     Key? key,
   }) : super(key: key);
 
   @override
-  _buildSheetContent createState() => _buildSheetContent();
+  _BuildSheetContentState createState() => _BuildSheetContentState();
 }
 
-class _buildSheetContent extends State<BuildSheetContent> {
+class _BuildSheetContentState extends State<BuildSheetContent> {
   @override
   Widget build(BuildContext context) {
     return ListView(
       controller: widget.scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 50, 16, 16), // تعديل البادينج
+      padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
       children: [
-        // حقل البحث
+        // Search field
         BuildSearchField(),
         const SizedBox(height: 20),
-
-        // محتوى المجموعة
-        MemberGroupInside(
-          userName: widget.userName,
-          lastLocatin: widget.lastLocatin,
-          distance: widget.distance,
-        ),
+        // Dynamic list of group members
+        if (widget.groupMembers.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text(
+              "No members in this group.",
+              style: TextStyle(color: Colors.grey),
+            ),
+          )
+        else
+          ...widget.groupMembers.map((member) {
+            return Column(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PrivateChatScreen(
+                          recipientId: member['uid'] ?? '',
+                          recipientName: member['name'] ?? 'Unknown',
+                          recipientImage: member['imageUrl'],
+                        ),
+                      ),
+                    );
+                  },
+                  child: MemberGroupInside(
+                    userName: member['name'] ?? 'Unknown',
+                    lastLocatin: member['lastLocation'] ?? 'Unknown',
+                    distance: member['distance'] ?? 'N/A',
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            );
+          }).toList(),
       ],
     );
   }

@@ -9,7 +9,8 @@ import 'package:near_me_new_version/Features/share_location/screens/live_locatio
 import '../../../../core/constants.dart';
 import '../../../group_profile/screens/group_inside.dart';
 import 'round_image_widget.dart';
-
+import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart'
+ as live_location;
 class GroupStyle extends StatefulWidget {
   final String? groupName;
   final String? groupId;

@@ -1,4 +1,3 @@
-
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
@@ -25,8 +24,6 @@ class CloudinaryService {
     try {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
-
-      // No encryption for images, upload as-is
       final response = await _cloudinary.uploadFile(
         CloudinaryFile.fromFile(
           imageFile.path,
@@ -34,7 +31,6 @@ class CloudinaryService {
           resourceType: CloudinaryResourceType.Image,
         ),
       );
-
       return response.secureUrl;
     } catch (e) {
       print('Cloudinary upload error: $e');
@@ -46,8 +42,6 @@ class CloudinaryService {
     try {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
-
-      // No encryption for videos, upload as-is
       final response = await _cloudinary.uploadFile(
         CloudinaryFile.fromFile(
           videoFile.path,
@@ -55,7 +49,6 @@ class CloudinaryService {
           resourceType: CloudinaryResourceType.Video,
         ),
       );
-
       return response.secureUrl;
     } catch (e) {
       print('Cloudinary video upload error: $e');
@@ -67,16 +60,13 @@ class CloudinaryService {
     try {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
-
-      // No encryption for voice messages, upload as-is
       final response = await _cloudinary.uploadFile(
         CloudinaryFile.fromFile(
           audioFile.path,
           folder: folder ?? 'user_uploads/${user.uid}/voice',
-          resourceType: CloudinaryResourceType.Video, // Assuming audio is handled as video for simplicity, adjust if needed
+          resourceType: CloudinaryResourceType.Video,
         ),
       );
-
       return response.secureUrl;
     } catch (e) {
       print('Cloudinary voice upload error: $e');

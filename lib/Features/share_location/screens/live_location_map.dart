@@ -19,13 +19,15 @@ import 'package:near_me_new_version/Features/share_location/components/map_contr
 import 'package:near_me_new_version/Features/share_location/components/map_widget.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
+import 'package:near_me_new_version/core/constants.dart';
+import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 
 class OrderTrackingPage extends StatefulWidget {
   final String groupId;
   final String groupName;
 
   const OrderTrackingPage({Key? key, this.groupId = '', this.groupName = ''})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<OrderTrackingPage> createState() => _OrderTrackingPageState();
@@ -46,10 +48,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
   Set<Polyline> polylineCoordinatesSet = {};
   String currentUerName = '';
-  String userName = 'Radwa';
-  String lastLocationText = 'Just arrived home';
-  String distance = '2.5km';
-  List<LatLng> polylineCoordinates = [];
+  List<Map<String, dynamic>> groupMembers = [];
   BitmapDescriptor? customUserMarkerIcon;
   BitmapDescriptor? customSourceMarkerIcon;
 
@@ -58,6 +57,31 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     log("initState............");
     super.initState();
     initialization();
+    _loadGroupMembers();
+  }
+
+  void _loadGroupMembers() async {
+    final group = await groupService.getGroupById(widget.groupId);
+    if (group != null) {
+      List<Map<String, dynamic>> members = [];
+      for (String uid in group.members) {
+        final userData = await groupService.getUserData(uid);
+        if (userData != null) {
+          members.add({
+            'uid': uid,
+            'name': '${userData['fName']} ${userData['lName']}',
+            'imageUrl': userData['imageUrl'],
+            'lastLocation': 'Active now',
+            'distance': '0.5km'
+          });
+        }
+      }
+      if (mounted) {
+        setState(() {
+          groupMembers = members;
+        });
+      }
+    }
   }
 
   void initialization() {
@@ -66,9 +90,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     user = firebase_auth.FirebaseAuth.instance.currentUser;
     isUserLiveTrackingOn = context.read<TrackingUserOnCubit>().state;
 
-    _trackingSubscription = context.read<TrackingUserOnCubit>().stream.listen((
-      state,
-    ) {
+    _trackingSubscription = context.read<TrackingUserOnCubit>().stream.listen((state) {
       if (mounted) {
         setState(() {
           isUserLiveTrackingOn = state;
@@ -79,33 +101,18 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     _initializeTracking();
   }
 
-  // void _fetchUserData(String userId) async {
-  //   Map<String, dynamic>? userData;
-  //   if (user != null) {
-  //     final userId = user!.uid;
-  //     userData = await groupService.getUserData(userId);
-  //     setState(() {});
-  //   }
-  //   if (userData != null) {
-  //     currentUerName = userData['name'] ?? 'user';
-  //   } else {
-  //     log("User data not found for user: ${user?.uid}");
-  //   }
-  // }
-
   Future<void> _initializeTracking() async {
     _createFixedMarker();
     _createFixedSourceMarker();
     log("Initializing live tracking for group: ${widget.groupId}");
     await _handleLiveLocation();
-
     _toggleLiveTracking(isLiveTrackingOn, isUserLiveTrackingOn);
   }
 
   Future<void> _createFixedMarker() async {
     customUserMarkerIcon = await createCircleMarkerWithImage(
       'assets/images/user_photo.jpeg',
-      circleRadius: 60.0, // يمكنك تعديل الحجم
+      circleRadius: 60.0,
       circleColor: Colors.blueAccent,
       borderWidth: 4.0,
       borderColor: Colors.white,
@@ -167,7 +174,6 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     _locationController.startLocationUpdates((newLoc) {
       _handleLocationUpdate(newLoc);
     });
-
     _listenToGroupLiveLocations();
   }
 
@@ -198,9 +204,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       _locationController.currentLocation!.latitude!,
       _locationController.currentLocation!.longitude!,
     );
-    log(
-      "Static map reset to initial position: ${_mapController.initialPosition}",
-    );
+    log("Static map reset to initial position: ${_mapController.initialPosition}");
     _mapController.updateCameraPosition(
       LatLng(
         _mapController.initialPosition!.latitude!,
@@ -255,9 +259,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   }
 
   void _listenToGroupLiveLocations() {
-    _firebaseController.getGroupLiveLocationsStream(widget.groupId).listen((
-      snapshot,
-    ) {
+    _firebaseController.getGroupLiveLocationsStream(widget.groupId).listen((snapshot) {
       final markers = _createMarkersFromSnapshot(snapshot);
       _mapController.updateMarkers(markers);
       if (mounted) {
@@ -269,7 +271,6 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   Set<Marker> _createMarkersFromSnapshot(QuerySnapshot snapshot) {
     log("Creating markers from snapshot: ${snapshot.docs.length} documents");
     final markers = <Marker>{};
-    //_fetchUserData(user!.uid);
     for (var doc in snapshot.docs) {
       final curLat = double.parse(doc['curLat'].toString());
       final curLng = double.parse(doc['curLng'].toString());
@@ -281,8 +282,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         Marker(
           markerId: MarkerId('${userId}_current'),
           position: LatLng(curLat, curLng),
-          icon:
-              customUserMarkerIcon ??
+          icon: customUserMarkerIcon ??
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           infoWindow: InfoWindow(
             title: 'Current Location',
@@ -292,8 +292,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         Marker(
           markerId: MarkerId('${userId}_source'),
           position: LatLng(sourceLat, sourceLng),
-          icon:
-              customSourceMarkerIcon ??
+          icon: customSourceMarkerIcon ??
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           infoWindow: InfoWindow(
             title: 'Source Location',
@@ -313,43 +312,6 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     return markers;
   }
 
-  // @override
-  // void dispose() {
-  //   log("Disposing OrderTrackingPage resources...");
-  //   _locationController.dispose();
-  //   _mapController.dispose();
-  //   super.dispose();
-  // }
-
-  @override
-  Widget build(BuildContext context) {
-    _createPolylines();
-    log("Building OrderTrackingPage with groupId: ${widget.groupId}");
-    return Scaffold(
-      body: Stack(
-        children: [
-          MapWidget(
-            isLiveTrackingOn: isLiveTrackingOn,
-            currentLocation: _locationController.currentLocation,
-            destinationLocation: _locationController.destinationLocation,
-            sourceLocation: _locationController.sourceLocation,
-            markers: _mapController.markers,
-            onMapCreated: _mapController.onMapCreated,
-            polylines: polylineCoordinatesSet,
-            mapController: _mapController,
-          ),
-          _buildTopControls(),
-          BuildBottomSheetWithAvatar(
-            avatarUrl: "assets/images/group.jpg",
-            userName: userName,
-            lastLocatin: lastLocationText,
-            distance: distance,
-          ),
-        ],
-      ),
-    );
-  }
-
   void _createPolylines() async {
     if (_locationController.currentLocation == null ||
         _locationController.sourceLocation == null ||
@@ -360,7 +322,6 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       return;
     }
 
-    // Get route as List<LatLng> from latlong2, convert to Google Maps LatLng
     final osrmRoute = await _OSRM.getRoute(
       _locationController.sourceLocation!.latitude!,
       _locationController.sourceLocation!.longitude!,
@@ -371,27 +332,24 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       log("null routes......");
       return;
     }
-    polylineCoordinates =
-        osrmRoute
-            .map((latLng) => LatLng(latLng.latitude, latLng.longitude))
-            .toList();
+    final polylineCoordinates =
+        osrmRoute.map((latLng) => LatLng(latLng.latitude, latLng.longitude)).toList();
     log("Polyline coordinates: $polylineCoordinates");
     polylineCoordinatesSet = {
       Polyline(
         polylineId: const PolylineId("manual_route"),
-        points:
-            polylineCoordinates.isNotEmpty
-                ? polylineCoordinates
-                : [
-                  LatLng(
-                    _locationController.sourceLocation!.latitude!,
-                    _locationController.sourceLocation!.longitude!,
-                  ),
-                  LatLng(
-                    _locationController.currentLocation!.latitude!,
-                    _locationController.currentLocation!.longitude!,
-                  ),
-                ],
+        points: polylineCoordinates.isNotEmpty
+            ? polylineCoordinates
+            : [
+                LatLng(
+                  _locationController.sourceLocation!.latitude!,
+                  _locationController.sourceLocation!.longitude!,
+                ),
+                LatLng(
+                  _locationController.currentLocation!.latitude!,
+                  _locationController.currentLocation!.longitude!,
+                ),
+              ],
         color: Colors.blue,
         width: 5,
       ),
@@ -448,6 +406,51 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         'onToggle': _hanldeLiveLocationInstance,
         'isLiveTrackingOn': isUserLiveTrackingOn,
       },
+    ).then((_) => _loadGroupMembers());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _createPolylines();
+    log("Building OrderTrackingPage with groupId: ${widget.groupId}");
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(
+            context,
+            GroupChat.routeName,
+            arguments: {
+              'groupId': widget.groupId,
+              'groupName': widget.groupName,
+            },
+          );
+        },
+        backgroundColor: kPrimaryColor1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50.0),
+        ),
+        child: const Icon(Icons.message, color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          MapWidget(
+            isLiveTrackingOn: isLiveTrackingOn,
+            currentLocation: _locationController.currentLocation,
+            destinationLocation: _locationController.destinationLocation,
+            sourceLocation: _locationController.sourceLocation,
+            markers: _mapController.markers,
+            onMapCreated: _mapController.onMapCreated,
+            polylines: polylineCoordinatesSet,
+            mapController: _mapController,
+          ),
+          _buildTopControls(),
+          BuildBottomSheetWithAvatar(
+            avatarUrl: "assets/images/group.jpg",
+            groupId: widget.groupId,
+            groupMembers: groupMembers,
+          ),
+        ],
+      ),
     );
   }
 }
