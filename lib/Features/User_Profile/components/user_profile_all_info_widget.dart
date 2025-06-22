@@ -138,7 +138,7 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
 
             child: Center(
               child: RoundImageWidget(
-                name: kDefaultUserImge,
+               // name: kDefaultUserImge,
                 width: 110.w,
                 height: 110.h,
               ),

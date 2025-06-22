@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart'
-    show FirebaseFirestore, QuerySnapshot;
+    show FirebaseFirestore, FirebaseFirestore, QuerySnapshot;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -51,12 +52,14 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   List<Map<String, dynamic>> groupMembers = [];
   BitmapDescriptor? customUserMarkerIcon;
   BitmapDescriptor? customSourceMarkerIcon;
+Uint8List? groupImage;
 
   @override
   void initState() {
     log("initState............");
     super.initState();
     initialization();
+    _listenToGroupImageChanges();
     _loadGroupMembers();
   }
 
@@ -83,14 +86,37 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       }
     }
   }
+void _listenToGroupImageChanges() {
+  FirebaseFirestore.instance
+      .collection('groups')
+      .doc(widget.groupId)
+      .snapshots()
+      .listen((snapshot) async {
+    if (snapshot.exists) {
+      final updatedImage = await groupService.getDecryptedGroupImage(widget.groupId);
+      if (mounted) {
+        setState(() {
+          groupImage = updatedImage;
+        });
+      }
+    }
+  });
+}
 
-  void initialization() {
+  Future<void> initialization() async {
     _createFixedMarker();
     _createFixedSourceMarker();
     user = firebase_auth.FirebaseAuth.instance.currentUser;
     isUserLiveTrackingOn = context.read<TrackingUserOnCubit>().state;
-
-    _trackingSubscription = context.read<TrackingUserOnCubit>().stream.listen((state) {
+   final image = await groupService.getDecryptedGroupImage(widget.groupId);
+  if (mounted) {
+    setState(() {
+      groupImage = image;
+    });
+  }
+    _trackingSubscription = context.read<TrackingUserOnCubit>().stream.listen((
+      state,
+    ) {
       if (mounted) {
         setState(() {
           isUserLiveTrackingOn = state;
@@ -380,22 +406,25 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   }
 
   BoxDecoration _buildGroupAvatarDecoration() {
-    return BoxDecoration(
-      shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 4),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.2),
-          blurRadius: 10,
-          offset: const Offset(0, 5),
-        ),
-      ],
-      image: const DecorationImage(
-        image: AssetImage("assets/images/group.jpg"),
-        fit: BoxFit.cover,
+  return BoxDecoration(
+    shape: BoxShape.circle,
+    border: Border.all(color: Colors.white, width: 4),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.2),
+        blurRadius: 10,
+        offset: const Offset(0, 5),
       ),
-    );
-  }
+    ],
+    image: DecorationImage(
+      image: groupImage != null
+          ? MemoryImage(groupImage!)
+          : const AssetImage("assets/images/group.jpg") as ImageProvider,
+      fit: BoxFit.cover,
+    ),
+  );
+}
+
 
   void _navigateToGroupProfile(BuildContext context) {
     Navigator.pushNamed(

@@ -277,7 +277,7 @@ class _EditUserWidgetState extends State<EditUserWidget> {
 
                   child: Center(
                     child: RoundImageWidget(
-                      name: kDefaultUserImge,
+                      //name: kDefaultUserImge,
                       width: 110.w,
                       height: 110.h,
                     ),

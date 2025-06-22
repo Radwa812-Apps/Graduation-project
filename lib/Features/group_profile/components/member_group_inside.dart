@@ -43,7 +43,7 @@ class MemberGroupInside extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.only(left: 16),
             child: RoundImageWidget(
-              name: kDefaultUserImge,
+              //name: kDefaultUserImge,
               width: 50,
               height: 50,
             ),
