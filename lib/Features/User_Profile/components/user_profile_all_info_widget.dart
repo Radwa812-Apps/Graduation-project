@@ -44,7 +44,7 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
                 if (state is UserInfoLoadedSuccessState) {
                   return Container(
                     width: screenWidth * 0.80.w,
-                    height: screenHeight * 0.64.h,
+                    height: screenHeight * 0.52.h,
                     decoration: BoxDecoration(
                       color: kPrimaryColor1.withOpacity(.20),
                       borderRadius: BorderRadius.circular(20),
@@ -116,7 +116,7 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
                               EditScreen.editScreenKey,
                             );
                           },
-                          size: Size(screenWidth * 0.7.w, screenHeight * .06.h),
+                          size: Size(screenWidth * 0.5.w, screenHeight * .01.h),
                         ),
                       ],
                     ),

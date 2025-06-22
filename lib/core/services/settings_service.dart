@@ -53,11 +53,13 @@ class _SettingsServiceState extends State<SettingsService> {
               .collection('groups')
               .where('members', arrayContains: userId)
               .get();
-
-      setState(() {
+      if(mounted){
+setState(() {
         groupIds = groupSnapshot.docs.map((doc) => doc.id).toList();
         print('Fetched groupIds: $groupIds');
       });
+      }
+      
     } catch (e) {
       print('Error fetching groups: $e');
     }
@@ -96,7 +98,10 @@ class _SettingsServiceState extends State<SettingsService> {
 
   void _handleRiskSwitch() async {
     isAlertActive = await _riskServices.checkRiskSwitch() ?? false;
-    setState(() {});
+    if(mounted){
+setState(() {});
+    }
+    
   }
 
   void _openGroupSelection() async {
@@ -112,10 +117,13 @@ class _SettingsServiceState extends State<SettingsService> {
     );
     log("result...$result");
     if (result != null) {
-      setState(() {
+      if(mounted){
+setState(() {
         selectedGroupIds = result;
         _saveSelectedGroupsToFirebase();
       });
+      }
+      
     }
     // Create a batch to update all selected groups
     WriteBatch batch = FirebaseFirestore.instance.batch();
@@ -132,9 +140,12 @@ class _SettingsServiceState extends State<SettingsService> {
     log("risk activated on firebase");
 
     await batch.commit();
-    setState(() {
+    if(mounted){
+setState(() {
       _handleRiskSwitch();
     });
+    }
+    
     log("open group selection: isAlertactive: $isAlertActive");
   }
 

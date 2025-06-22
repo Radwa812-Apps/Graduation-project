@@ -46,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
                 iconSize: 25.sp,
                 fontSize: 22.sp,
                 onTap: () {
-                  Navigator.pushNamed(context, Map1.map1Key);
+                  Navigator.pushNamed(context, Map1.map1Key,arguments: 'SettingsScreen');
                 },
               ),
               SizedBox(height: spaceBetweenRows),

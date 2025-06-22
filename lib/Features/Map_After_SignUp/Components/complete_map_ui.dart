@@ -8,12 +8,13 @@ import 'custom_container.dart';
 import 'custom_places.dart';
 
 class CompleteMapUi extends StatefulWidget {
-  const CompleteMapUi(
-      {super.key,
-      required this.service,
-      required this.controller,
-      required this.GetSearchedPlace,
-      required this.goToPlace});
+  const CompleteMapUi({
+    super.key,
+    required this.service,
+    required this.controller,
+    required this.GetSearchedPlace,
+    required this.goToPlace,
+  });
 
   final MapServices service;
   final TextEditingController controller;
@@ -27,53 +28,54 @@ class _CompleteMapUiState extends State<CompleteMapUi> {
   String searchQuery = '';
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      CustomContainer(
-        w: 44.w,
-        h: 44.h,
-        child: IconButton(
-          icon: Icon(
-            Icons.location_on_outlined,
-            color: kPrimaryColor1,
-            size: 30.sp,
+    return Row(
+      children: [
+        CustomContainer(
+          w: 44.w,
+          h: 44.h,
+          child: IconButton(
+            icon: Icon(
+              Icons.location_on_outlined,
+              color: kPrimaryColor1,
+              size: 30.sp,
+            ),
+            onPressed: () {
+              _showCustomBottomSheet(context);
+            },
           ),
-          onPressed: () {
-            _showCustomBottomSheet(context);
-          },
         ),
-      ),
-      CustomContainer(
-        w: 230.w,
-        h: 40.h,
-        child: Center(
-          child: AutoCompleteSearch(
-            GetSearchedPlace: widget.GetSearchedPlace,
-            controller: widget.controller,
-            service: widget.service,
+        CustomContainer(
+          w: 230.w,
+          h: 40.h,
+          child: Center(
+            child: AutoCompleteSearch(
+              GetSearchedPlace: widget.GetSearchedPlace,
+              controller: widget.controller,
+              service: widget.service,
+            ),
           ),
-          
         ),
-      ),
-      
 
-      CustomContainer(
-        w: 44.w,
-        h: 44.h,
-        child: IconButton(
-          icon: Icon(
-            Icons.arrow_forward_ios_rounded,
-            color: kPrimaryColor1,
-            size: 25.sp,
+        CustomContainer(
+          w: 44.w,
+          h: 44.h,
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: kPrimaryColor1,
+              size: 25.sp,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            },
           ),
-          onPressed: () {},
         ),
-      )
-    ]);
+      ],
+    );
   }
 
   void _showCustomBottomSheet(BuildContext context) {
-    setState(() {
-    });
+    setState(() {});
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -89,16 +91,18 @@ class _CompleteMapUiState extends State<CompleteMapUi> {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 0.2, sigmaY: 0.2),
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.7),
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -118,11 +122,16 @@ class _CompleteMapUiState extends State<CompleteMapUi> {
                               hintText: 'Search...',
                               border: InputBorder.none,
                               suffixIcon: IconButton(
-                                  onPressed: (() {}),
-                                  icon: const Icon(Icons.search,
-                                      color: Colors.grey)),
+                                onPressed: (() {}),
+                                icon: const Icon(
+                                  Icons.search,
+                                  color: Colors.grey,
+                                ),
+                              ),
                               contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 9, vertical: 12),
+                                horizontal: 9,
+                                vertical: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -142,8 +151,7 @@ class _CompleteMapUiState extends State<CompleteMapUi> {
         );
       },
     ).whenComplete(() {
-      setState(() {
-      });
+      setState(() {});
     });
   }
 }

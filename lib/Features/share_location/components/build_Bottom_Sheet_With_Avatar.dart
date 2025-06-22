@@ -80,10 +80,12 @@ class BuildBottomSheetWithAvatar extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _BuildBottomSheetWithAvatarState createState() => _BuildBottomSheetWithAvatarState();
+  _BuildBottomSheetWithAvatarState createState() =>
+      _BuildBottomSheetWithAvatarState();
 }
 
-class _BuildBottomSheetWithAvatarState extends State<BuildBottomSheetWithAvatar> {
+class _BuildBottomSheetWithAvatarState
+    extends State<BuildBottomSheetWithAvatar> {
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -92,7 +94,7 @@ class _BuildBottomSheetWithAvatarState extends State<BuildBottomSheetWithAvatar>
         Padding(
           padding: const EdgeInsets.only(top: 40),
           child: DraggableScrollableSheet(
-            initialChildSize: 0.53,
+            initialChildSize: 0.05,
             minChildSize: 0.04,
             maxChildSize: 0.85,
             snap: true,
@@ -102,7 +104,9 @@ class _BuildBottomSheetWithAvatarState extends State<BuildBottomSheetWithAvatar>
                 clipBehavior: Clip.hardEdge,
                 decoration: BoxDecoration(
                   color: Theme.of(context).canvasColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(25),
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,

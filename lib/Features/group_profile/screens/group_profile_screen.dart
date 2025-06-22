@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/Home/Home/Screens/home_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:near_me_new_version/Features/auth/Sign_up_and_in/components/custom_back_button.dart';
 import 'package:near_me_new_version/Features/group_profile/components/search_text_widget.dart';
 import 'package:near_me_new_version/Features/group_profile/components/split_between_features.dart';
 import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
@@ -27,7 +28,6 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   bool _isSearchExpanded = false;
   bool isMenuVisible = false;
 
-
   final GroupService _groupService = GroupService();
   Group? _group;
   bool _isDataLoaded = false;
@@ -40,7 +40,6 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   Function(bool)? onToggle;
   late String groupId;
   bool isLiveTrackingOn = false;
-  
 
   @override
   void didChangeDependencies() {
@@ -87,30 +86,30 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
     });
   }
 
- void _showMenu(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (BuildContext dialogContext) {
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: LeaveGroup(
-          groupId: groupId,
-          onSuccess: () {
-            Navigator.of(dialogContext).pop(); 
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              HomeScreen.homeScreenKey,
-              (route) => false,
-            );
-          },
-        ),
-      );
-    },
-  );
-}
+  void _showMenu(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: LeaveGroup(
+            groupId: groupId,
+            onSuccess: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                HomeScreen.homeScreenKey,
+                (route) => false,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 
-/*void _showMenu(BuildContext context) {
+  /*void _showMenu(BuildContext context) {
   final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
   final RenderBox button = context.findRenderObject() as RenderBox;
   final Offset position = button.localToGlobal(Offset.zero, ancestor: overlay);
@@ -208,18 +207,33 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                 );
               },
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 15, bottom: 15),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  color: kPrimaryColor1,
-                  size: 28,
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+            leading:
+            // Row(
+            //   children: [
+            //     SizedBox(width: 10),
+            //     CustomBackButton(
+            //       icon: Icons.arrow_back_ios_outlined,
+            //       ontap: () => Navigator.pop(context),
+            //     ),
+            //   ],
+            // ),
+            Padding(
+              padding: const EdgeInsets.only(left: 18, bottom: 10, top: 5),
+              child: 
+              // CustomBackButton(
+              //   icon: Icons.arrow_back_ios_outlined,
+              //   ontap: () => Navigator.pop(context),
+              // ),
+            IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                color: kPrimaryColor1,
+                size: 28,
               ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
             ),
             actions: [
               Padding(

@@ -26,6 +26,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               paddingTopContainer: 48.h,
               imagePositionTop: -20,
             ),
+            SizedBox(height: 90)
           ],
         ),
       ),

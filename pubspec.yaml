@@ -93,7 +93,8 @@ dependencies:
   hive_flutter: ^1.1.0
   json_annotation: ^4.9.0
   hive_generator: ^2.0.1
-  share_plus: ^7.2.2 #for sharing
+  share_plus: ^11.0.0
+  
 
 dev_dependencies:
   flutter_test:

@@ -31,6 +31,7 @@ class EditScreen extends StatelessWidget {
                   imagePositionTop: 15,
                   paddingTopContainer: 70,
                 ),
+                SizedBox(height: 70)
               ],
             ),
           ],

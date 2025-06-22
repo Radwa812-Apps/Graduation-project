@@ -90,10 +90,13 @@ class _Map1State extends State<Map1> {
 
   Future<void> _loadCustomPlaces() async {
     final customPlaces = await getUserCustomPlaces();
+    if(mounted){
     setState(() {
       this.customPlaces = customPlaces;
       markers = convertToMarkers(customPlaces);
     });
+    }
+    
   }
 
   final Completer<GoogleMapController> _controller =
@@ -137,13 +140,15 @@ class _Map1State extends State<Map1> {
     }
 
     Position position = await Geolocator.getCurrentPosition();
-    setState(() {
+    if(mounted){
+      setState(() {
       _cameraPosition = CameraPosition(
         target: LatLng(position.latitude, position.longitude),
         zoom: 14.4746,
       );
     });
-
+    }
+    
     final GoogleMapController controller = await _controller.future;
     try {
       if (controller != null) {
@@ -159,6 +164,7 @@ class _Map1State extends State<Map1> {
   @override
   Widget build(BuildContext context) {
     final markers = convertToMarkers(customPlaces);
+    final String? comeFrom = ModalRoute.of(context)?.settings.arguments as String?;
     return BlocConsumer<CustomPlacesBloc, CustomPlacesState>(
       listener: (context, state) {
         if (state is AddCustomPlacesSuccess ||
@@ -169,9 +175,12 @@ class _Map1State extends State<Map1> {
             Colors.green.withOpacity(0.8),
             'This Custom Place added successfully 😉',
           );
-          setState(() {
+          if(mounted){
+setState(() {
             _loadCustomPlaces();
           });
+          }
+          
         } else if (state is AddCustomPlacesFailure) {
           isLoad = false;
           AppMessages().sendVerification(
@@ -195,9 +204,12 @@ class _Map1State extends State<Map1> {
                     child: GoogleMap(
                       circles: circles,
                       onTap: (latLng) {
-                        setState(() {
+                        if(mounted){
+setState(() {
                           selectedLatLng = latLng;
                         });
+                        }
+                        
                         _addCustomPlaceBottomSheet(context);
                       },
                       markers: markers,
@@ -222,6 +234,7 @@ class _Map1State extends State<Map1> {
                     goToPlace: goToPlace,
                   ),
                 ),
+                if(comeFrom != 'SettingsScreen'&& comeFrom != "SelectPlaceScreen")
                 Positioned(
                   bottom: 20.h,
                   left: 270.w,
@@ -280,8 +293,8 @@ await onCreatedmapController.animateCamera(
       } catch (e) {
         log("error animate camera" + e.toString());
       }
-
-      setState(() {
+if(mounted){
+setState(() {
         markers.clear();
         markers.add(
           Marker(
@@ -294,6 +307,8 @@ await onCreatedmapController.animateCamera(
           ),
         );
       });
+}
+      
     } else {
       log('no searched place');
     }
@@ -323,8 +338,8 @@ await controller.animateCamera(
     }
 
     controller.showMarkerInfoWindow(MarkerId(docId));
-
-    setState(() {
+if(mounted){
+setState(() {
       circles.clear();
       circles.add(
         Circle(
@@ -337,5 +352,7 @@ await controller.animateCamera(
         ),
       );
     });
+}
+    
   }
 }

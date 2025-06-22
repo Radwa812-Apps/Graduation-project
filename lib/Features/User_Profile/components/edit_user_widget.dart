@@ -66,7 +66,7 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                   padding: EdgeInsets.only(top: widget.paddingTopContainer),
                   child: Container(
                     width: screenWidth * 0.80.w,
-                    height: screenHeight * 0.70.h,
+                    height: screenHeight * 0.52.h,
                     decoration: BoxDecoration(
                       color: kPrimaryColor1.withOpacity(.20),
                       borderRadius: BorderRadius.circular(20),
@@ -249,7 +249,7 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                                         // }
                                       }
                                       : null,
-                              size: Size(100.w, 65.h),
+                              size: Size(100, 65),
                               isEnabled: isChanged,
                             ),
                             SizedBox(width: 70.w),
