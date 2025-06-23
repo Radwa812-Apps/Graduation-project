@@ -34,7 +34,7 @@ class MembersStyleWidget extends StatelessWidget {
                 const Padding(
                   padding: EdgeInsets.only(left: 10, top: 10),
                   child: RoundImageWidget(
-                    name: kDefaultUserImge,
+                    //name: kDefaultUserImge,
                     width: 50,
                     height: 50,
                   ),

@@ -67,7 +67,7 @@ class _RowCheckboxState extends State<RowCheckbox> {
               children: [
                 const SizedBox(width: 10),
                 const RoundImageWidget(
-                  name: kDefaultGroupImge,
+                  //name: kDefaultGroupImge,
                   width: 50,
                   height: 50,
                 ),

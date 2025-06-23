@@ -1,21 +1,24 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Group {
   final String id;
   final String name;
   final String description;
-  final String groupPicture;
+  final String? encryptedGroupPicture;
+  final String? encryptionKey; 
   final Timestamp createdAt;
   final String createdBy;
-  final List<String> members; 
+  final List<String> members;
 
   Group({
     required this.id,
     required this.name,
     required this.description,
-    required this.groupPicture,
     required this.createdAt,
     required this.createdBy,
-    required this.members, 
+    required this.members,
+    this.encryptedGroupPicture,
+    this.encryptionKey,
   });
 
   factory Group.fromJson(Map<String, dynamic> json, String id) {
@@ -23,22 +26,24 @@ class Group {
       id: id,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      groupPicture: json['groupPicture'] ?? 'default_picture.jpg',
+      encryptedGroupPicture: json['encryptedGroupPicture'],
+      encryptionKey: json['encryptionKey'], 
       createdAt: json['createdAt'] ?? Timestamp.now(),
       createdBy: json['createdBy'] ?? '',
-      members: List<String>.from(json['members'] ?? []), 
+      members: List<String>.from(json['members'] ?? []),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': this.id,
-      'name': this.name,
-      'description': this.description,
-      'groupPicture': this.groupPicture,
-      'createdAt': this.createdAt,
-      'createdBy': this.createdBy,
-      'members': this.members, 
+      'id': id,
+      'name': name,
+      'description': description,
+      'encryptedGroupPicture': encryptedGroupPicture,
+      'encryptionKey': encryptionKey, 
+      'createdAt': createdAt,
+      'createdBy': createdBy,
+      'members': members,
     };
   }
 }

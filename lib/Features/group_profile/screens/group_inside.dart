@@ -1,4 +1,6 @@
-/*import 'package:flutter/material.dart';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:near_me_new_version/Features/Private_chat/screens/private_chat_screen.dart';
@@ -25,7 +27,7 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
   String? _createdBy;
   String? _groupId;
   bool _isDataLoaded = false;
-  bool isLiveTrackingOn = false; // Added state for live tracking
+  Uint8List? groupImage;  bool isLiveTrackingOn = false; // Added state for live tracking
 
   final LatLng _initialPosition = const LatLng(30.0444, 31.2357);
 
@@ -44,19 +46,15 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
   }
 
   void _loadGroupData() async {
-    final String? groupId = ModalRoute.of(context)?.settings.arguments as String?;
-    print("Group ID received: $groupId");
-
+    final String? groupId =
+        ModalRoute.of(context)?.settings.arguments as String?;
     if (groupId != null) {
       final group = await _groupService.getGroupById(groupId);
-      print("Group data: ${group?.toJson()}");
 
       if (group != null) {
-        print("Members in group: ${group.members}");
         List<Map<String, dynamic>> membersData = [];
         for (String uid in group.members) {
           Map<String, String>? userData = await _groupService.getUserData(uid);
-          print("User data for UID $uid: $userData");
           if (userData != null) {
             membersData.add({
               'uid': uid,
@@ -67,23 +65,28 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
             });
           }
         }
+
+        final decryptedImage = await _groupService.getDecryptedGroupImage(
+          groupId,
+        );
+
         setState(() {
           _members = membersData;
           _groupName = group.name;
           _createdBy = group.createdBy;
           _groupId = groupId;
-          print("Members list updated: $_members");
+          groupImage = decryptedImage;
         });
-      } else {
-        print("Group not found for ID: $groupId");
       }
-    } else {
-      print("No groupId provided!");
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    ImageProvider imageProvider = const AssetImage(kDefaultGroupImge);
+    if (groupImage != null) {
+      imageProvider = MemoryImage(groupImage!);
+    }
     return Scaffold(
       backgroundColor: kBackgroundColor,
       body: Stack(
@@ -138,19 +141,30 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
                               child: TextField(
                                 decoration: InputDecoration(
                                   hintText: 'Search...',
-                                  hintStyle: TextStyle(color: Colors.grey.withOpacity(0.8)),
-                                  suffixIcon: const Icon(Icons.search, color: kPrimaryColor1),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.withOpacity(0.8),
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.search,
+                                    color: kPrimaryColor1,
+                                  ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20.0),
-                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.5)),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.withOpacity(0.5),
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20.0),
-                                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.5)),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.withOpacity(0.5),
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20.0),
-                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.8)),
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withOpacity(0.8),
+                                    ),
                                   ),
                                   filled: true,
                                   fillColor: Colors.grey[200],
@@ -162,9 +176,24 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
                           ),
                           SizedBox(width: 10.w),
                           InkWell(
-                            onTap: () {
-                              // Notifications logic here
+                            onTap: () async {
+                              final result = await Navigator.pushNamed(
+                                context,
+                                GroupProfileScreen.groupProfileScreenKey,
+                                 arguments: {'id': _groupId},
+                              );
+
+                              if (result == true && _groupId != null) {
+                                final updatedImage = await _groupService
+                                    .getDecryptedGroupImage(_groupId!);
+                                if (mounted) {
+                                  setState(() {
+                                    groupImage = updatedImage;
+                                  });
+                                }
+                              }
                             },
+
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
                               padding: const EdgeInsets.all(8),
@@ -255,9 +284,12 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
                   );
                 }
               }),
-              child: const CircleAvatar(
-                radius: 30,
-                backgroundImage: AssetImage("assets/images/group.jpg"),
+              child: CircleAvatar(
+                radius: 40,
+                backgroundImage:
+                    groupImage != null
+                        ? MemoryImage(groupImage!)
+                        : const AssetImage(kDefaultGroupImge) as ImageProvider,
               ),
             ),
           ),
@@ -289,7 +321,7 @@ class _GroupInsideScreenState extends State<GroupInsideScreen> {
       ),
     );
   }
-}*/
+}
 
 
 
