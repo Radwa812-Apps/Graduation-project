@@ -84,7 +84,7 @@ class SocialAuthWidgetState  extends State<SocialAuthWidget> {
     try {
       if (user != null) {
         UserModel userObject =
-            UserModel.fromUserCredential(userCredential: user);
+            await UserModel.fromUserCredential(userCredential: user);
         FirebaseFirestore firestore = FirebaseFirestore.instance;
         await firestore
             .collection('users')
