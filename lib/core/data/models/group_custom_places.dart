@@ -1,3 +1,5 @@
+///😍😍😍😍😍😍😍😍😍😍😍😍😍
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GroupCustomPlace {
@@ -5,7 +7,7 @@ class GroupCustomPlace {
   final String customPlaceId;
   final String groupId;
   final Timestamp assignedAt;
-
+  
   GroupCustomPlace({
     required this.id,
     required this.customPlaceId,
@@ -13,12 +15,23 @@ class GroupCustomPlace {
     required this.assignedAt,
   });
 
-  factory GroupCustomPlace.fromJson(Map<String, dynamic> json, String id) {
+  // Convert Firestore document to GroupCustomPlace object
+  factory GroupCustomPlace.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return GroupCustomPlace(
-      id: id,
-      customPlaceId: json['customPlaceId'] as String,
-      groupId: json['groupId'] as String,
-      assignedAt: json['assignedAt'] as Timestamp,
+      id: doc.id,
+      customPlaceId: data['customPlaceId'],
+      groupId: data['groupId'],
+      assignedAt: data['assignedAt'],
     );
+  }
+
+  // Convert object to Map for Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'customPlaceId': customPlaceId,
+      'groupId': groupId,
+      'assignedAt': assignedAt,
+    };
   }
 }

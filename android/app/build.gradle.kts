@@ -10,11 +10,12 @@ plugins {
 android {
     
     namespace = "com.example.near_me_new_version"
-    compileSdk =  34
+    compileSdk =  35
     ndkVersion = "28.0.13004108"
     
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -24,11 +25,12 @@ android {
     }
 
     defaultConfig {
+        multiDexEnabled = true
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.near_me_new_version"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 24
+        minSdk = 26
         targetSdk =  33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -47,6 +49,7 @@ flutter {
     source = "../.."
 }
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(platform("com.google.firebase:firebase-bom:32.7.0")) // 🔹 تأكد من استخدام `platform()`
     implementation("com.google.firebase:firebase-analytics") // 🔹 استخدام Kotlin DSL
     implementation("com.google.firebase:firebase-auth")       // ✅ أضيفي دي

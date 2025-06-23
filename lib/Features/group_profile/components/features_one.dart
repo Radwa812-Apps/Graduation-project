@@ -7,8 +7,13 @@ class FeaturesOne extends StatefulWidget {
   final Function(bool)? onToggle;
   final bool isLiveTrackingOn;
   final String id;
-  const FeaturesOne({this.onToggle, super.key, this.isLiveTrackingOn = false, this.id = ''});
-
+ 
+  const FeaturesOne({
+    this.onToggle,
+    super.key,
+    this.isLiveTrackingOn = false,
+    this.id = '',
+  });
   @override
   State<FeaturesOne> createState() => _FeaturesOneState();
 }
@@ -39,9 +44,11 @@ class _FeaturesOneState extends State<FeaturesOne> {
         const SizedBox(height: 20),
         GestureDetector(
           onTap: () {
-            Navigator.pushNamed(
+            Navigator.push(
               context,
-              SelectPlaceScreen.selectPlaceScreenKey,
+              MaterialPageRoute(
+                builder: (context) => SelectPlaceScreen(groupId: widget.id),
+              ),
             );
           },
           child: const IconsTextSwitchWidget(

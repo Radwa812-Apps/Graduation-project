@@ -13,7 +13,11 @@ import 'package:permission_handler/permission_handler.dart';
 
 class GroupService {
   // Create a new group
-  Future<String?> makeNewGroup(String name, String description) async {
+Future<String?> makeNewGroup(
+    String name,
+    String description, {
+    List<String> geofencesIds = const [], // Default empty list
+  }) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print("No user is logged in!");
@@ -29,6 +33,7 @@ class GroupService {
         'createdAt': Timestamp.now(),
         'createdBy': user.uid,
         'members': [user.uid],
+        'geofenceIds': geofencesIds, // Add the custom places list
         'id': '',
       });
 

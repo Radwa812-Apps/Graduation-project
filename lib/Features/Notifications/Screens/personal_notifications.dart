@@ -1,19 +1,73 @@
+///😍😍😍😍😍😍😍😍😍😍😍😍😍
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 import 'package:near_me_new_version/Features/Notifications/Components/date_label.dart';
 import 'package:near_me_new_version/Features/Notifications/Components/header_notifications.dart';
+import 'package:near_me_new_version/Features/Notifications/Components/notification_item.dart';
+import 'package:near_me_new_version/Features/Notifications/Components/personal_notification.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/group_notifications.dart';
-import '../../../core/constants.dart';
-import '../Components/personal_notification.dart';
+import 'package:near_me_new_version/core/constants.dart';
 
-class PersonalNotifications extends StatelessWidget {
+class PersonalNotifications extends StatefulWidget {
+  final String groupId;
+  final String userId;
   final String title;
   static const personalNotificationsKey = '/PersonalNotifications';
 
   const PersonalNotifications({
     Key? key,
+    required this.groupId,
+    required this.userId,
     required this.title,
   }) : super(key: key);
+
+  @override
+  State<PersonalNotifications> createState() => _PersonalNotificationsState();
+}
+
+class _PersonalNotificationsState extends State<PersonalNotifications> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late Stream<QuerySnapshot> _notificationsStream =
+      Stream<QuerySnapshot>.empty();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      // Initialize notifications stream for specific user in specific group
+      _notificationsStream =
+          _firestore
+              .collection('notifications')
+              .where(
+                'userLocationId',
+                isEqualTo: widget.userId,
+              ) // Only this user's notifications
+              .where(
+                'groupsID',
+                arrayContains: widget.groupId,
+              ) // Only in this specific group
+              .orderBy('timeOfLocation', descending: true)
+              .snapshots();
+
+      setState(() {});
+    } catch (e) {
+      debugPrint('Error loading notifications: $e');
+      if (mounted) {
+        setState(() {
+          _notificationsStream = Stream<QuerySnapshot>.empty();
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +75,8 @@ class PersonalNotifications extends StatelessWidget {
       backgroundColor: background,
       body: SingleChildScrollView(
         child: Container(
-          width: 393.w,
-          height: 852.h,
+          width: MediaQuery.of(context).size.width,
+          height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(40),
             color: background,
@@ -30,94 +84,49 @@ class PersonalNotifications extends StatelessWidget {
           child: Column(
             children: [
               HeaderNotifications(
-                title: title,
-                onBackPressed: () {
-                  Navigator.pop(context);
-                }, image: "assets/images/user.jpg",
+                title: widget.title,
+                backArrow: null,
+                showCircleAvatar: false,
+                image: "assets/images/group.jpg",
               ),
-              const DateLabel(dateText: 'Yesterday'),
+              const DateLabel(dateText: 'Recent'),
               Expanded(
-                child: ListView(
-                  shrinkWrap: true,
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                  children: [
-                    PersonalNotificationItem(
-                      message: 'Aliaa just arrived home',
-                      time: '12:00 PM',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const GroupNotifications(
-                              title: 'Aliaa',
-                            ),
-                          ),
-                        );
-                      },
-                      showForwardIcon: false,
-                    ),
-                    PersonalNotificationItem(
-                      message: 'Aliaa on her way to work',
-                      time: '12:00 PM',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const GroupNotifications(
-                              title: 'Aliaa',
-                            ),
-                          ),
-                        );
-                      },
-                      showForwardIcon: false,
-                    ),
-                    PersonalNotificationItem(
-                      message: 'Aliaa at the gym',
-                      time: '12:00 PM',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const GroupNotifications(
-                              title: 'Aliaa',
-                            ),
-                          ),
-                        );
-                      },
-                      showForwardIcon: false,
-                    ),
-                    PersonalNotificationItem(
-                      message: 'Aliaa on her way to Home',
-                      time: '12:00 PM',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const GroupNotifications(
-                              title: 'Aliaa',
-                            ),
-                          ),
-                        );
-                      },
-                      showForwardIcon: false,
-                    ),
-                    PersonalNotificationItem(
-                      message: 'Aliaa At El-Hamed Supermarket',
-                      time: '12:00 PM',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PersonalNotifications(
-                              title: 'Aliaa',
-                            ),
-                          ),
-                        );
-                      },
-                      showForwardIcon: false,
-                    ),
-                  ],
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 10.h,
+                  ),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _notificationsStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final items = <Widget>[];
+                      for (final doc in snapshot.data!.docs) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final messageData = jsonDecode(data['messageLocation']);
+
+                        items.add(_buildNotificationItem(data, messageData));
+                      }
+
+                      return ListView(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        physics: const BouncingScrollPhysics(),
+                        children: items,
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -125,5 +134,53 @@ class PersonalNotifications extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildNotificationItem(
+    Map<String, dynamic> data,
+    Map<String, dynamic> messageData,
+  ) {
+    // return NotificationItem(
+    //   title: widget.title,
+    //   name: messageData['userName'] ?? 'User',
+    //   message:
+    //       '${messageData['userName']} ${messageData['eventType']?.toString().toLowerCase() ?? ''} ${messageData['geofenceName'] ?? ''}',
+    //   time: _formatTime(data['timeOfLocation']),
+    //   onPressed: null, // No navigation for personal notifications
+    //   showForwardIcon: false,
+    // );
+    return PersonalNotificationItem(
+      message:
+          '${messageData['userName']} ${messageData['eventType']?.toString().toLowerCase() ?? ''} ${messageData['geofenceName'] ?? ''}',
+      time: _formatNotificationTime(data['timeOfLocation']),
+      onPressed: null, // No navigation for personal notifications
+      showForwardIcon: false,
+    );
+  }
+
+  String _formatNotificationDate(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    final date = timestamp.toDate();
+    final today = DateTime.now();
+
+    if (date.year == today.year &&
+        date.month == today.month &&
+        date.day == today.day) {
+      return 'Today';
+    }
+
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day) {
+      return 'Yesterday';
+    }
+
+    return DateFormat('MMMM d, y').format(date);
+  }
+
+  String _formatNotificationTime(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    return DateFormat('hh:mm a').format(timestamp.toDate());
   }
 }

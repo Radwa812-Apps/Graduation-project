@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:near_me_new_version/Features/group_profile/screens/tracking.dart';
 import 'package:near_me_new_version/core/constants.dart';
 
 class BuildSearchField extends StatefulWidget {
-
-  const BuildSearchField({
-    Key? key,
-  }) : super(key: key);
+  const BuildSearchField({Key? key}) : super(key: key);
 
   @override
   _buildSearchField createState() => _buildSearchField();
 }
+
 class _buildSearchField extends State<BuildSearchField> {
   late TextEditingController _controller;
 
@@ -43,6 +42,23 @@ class _buildSearchField extends State<BuildSearchField> {
               ),
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
             ),
+          ),
+        ),
+        const SizedBox(width: 8), 
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pushNamed(context, TrackingScreen.trackingMapScreenKey);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          child: const Text(
+            'Tracking',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(width: 10),

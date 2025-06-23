@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants.dart';
+
 class NotificationItem extends StatelessWidget {
   final String? title;
   final String? name;
@@ -23,30 +24,29 @@ class NotificationItem extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: SizedBox(
-       
-        width: 300.w, 
-        height: 86.h,
+        width: 300.w,
+        height: 90.h,
         child: Container(
           margin: EdgeInsets.only(bottom: 10.h),
           padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 8.h),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.w),   
-              topRight: Radius.circular(20.w),  
+              topLeft: Radius.circular(20.w),
+              topRight: Radius.circular(20.w),
               bottomLeft: Radius.circular(10.w),
-              bottomRight: Radius.circular(10.w)
+              bottomRight: Radius.circular(10.w),
             ),
             color: Color.fromRGBO(181, 158, 90, 0.675).withOpacity(0.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2), 
-                blurRadius: 10.0,                      
-                spreadRadius: 2.0,                     
-                offset: Offset(0, 4),                  
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10.0,
+                spreadRadius: 2.0,
+                offset: Offset(0, 4),
               ),
             ],
             border: Border.all(
-              color: Colors.white.withOpacity(0.5), 
+              color: Colors.white.withOpacity(0.5),
               width: 1.0,
             ),
           ),
@@ -68,7 +68,7 @@ class NotificationItem extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    if (title != null) SizedBox(height: 10.h),
+                    if (title != null) SizedBox(height: 1.h),
                     Row(
                       children: [
                         if (name != null)

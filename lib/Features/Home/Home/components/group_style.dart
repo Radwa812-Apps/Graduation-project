@@ -4,10 +4,13 @@ import 'dart:developer';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/group_notifications.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
+import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
+import 'package:near_me_new_version/core/services/location_noti.dart';
 import '../../../../core/constants.dart';
 import '../../../group_profile/screens/group_inside.dart';
 import 'round_image_widget.dart';
@@ -37,7 +40,7 @@ class _GroupStyleState extends State<GroupStyle>
     super.initState();
     _setupAnimation();
     _listenToGroupChanges();
-   // _loadGroupImage();
+    // _loadGroupImage();
   }
 
   void _setupAnimation() {
@@ -66,29 +69,31 @@ class _GroupStyleState extends State<GroupStyle>
     ).animate(_animationController);
   }
 
- void _listenToGroupChanges() {
-  FirebaseFirestore.instance
-      .collection('groups')
-      .doc(widget.groupId)
-      .snapshots()
-      .listen((snapshot) async {
-        if (snapshot.exists) {
-          final triggered = snapshot.data()?['alert_triggered'] ?? false;
+  void _listenToGroupChanges() {
+    FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .snapshots()
+        .listen((snapshot) async {
+          if (snapshot.exists) {
+            final triggered = snapshot.data()?['alert_triggered'] ?? false;
 
-          final updatedImage = await _groupService.getDecryptedGroupImage(widget.groupId!);
+            final updatedImage = await _groupService.getDecryptedGroupImage(
+              widget.groupId!,
+            );
 
-          if (mounted) {
-            setState(() {
-              groupImage = updatedImage;
-              if (triggered && !_isAlerted) {
-                _isAlerted = true;
-                _animationController.forward();
-              }
-            });
+            if (mounted) {
+              setState(() {
+                groupImage = updatedImage;
+                if (triggered && !_isAlerted) {
+                  _isAlerted = true;
+                  _animationController.forward();
+                }
+              });
+            }
           }
-        }
-      });
-}
+        });
+  }
 
   void _loadGroupImage() async {
     if (widget.groupId != null) {
@@ -163,8 +168,7 @@ class _GroupStyleState extends State<GroupStyle>
                         },
                         child: RoundImageWidget(
                           imageBytes: groupImage,
-                          assetImagePath:
-                              'assets/images/group.jpg', 
+                          assetImagePath: 'assets/images/group.jpg',
                           width: screenWidth * .14,
                           height: screenHeight * .07,
                         ),
@@ -183,18 +187,30 @@ class _GroupStyleState extends State<GroupStyle>
                         ),
                       ),
                       SizedBox(width: 8.w),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                            context,
-                            GroupNotifications.groupNotificationsKey,
-                            arguments: widget.groupName,
-                          );
-                        },
-                        icon: Icon(
-                          Icons.notifications_outlined,
-                          size: 30.sp,
-                          color: kPrimaryColor1,
+                      BlocProvider(
+                        create:
+                            (context) => NotificationBloc(
+                              repository: NotificationRepository(
+                                firestore: FirebaseFirestore.instance,
+                              ),
+                            ),
+                        child: IconButton(
+                          onPressed: () {
+                            Navigator.pushNamed(
+                              context,
+                              GroupNotifications.groupNotificationsKey,
+                              arguments: {
+                                'groupName': widget.groupName,
+                                'groupId':
+                                   widget.groupId , 
+                              },
+                            );
+                          },
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            size: 30.sp,
+                            color: kPrimaryColor1,
+                          ),
                         ),
                       ),
                     ],

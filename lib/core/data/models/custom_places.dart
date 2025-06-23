@@ -1,3 +1,7 @@
+///😍😍😍😍😍😍😍😍😍😍😍😍😍
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class CustomPlace {
   final String id;
   // final String userId;
@@ -16,16 +20,13 @@ class CustomPlace {
     // required this.radius,
     // required this.notificationType,
   });
-
-  factory CustomPlace.fromJson( json, String id) {
+  factory CustomPlace.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
     return CustomPlace(
-      id: id,
-      // userId: json['userId'] as String,
-      name: json['name'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      // radius: (json['radius'] as num).toDouble(),
-      // notificationType: json['notificationType'] as String,
+      id: doc.id,
+      name: data['name'] ?? 'No Name',
+      latitude: (data['latitude'] as num).toDouble(),
+      longitude: (data['longitude'] as num).toDouble(),
     );
   }
 }

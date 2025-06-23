@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/components/custom_back_button.dart';
@@ -15,10 +16,8 @@ class SignUpVerificationEmailPage extends StatefulWidget {
       '/SignUpVerificationEmailPage';
 
   final Services services;
-  const SignUpVerificationEmailPage({
-    Key? key,
-    required this.services,
-  }) : super(key: key);
+  const SignUpVerificationEmailPage({Key? key, required this.services})
+    : super(key: key);
 
   @override
   _SignUpVerificationEmailPageState createState() =>
@@ -44,12 +43,10 @@ class _SignUpVerificationEmailPageState
       duration: const Duration(seconds: 2),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.9,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _controller.repeat(reverse: true);
 
@@ -63,8 +60,11 @@ class _SignUpVerificationEmailPageState
     bool isConnected = await checkConnection();
     if (!isConnected) {
       if (mounted) {
-        AppMessages().sendVerification(context, Colors.red.withOpacity(0.8),
-            'No internet connection. Please check your network.');
+        AppMessages().sendVerification(
+          context,
+          Colors.red.withOpacity(0.8),
+          'No internet connection. Please check your network.',
+        );
       }
       return;
     }
@@ -86,8 +86,11 @@ class _SignUpVerificationEmailPageState
     {
       if (!isConnected) {
         // ignore: use_build_context_synchronously
-        AppMessages().sendVerification(context, Colors.red.withOpacity(0.8),
-            'No internet connection. Please check your network.');
+        AppMessages().sendVerification(
+          context,
+          Colors.red.withOpacity(0.8),
+          'No internet connection. Please check your network.',
+        );
         return;
       }
     }
@@ -98,8 +101,11 @@ class _SignUpVerificationEmailPageState
     });
     if (isEmailVerified) {
       // ignore: use_build_context_synchronously
-      AppMessages().sendVerification(context, Colors.green.withOpacity(0.8),
-          'Congratulations\nYour account has been created! Verify email to continue.');
+      AppMessages().sendVerification(
+        context,
+        Colors.green.withOpacity(0.8),
+        'Congratulations\nYour account has been created! Verify email to continue.',
+      );
 
       timer?.cancel();
       final Map<String, dynamic> arguments =
@@ -111,7 +117,7 @@ class _SignUpVerificationEmailPageState
 
       final String fname = arguments['fname'] as String;
       final String lname = arguments['lname'] as String;
-
+      final fcmToken = await FirebaseMessaging.instance.getToken();
       await widget.services.addUser(
         fName: fname,
         lName: lname,
@@ -120,6 +126,7 @@ class _SignUpVerificationEmailPageState
         dateOfBirth: dateOfBirth,
         profilPicture: 'assets/images/user.jpg',
         role: 'Not admin',
+        fcmToken: fcmToken ?? '',
       );
     }
   }
@@ -129,8 +136,11 @@ class _SignUpVerificationEmailPageState
     {
       if (!isConnected) {
         // ignore: use_build_context_synchronously
-        AppMessages().sendVerification(context, Colors.red.withOpacity(0.8),
-            'No internet connection. Please check your network.');
+        AppMessages().sendVerification(
+          context,
+          Colors.red.withOpacity(0.8),
+          'No internet connection. Please check your network.',
+        );
         return;
       }
     }
@@ -139,15 +149,21 @@ class _SignUpVerificationEmailPageState
       final user = FirebaseAuth.instance.currentUser!;
       await user.sendEmailVerification();
       // ignore: use_build_context_synchronously
-      AppMessages().sendVerification(context, Colors.orange.withOpacity(0.8),
-          "We've sent a confirmation email to your registered email address. Please check your inbox to verify your account and get started!");
+      AppMessages().sendVerification(
+        context,
+        Colors.orange.withOpacity(0.8),
+        "We've sent a confirmation email to your registered email address. Please check your inbox to verify your account and get started!",
+      );
       setState(() => canResentEmail = false);
       await Future.delayed(const Duration(seconds: 5));
       setState(() => canResentEmail = true);
     } catch (e) {
       // ignore: use_build_context_synchronously
-      AppMessages()
-          .sendVerification(context, Colors.red.withOpacity(0.8), e.toString());
+      AppMessages().sendVerification(
+        context,
+        Colors.red.withOpacity(0.8),
+        e.toString(),
+      );
     }
   }
 
@@ -156,83 +172,87 @@ class _SignUpVerificationEmailPageState
     return isEmailVerified
         ? SuccessPage()
         : Scaffold(
-            body: Stack(
-              children: [
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _scaleAnimation.value,
-                            child: Image.network(
-                              'https://img.freepik.com/free-vector/new-message-concept-illustration_114360-6007.jpg',
-                              height: 350.h,
-                              width: 350.w,
-                            ),
-                          );
-                        },
+          body: Stack(
+            children: [
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: _scaleAnimation.value,
+                          child: Image.network(
+                            'https://img.freepik.com/free-vector/new-message-concept-illustration_114360-6007.jpg',
+                            height: 350.h,
+                            width: 350.w,
+                          ),
+                        );
+                      },
+                    ),
+                    SizedBox(height: 20.h),
+                    Text(
+                      'Verify your email address!',
+                      style: TextStyle(
+                        fontSize: 25.sp,
+                        fontWeight: FontWeight.bold,
                       ),
-                      SizedBox(height: 20.h),
-                      Text(
-                        'Verify your email address!',
-                        style: TextStyle(
-                            fontSize: 25.sp, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 30.w),
+                      child: const Text(
+                        'A Verification email has been sent to your email ,  Please check your inbox to verify your account and get started!',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        maxLines: 3,
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 20.h),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 30.w),
-                        child: const Text(
-                          'A Verification email has been sent to your email ,  Please check your inbox to verify your account and get started!',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                          maxLines: 3,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      SizedBox(height: 30.h),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kSpecialColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            minimumSize: Size(double.infinity, 50.h),
+                    ),
+                    SizedBox(height: 30.h),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kSpecialColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                          onPressed: () {
-                            if (isConnected) {
-                              canResentEmail ? sendVerification() : null;
-                            } else {
-                              AppMessages().sendVerification(
-                                context,
-                                Colors.red.withOpacity(0.8),
-                                "No internet connection. Please check your network settings.",
-                              );
-                            }
-                          },
-                          child: Text(
-                            'Resend Email',
-                            style: TextStyle(
-                                fontSize: 20.sp, fontWeight: FontWeight.bold),
+                          minimumSize: Size(double.infinity, 50.h),
+                        ),
+                        onPressed: () {
+                          if (isConnected) {
+                            canResentEmail ? sendVerification() : null;
+                          } else {
+                            AppMessages().sendVerification(
+                              context,
+                              Colors.red.withOpacity(0.8),
+                              "No internet connection. Please check your network settings.",
+                            );
+                          }
+                        },
+                        child: Text(
+                          'Resend Email',
+                          style: TextStyle(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                CustomBackButton(
-                  ontap: () {
-                    //  FirebaseAuth.instance.signOut();
-                    Navigator.pushNamed(context, SignInScreen.signInScreenKey);
-                  },
-                  icon: Icons.close,
-                ),
-              ],
-            ),
-          );
+              ),
+              CustomBackButton(
+                ontap: () {
+                  //  FirebaseAuth.instance.signOut();
+                  Navigator.pushNamed(context, SignInScreen.signInScreenKey);
+                },
+                icon: Icons.close,
+              ),
+            ],
+          ),
+        );
   }
 }

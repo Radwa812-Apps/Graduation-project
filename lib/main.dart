@@ -2,8 +2,10 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/general_notifications.dart';
 import 'package:near_me_new_version/Features/Settings/components/risk_block.dart';
@@ -20,14 +22,17 @@ import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/signUp_
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_up_screen.dart';
 import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart' as live_location_map;
+import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart'
+    as live_location_map;
 import 'package:near_me_new_version/Features/group_profile/screens/search_member.dart';
+import 'package:near_me_new_version/Features/group_profile/screens/tracking.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/Features/share_location/screens/test.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
+import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/bloc_singletons.dart';
 import 'package:near_me_new_version/core/data/bloc/custom_places/custom_places_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
@@ -37,6 +42,7 @@ import 'package:near_me_new_version/core/services/Auth_functions.dart';
 import 'package:near_me_new_version/core/services/chat_services.dart'
     show ChatService;
 import 'package:near_me_new_version/core/services/cloudinary_service.dart';
+import 'package:near_me_new_version/core/services/location_noti.dart';
 import 'package:near_me_new_version/core/services/risk_services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -55,7 +61,8 @@ import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
 import 'package:flutter/services.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart'
- as live_location;
+    as live_location;
+
 const platform = MethodChannel(
   'com.example.near_me_new_version/floating_button',
 );
@@ -66,7 +73,15 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   // debugPaintSizeEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp();
+  await Firebase.initializeApp();
+
+  final notificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  await notificationsPlugin.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+  );
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
@@ -80,7 +95,7 @@ void main() async {
     ),
   );*/
   const encryptionKey = 'your-256-bit-super-secret-key!!';
-
+  FirebaseMessaging.instance.getToken().then(print);
   runApp(
     ScreenUtilInit(
       builder: (BuildContext context, Widget? child) {
@@ -122,7 +137,7 @@ void main() async {
   );
   platform.setMethodCallHandler((call) async {
     if (call.method == 'onFloatingButtonPressed') {
-       print('Floating button pressed from Android!');
+      print('Floating button pressed from Android!');
       _riskServices.handleRiskbutton();
     }
   });
@@ -174,11 +189,21 @@ class _NearMeAppState extends State<NearMeApp> {
                 create: (context) => ProfileBloc(),
                 child: UserProfileScreen(),
               ),
+              Provider(
+                create:
+                    (context) => NotificationBloc(
+                      repository: NotificationRepository(
+                        firestore: FirebaseFirestore.instance,
+                      ),
+                    ),
+                child: Container(),
+              ),
             ],
             child: MaterialApp(
               debugShowCheckedModeBanner: false,
               navigatorObservers: [routeObserver],
-              initialRoute: SplashPage.splashPageKey,  navigatorKey: navigatorKey,
+              initialRoute: SplashPage.splashPageKey,
+              navigatorKey: navigatorKey,
               routes: {
                 '/': (context) => HomeScreen(),
                 SplashPage.splashPageKey: (context) => const SplashPage(),
@@ -222,34 +247,43 @@ class _NearMeAppState extends State<NearMeApp> {
                 },
                 EditScreen.editScreenKey: (context) => EditScreen(),
                 GroupNotifications.groupNotificationsKey:
-                    (context) => const GroupNotifications(title: 'Alex Trip'),
+                    (context) => const GroupNotifications(
+                      title: 'Alex Trip',
+                      groupId: '',
+                    ),
                 PersonalNotifications.personalNotificationsKey:
                     (context) => PermissionLocation(),
-               PrivateChatScreen.privateChatScreenKey: (context) {
-              final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-              return PrivateChatScreen(
-                recipientId: args?['recipientId'] ?? '',
-                recipientName: args?['recipientName'] ?? 'Unknown',
-                recipientImage: args?['recipientImage'],
-              );
-            },
+                PrivateChatScreen.privateChatScreenKey: (context) {
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, dynamic>?;
+                  return PrivateChatScreen(
+                    recipientId: args?['recipientId'] ?? '',
+                    recipientName: args?['recipientName'] ?? 'Unknown',
+                    recipientImage: args?['recipientImage'],
+                  );
+                },
                 SearchMember.searchMemberKey: (context) => const SearchMember(),
-                SelectPlaceScreen.selectPlaceScreenKey:
-                    ((context) => const SelectPlaceScreen()),
+                SelectPlaceScreen.routeName:
+                    ((context) => const SelectPlaceScreen(groupId: '')),
                 MediaScreen.mediaScreenKey: (context) => const MediaScreen(),
                 PasswordResetPage.passwordResetPageKey:
                     (context) => const PasswordResetPage(),
-                
+
                 OrderTrackingPage.orderTrackingScreenKey: (context) {
-  final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-  return OrderTrackingPage(
-    groupId: args['groupId'] ?? '',
-    groupName: args['groupName'] ?? '',
-  );
-},
+                  final args =
+                      ModalRoute.of(context)!.settings.arguments
+                          as Map<String, String>;
+                  return OrderTrackingPage(
+                    groupId: args['groupId'] ?? '',
+                    groupName: args['groupName'] ?? '',
+                  );
+                },
 
                 CustomMarkerMap.customMarkerMapScreenKey:
                     (context) => CustomMarkerMap(),
+                TrackingScreen.trackingMapScreenKey:
+                    (context) => TrackingMapScreen(),
               },
             ),
           );
