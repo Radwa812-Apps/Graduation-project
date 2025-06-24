@@ -9,6 +9,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,9 +21,13 @@ import 'package:native_geofence/src/typedefs.dart';
 import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
 import 'package:near_me_new_version/core/data/models/notification.dart';
 import 'package:near_me_new_version/core/services/location_noti.dart';
+import 'package:near_me_new_version/core/services/notification_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+import '../../../core/services/get_service_key.dart';
+import '../../../core/services/send_notification_service.dart';
 
 class TrackingScreen extends StatelessWidget {
   const TrackingScreen({super.key});
@@ -44,6 +50,8 @@ class TrackingMapScreen extends StatefulWidget {
 }
 
 class _TrackingMapScreenState extends State<TrackingMapScreen> {
+  NotificationService notificationService = NotificationService();
+
   // save notification to firestore
   late NotificationBloc _notificationBloc;
   final NotificationRepository _notificationRepository = NotificationRepository(
@@ -74,6 +82,11 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   @override
   void initState() {
     super.initState();
+    notificationService.requestNotificationPermission();
+   notificationService.getDeviceToken();
+
+
+
     _notificationBloc = NotificationBloc(repository: _notificationRepository);
     _initNotifications();
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -96,7 +109,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       await _checkLocationPermissions();
       await _loadActiveGeofences(userId);
     } catch (e) {
-      debugPrint('Error initializing geofencing: $e');
+      print('Error initializing geofencing: $e');
     }
   }
 
@@ -161,7 +174,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading geofences: $e');
+      print('Error loading geofences: $e');
     }
   }
 
@@ -264,12 +277,10 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     LatLng newLocation, {
     bool isAutoTracking = false,
   }) async {
-    debugPrint(
-      'Active Geofences: ${activeGeofences.map((g) => g.id).toList()}',
-    );
+    print('Active Geofences: ${activeGeofences.map((g) => g.id).toList()}');
     if (activeGeofences.isEmpty) return;
-    debugPrint('===== New Location Update =====');
-    debugPrint(
+    print('===== New Location Update =====');
+    print(
       'Current Position: ${newLocation.latitude}, ${newLocation.longitude}\n',
     );
 
@@ -284,7 +295,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         newLocation.longitude,
       );
 
-      debugPrint('''
+      print('''
     Geofence ID: ${geofence.id}
     Geofence Center: ${geofence.location.latitude}, ${geofence.location.longitude}
     Distance: ${distance.toStringAsFixed(2)} meters
@@ -295,7 +306,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       final previousState = _geofenceStates[geofence.id] ?? false;
 
       if (isInside != previousState) {
-        debugPrint('STATE CHANGED: ${isInside ? 'ENTER' : 'EXIT'}');
+        print('STATE CHANGED: ${isInside ? 'ENTER' : 'EXIT'}');
       }
       if (isInside) {
         enteredGeofenceId = geofence.id;
@@ -326,7 +337,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
           'Still inside geofence ${geofence.id}',
         );
       }
-      debugPrint('''
+      print('''
         Checking Geofence: ${geofence.id}
         Distance: $distance meters
         IsInside: $isInside
@@ -368,9 +379,66 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     );
   }
 
+static Future<void> _sendPushNotifications({
+  required List<String> recipients,
+  required String title,
+  required String body,
+}) async {
+  try {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      print('No internet connection');
+      return;
+    }
 
+    print('🦕 Preparing to notify ${recipients.length} recipients');
 
+    // Get valid FCM tokens
+    final tokens = await _fetchValidFcmTokens(recipients);
 
+    if (tokens.isEmpty) {
+      print('🦕 No valid device tokens found');
+      return;
+    }
+
+    // Send in batches (FCM limit: 500 per request)
+    const batchSize = 500;
+    for (var i = 0; i < tokens.length; i += batchSize) {
+      final batch = tokens.sublist(
+        i,
+        i + batchSize > tokens.length ? tokens.length : i + batchSize,
+      );
+
+      print('🦕 Sending to batch ${i ~/ batchSize + 1} (${batch.length} devices)');
+
+      int attempts = 0;
+      bool success = false;
+      while (attempts < 3 && !success) {
+        try {
+          // Send to each token in the batch
+          for (final token in batch) {
+            await SendNotificationService.sendNotificationUsingApi(
+              fcmToken: token,
+              title: title,
+              body: body,
+              data: {
+                'type': 'geofence_update',
+                'event_timestamp': DateTime.now().toIso8601String(),
+              },
+            );
+          }
+          success = true;
+        } catch (e) {
+          attempts++;
+          print('Attempt $attempts failed: $e');
+          await Future.delayed(Duration(seconds: 2));
+        }
+      }
+    }
+  } catch (e) {
+    print('🦕 Notification send error: $e');
+  }
+}
   @pragma('vm:entry-point')
   static Future<void> geofenceTriggered(GeofenceCallbackParams params) async {
     try {
@@ -384,7 +452,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       final userId = currentUser?.uid;
 
       if (userId == null) {
-        debugPrint('No authenticated user found');
+        print('No authenticated user found');
         return;
       }
 
@@ -399,10 +467,10 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
 
         if (userDoc.exists) {
           firstName = userDoc.get('fName') ?? 'User';
-          //   debugPrint('Retrieved user name: $firstName');
+          //   print('Retrieved user name: $firstName');
         }
       } catch (e) {
-        debugPrint('Error fetching user data: $e');
+        print('Error fetching user data: $e');
       }
 
       // Find relevant groups
@@ -418,7 +486,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       );
 
       final matchingGroupIds = groupsQuery.docs.map((doc) => doc.id).toList();
-
 
       // Collect unique members
       final Set<String> allMembers = {};
@@ -445,7 +512,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       final repository = NotificationRepository(
         firestore: FirebaseFirestore.instance,
       );
-
 
       final currentUserNotification = Notifications(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -500,111 +566,11 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Geofence processing error: $e');
+      print('Geofence processing error: $e');
     }
   }
-
-  static Future<void> _sendPushNotifications({
-    required List<String> recipients,
-    required String title,
-    required String body,
-  }) async {
-    try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        debugPrint('No internet connection');
-        return;
-      }
-
-
-      
-      print(
-        '🦕🦕🦕🦕🦕🦕🦕🦕🦕Preparing to notify ${recipients.length} recipients',
-      );
-
-      // Get valid FCM tokens
-      final tokens = await _fetchValidFcmTokens(recipients);
-
-      if (tokens.isEmpty) {
-        print('🦕🦕🦕🦕🦕🦕🦕🦕🦕No valid device tokens found');
-        return;
-      }
-
-      // Send in batches (FCM limit: 500 per request)
-      const batchSize = 500;
-      for (var i = 0; i < tokens.length; i += batchSize) {
-        final batch = tokens.sublist(
-          i,
-          i + batchSize > tokens.length ? tokens.length : i + batchSize,
-        );
-
-        print(
-          '🦕🦕🦕🦕🦕🦕🦕🦕🦕Sending to batch ${i ~/ batchSize + 1} (${batch.length} devices)',
-        );
-
-        final response = await http.post(
-          Uri.parse('https://fcm.googleapis.com/fcm/send'),
-          headers: {
-            'Content-Type': 'application/json',
-            // 'Authorization': 'key=${await _getSecureServerKey()}',
-            'Authorization': 'key=AIzaSyBirQIZZvB-hHTtT20gJPxDXUqIEfcOK7s',
-          },
-          body: jsonEncode({
-            'registration_ids': batch,
-            'notification': {
-              'title': title,
-              'body': body,
-              'sound': 'default',
-              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-            },
-            'priority': 'high',
-            'data': {
-              'type': 'geofence_update',
-              'event_timestamp': DateTime.now().toIso8601String(),
-            },
-          }),
-        );
-
-        int attempts = 0;
-        bool success = false;
-        while (attempts < 3 && !success) {
-          try {
-            final response = await http.post(
-              Uri.parse('https://fcm.googleapis.com/fcm/send'),
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'key=AIzaSyBirQIZZvB-hHTtT20gJPxDXUqIEfcOK7s', 
-              },
-              body: jsonEncode({
-                'registration_ids': batch,
-                'notification': {
-                  'title': title,
-                  'body': body,
-                  'sound': 'default',
-                  'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                },
-                'data': {
-                  'type': 'geofence_update',
-                  'event_timestamp': DateTime.now().toIso8601String(),
-                },
-              }),
-            );
-            _validateFcmResponse(response);
-            success = true;
-          } catch (e) {
-            attempts++;
-            debugPrint('Attempt $attempts failed: $e');
-            await Future.delayed(Duration(seconds: 2));
-          }
-        }
-      }
-    } catch (e) {
-      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Notification send error: $e');
-    }
-  }
-
-  static Future<List<String>> _fetchValidFcmTokens(List<String> userIds) async {
-    final validTokens = <String>[];
+ static Future<List<String>> _fetchValidFcmTokens(List<String> userIds) async {
+    final List<String> validTokens = [];
 
     for (final userId in userIds) {
       try {
@@ -616,68 +582,121 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
 
         if (userDoc.exists) {
           final token = userDoc.get('fcmToken')?.toString();
+
           if (token != null && token.isNotEmpty && token != 'null') {
             validTokens.add(token);
           } else {
             print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Invalid token for user $userId');
+
+            // إذا كان الـ token غير صالح، يمكنك توليد واحد جديد وتحديثه
+            final newToken = await FirebaseMessaging.instance.getToken();
+            if (newToken != null) {
+              await _updateUserFcmToken(userId, newToken);
+              validTokens.add(newToken);
+              print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Generated new token for user $userId');
+            }
           }
         }
       } catch (e) {
-        print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Error fetching token for $userId: $e');
+        print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Error fetching token for user $userId: $e');
       }
     }
 
     return validTokens;
   }
 
-  static Future<String> _getSecureServerKey() async {
+  static Future<void> _updateUserFcmToken(
+    String userId,
+    String newToken,
+  ) async {
     try {
-      // Call a Cloud Function that returns the key
-      final result =
-          await FirebaseFunctions.instance
-              .httpsCallable('getFcmServerKey')
-              .call();
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'fcmToken': newToken,
+      });
+      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Updated FCM token for user $userId');
+    } catch (e) {
+      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Error updating FCM token: $e');
+    }
+  }
+ 
+  static void _validateFcmResponse(http.Response response) {
+    try {
+      // تسجيل البيانات الأساسية للاستجابة
+      print('🛠️🛠️🛠️🛠️🛠️🛠️ Raw FCM Response:');
+      print('Status Code: ${response.statusCode}');
+      print('Headers: ${response.headers}');
+      print('Body: ${response.body}');
 
-      final serverKey = result.data as String;
+      if (response.statusCode != 200) {
+        final errorDetails = {
+          'status': response.statusCode,
+          'headers': response.headers,
+          'body': response.body,
+          'timestamp': DateTime.now().toIso8601String(),
+        };
 
-      if (serverKey.isEmpty) {
-        throw Exception('Invalid server key received from Cloud Function');
+        print('❌❌❌❌❌❌ FCM Error Details:');
+        print(jsonEncode(errorDetails));
+
+        FirebaseCrashlytics.instance.log(
+          'FCM API Error: ${response.statusCode} - ${response.body}',
+        );
+
+        throw Exception(
+          'FCM delivery failed with status ${response.statusCode}',
+        );
       }
 
-      return serverKey;
-    } catch (e) {
-      debugPrint('Error retrieving server key from Cloud Function: $e');
-      throw Exception('Failed to retrieve server key from backend');
+      final responseData = jsonDecode(response.body);
+      print('🔍🔍🔍🔍🔍🔍 Parsed FCM Response:');
+      print('Success: ${responseData['success']}');
+      print('Failure: ${responseData['failure']}');
+      print('Message ID: ${responseData['multicast_id']}');
+
+      if (responseData['failure'] > 0) {
+        final errors =
+            responseData['results']?.where((r) => r['error'] != null)?.toList();
+
+        print('⚠️⚠️⚠️⚠️⚠️⚠️ Failed Deliveries Details:');
+        errors?.forEach((error) {
+          print('Error: ${error['error']}');
+        });
+
+        FirebaseCrashlytics.instance.recordError(
+          Exception('Partial FCM delivery failure'),
+          StackTrace.current,
+          reason: '''
+Failed for ${responseData['failure']} tokens.
+Errors: ${errors?.map((e) => e['error'])?.join(', ')}
+''',
+        );
+      }
+    } catch (e, stack) {
+      print('💥💥💥💥💥💥 Error processing FCM response: $e');
+      print(stack.toString());
+      FirebaseCrashlytics.instance.recordError(e, stack);
+      rethrow;
     }
   }
 
-  static void _validateFcmResponse(http.Response response) {
-    if (response.statusCode != 200) {
-      final errorDetails = {
-        'status': response.statusCode,
-        'body': response.body,
-        'time': DateTime.now().toIso8601String(),
-      };
-      debugPrint('FCM Error: ${jsonEncode(errorDetails)}');
-      throw Exception('FCM delivery failed');
-    }
 
-    final responseData = jsonDecode(response.body);
-    if (responseData['failure'] > 0) {
-      FirebaseCrashlytics.instance.recordError(
-        Exception('Partial FCM delivery failure'),
-        StackTrace.current,
-        reason: 'Failed for ${responseData['failure']} tokens',
-      );
-    }
-  }
+
+
+
+
+
+
+
+
+
+
 
   static String _extractPlaceNameFromGeofenceId(String geofenceId) {
     try {
       final parts = geofenceId.split('_');
       return parts.length >= 3 ? parts[2] : geofenceId;
     } catch (e) {
-      debugPrint('Geofence ID parsing error: $e');
+      print('Geofence ID parsing error: $e');
       return geofenceId;
     }
   }
@@ -697,7 +716,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         }
       }
     } catch (e) {
-      debugPrint('Error in _geofenceTriggered: $e');
+      print('Error in _geofenceTriggered: $e');
     }
   }
 

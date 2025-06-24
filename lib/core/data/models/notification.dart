@@ -18,6 +18,28 @@ class Notifications {
     required this.timeOfLocation,
   });
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'userLocationId': userLocationId,
+      'type': type,
+      'messageLocation': messageLocation,
+      'timeOfLocation': timeOfLocation,
+      'groupsID': groupsID,
+    };
+  }
+
+  factory Notifications.fromMap(Map<String, dynamic> map) {
+    return Notifications(
+      id: map['id'],
+      userLocationId: map['userLocationId'],
+      type: map['type'],
+      messageLocation: map['messageLocation'],
+      timeOfLocation: map['timeOfLocation'],
+      groupsID: List<String>.from(map['groupsID']),
+    );
+  }
+
   factory Notifications.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map;
 
@@ -65,7 +87,6 @@ class Notifications {
       'type': type,
       'messageLocation': messageLocation,
       'timeOfLocation': timeOfLocation,
-      
     };
   }
 }
