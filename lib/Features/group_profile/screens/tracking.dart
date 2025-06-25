@@ -384,18 +384,17 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     required String body,
   }) async {
     try {
-
-
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
         print('No internet connection');
         return;
       }
- // Remove duplicates
-    final uniqueRecipients = recipients.toSet().toList();
-    
-    print('🦕 Preparing to notify ${uniqueRecipients.length} unique recipients');
+      // Remove duplicates
+      final uniqueRecipients = recipients.toSet().toList();
 
+      print(
+        '🦕 Preparing to notify ${uniqueRecipients.length} unique recipients',
+      );
 
       print('🦕 Preparing to notify ${recipients.length} recipients');
 
@@ -514,7 +513,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         print(
           '👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻Group ${groupDoc.id} has ${members.length} members',
         );
-        
       }
 
       // Exclude current user
@@ -795,12 +793,19 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
                       itemCount: activeGeofences.length,
                       itemBuilder: (context, index) {
                         final geofence = activeGeofences[index];
+                        final geofenceName = _extractPlaceNameFromGeofenceId(
+                          geofence.id,
+                        );
                         return ListTile(
-                          title: Text('Geofence ${index + 1} (${geofence.id})'),
+                          title: Text(geofenceName),
                           subtitle: Text(
-                            'Lat: ${geofence.location.latitude.toStringAsFixed(4)}\n'
-                            'Lng: ${geofence.location.longitude.toStringAsFixed(4)}\n'
+                            'Lat: ${geofence.location.latitude.toStringAsFixed(4)}  ,   '
+                            'Lng: ${geofence.location.longitude.toStringAsFixed(4)}  ,  '
                             'Radius: ${geofence.radiusMeters}m',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
                           ),
                           onTap: () {
                             _moveCameraToGeofence(geofence);

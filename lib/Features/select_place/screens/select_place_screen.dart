@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants.dart';
+import '../../Map_After_SignUp/Screens/map1.dart';
 
 class Geofence {
   final String id;
@@ -51,6 +52,7 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
   final _temporarySelection = <String, bool>{};
   String _searchQuery = '';
   List<Geofence> _allGeofences = [];
+  bool _isLoading = true;
 
   final _placeIcons = const [
     Icons.home,
@@ -91,20 +93,50 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
     final userId = _auth.currentUser?.uid;
     if (userId == null) return;
 
-    final snapshot =
-        await FirebaseFirestore.instance
-            .collection('userGeofences')
-            .doc(userId)
-            .collection('geofences')
-            .get();
+    try {
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('userGeofences')
+              .doc(userId)
+              .collection('geofences')
+              .get();
 
-    final geofences =
-        snapshot.docs.map((doc) => Geofence.fromFirestore(doc)).toList();
+      final geofences =
+          snapshot.docs.map((doc) => Geofence.fromFirestore(doc)).toList();
 
-    setState(() {
-      _allGeofences = geofences;
-    });
+      setState(() {
+        _allGeofences = geofences;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading geofences: ${e.toString()}')),
+      );
+    }
   }
+
+  // Future<void> _loadUserGeofences() async {
+  //   final userId = _auth.currentUser?.uid;
+  //   if (userId == null) return;
+
+  //   final snapshot =
+  //       await FirebaseFirestore.instance
+  //           .collection('userGeofences')
+  //           .doc(userId)
+  //           .collection('geofences')
+  //           .get();
+
+  //   final geofences =
+  //       snapshot.docs.map((doc) => Geofence.fromFirestore(doc)).toList();
+
+  //   setState(() {
+  //     _allGeofences = geofences;
+  //     _isLoading = false;
+  //   });
+  // }
 
   // void _toggleGeofenceSelection(String geofenceId) {
   //   setState(() {
@@ -217,16 +249,46 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
   }
 
   Widget _buildGeofencesList() {
-    if (_allGeofences.isEmpty) {
+    if (_allGeofences.isEmpty && _isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (_allGeofences.isEmpty) {
+      return Center(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Map1()),
+            );
+          },
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "No Custom Place available.",
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              SizedBox(height: 4),
+              Text(
+                "add new place",
+                style: TextStyle(fontSize: 13, color: Colors.blue),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final filteredGeofences = _filterGeofences(_allGeofences);
 
     if (filteredGeofences.isEmpty) {
-      return const Center(child: Text("No results found"));
+      return const Center(
+        child: Text(
+          "No results found for your search",
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
     }
-
     return ListView.builder(
       itemCount: filteredGeofences.length,
       itemBuilder: (context, index) {

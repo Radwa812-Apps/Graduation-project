@@ -136,7 +136,7 @@ class _CompleteMapUiState extends State<CompleteMapUi> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        CustomPlacesCrudOp(
+                        GeofencesCrudOp(
                           searchQuery: searchQuery,
                           goToPlace: widget.goToPlace,
                         ),
