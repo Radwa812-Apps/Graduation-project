@@ -21,7 +21,8 @@ import 'package:near_me_new_version/Features/share_location/components/map_widge
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
+
+import '../../../chat_group/chat_group/screens/group_chat.dart';
 
 class OrderTrackingPage extends StatefulWidget {
   final String groupId;

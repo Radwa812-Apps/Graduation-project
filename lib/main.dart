@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/general_notifications.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_screen.dart';
 import 'package:near_me_new_version/Features/Settings/components/risk_block.dart';
 import 'package:near_me_new_version/Features/Settings/screens/settings_screen.dart';
 import 'package:near_me_new_version/Features/Splash_page/Screens/after_splash.dart';
@@ -20,7 +21,6 @@ import 'package:near_me_new_version/Features/auth/Forgot_password/Screens/forgot
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/add_user_success.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/signUp_verifiy_email.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_up_screen.dart';
-import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart'
     as live_location_map;
@@ -30,6 +30,7 @@ import 'package:near_me_new_version/Features/select_place/screens/select_place_s
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/Features/share_location/screens/test.dart';
+import 'package:near_me_new_version/chat_group/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
@@ -52,7 +53,6 @@ import 'Features/Notifications/Screens/group_notifications.dart';
 import 'Features/Notifications/Screens/personal_notifications.dart';
 import 'Features/Permissions/Screens/permission_location.dart';
 import 'Features/Permissions/Screens/permissions.dart';
-import 'Features/Private_chat/screens/private_chat_screen.dart';
 import 'Features/User_Profile/screens/edit_screen.dart';
 import 'Features/auth/Forgot_password/Screens/send_email_for_pass.dart';
 import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';

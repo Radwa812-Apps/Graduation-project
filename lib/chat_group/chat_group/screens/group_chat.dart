@@ -1,52 +1,62 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription;
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/Private_chat/components/private_message_bubble.dart';
-import 'package:near_me_new_version/Features/chat_group/components/chat_input_field.dart';
-import 'package:near_me_new_version/Features/chat_group/components/header_chat.dart';
-import 'package:near_me_new_version/Features/chat_group/components/full_screen_image_viewer.dart';
-import 'package:near_me_new_version/Features/chat_group/components/video_player_widget.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/core/services/chat_services.dart';
+import 'package:near_me_new_version/core/services/chat_services.dart' show ChatService;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
+import '../components/chat_input_field.dart';
+import '../components/group_media_screen.dart';
+import '../components/message_bubble.dart';
+import '../components/header_chat.dart';
 
-class PrivateChatScreen extends StatefulWidget {
-  final String recipientId;
-  final String recipientName;
-  final String? recipientImage;
 
-  static const String privateChatScreenKey = '/PrivateChatScreen';
+enum MediaType { image, video, voice }
 
-  const PrivateChatScreen({
-    super.key,
-    required this.recipientId,
-    required this.recipientName,
-    this.recipientImage,
-  });
+class GroupChat extends StatefulWidget {
+  final String groupId;
+  final String groupName;
+
+  static const String routeName = '/group-chat';
+  static String get groupChatKey => routeName;
+  static Map<String, dynamic> createArguments(String groupId, String groupName, List<Map<String, dynamic>> messages) {
+    return {
+      'groupId': groupId,
+      'groupName': groupName,
+      'messages': messages,
+    };
+  }
+
+  const GroupChat({
+    Key? key,
+    required this.groupId,
+    required this.groupName,
+  }) : super(key: key);
 
   @override
-  State<PrivateChatScreen> createState() => _PrivateChatScreenState();
+  State<GroupChat> createState() => _GroupChatState();
 }
 
-class _PrivateChatScreenState extends State<PrivateChatScreen> {
+class _GroupChatState extends State<GroupChat> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
   late ChatService _chatService;
   List<Map<String, dynamic>> _messages = [];
+  List<Map<String, dynamic>> _filteredMessages = [];
   bool _isSending = false;
   bool _showEmojiPicker = false;
   StreamSubscription? _messageSubscription;
   late final Record _audioRecorder;
   bool _isRecording = false;
   String? _audioPath;
-  String? _searchQuery = '';
+  String? _groupImage;
+  String _searchQuery = '';
   int _currentSearchIndex = -1;
   List<int> _searchMatchIndices = [];
   DateTime? _selectedDate;
@@ -55,8 +65,31 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
   void initState() {
     super.initState();
     _chatService = Provider.of<ChatService>(context, listen: false);
-    _audioRecorder = Record();
     _setupMessageStream();
+    _audioRecorder = Record();
+    _fetchGroupImage();
+    _filteredMessages = _messages;
+  }
+
+  Future<void> _fetchGroupImage() async {
+    try {
+      final groupDoc = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .get();
+      if (mounted) {
+        setState(() {
+          _groupImage = groupDoc.data()?['imageUrl'] ?? 'assets/default_group.png';
+        });
+      }
+    } catch (e) {
+      print('Error fetching group image: $e');
+      if (mounted) {
+        setState(() {
+          _groupImage = 'assets/default_group.png';
+        });
+      }
+    }
   }
 
   @override
@@ -69,14 +102,18 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
   }
 
   void _setupMessageStream() {
-    _messageSubscription = _chatService.getPrivateMessages(widget.recipientId).listen(
+    _messageSubscription = _chatService.getGroupMessages(widget.groupId).listen(
       (messages) {
         if (!mounted) return;
-        setState(() {
-          _messages = messages;
-          _filterMessages();
-        });
-        _scrollToBottom();
+        if (_messages.isEmpty || !_areMessagesEqual(_messages, messages) || messages.length > _messages.length) {
+          if (mounted) {
+            setState(() {
+              _messages = messages;
+              _filterMessages();
+            });
+            _scrollToBottom();
+          }
+        }
       },
       onError: (error) {
         if (mounted) {
@@ -88,13 +125,26 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     );
   }
 
+  bool _areMessagesEqual(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i]['id'] != b[i]['id']) return false;
+      if (a[i]['text'] != b[i]['text']) return false;
+      if (a[i]['imageUrl'] != b[i]['imageUrl']) return false;
+      if (a[i]['videoUrl'] != b[i]['videoUrl']) return false;
+      if (a[i]['voiceUrl'] != b[i]['voiceUrl']) return false;
+    }
+    return true;
+  }
+
   void _filterMessages() {
-    if (_searchQuery!.isEmpty && _selectedDate == null) {
+    if (_searchQuery.isEmpty && _selectedDate == null) {
+      _filteredMessages = _messages;
       _searchMatchIndices = [];
     } else {
-      _messages = _messages.where((msg) {
-        bool matchesSearch = _searchQuery!.isEmpty ||
-            (msg['text']?.toLowerCase().contains(_searchQuery!.toLowerCase()) ?? false);
+      _filteredMessages = _messages.where((msg) {
+        bool matchesSearch = _searchQuery.isEmpty ||
+            (msg['text']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
         bool matchesDate = _selectedDate == null ||
             (msg['timestamp'] is Timestamp &&
                 DateFormat('yyyy-MM-dd').format(msg['timestamp'].toDate()) ==
@@ -102,8 +152,8 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
         return matchesSearch && matchesDate;
       }).toList();
       _searchMatchIndices = List.generate(
-        _messages.length,
-        (index) => _messages.indexWhere((m) => m['id'] == _messages[index]['id']),
+        _filteredMessages.length,
+        (index) => _messages.indexWhere((m) => m['id'] == _filteredMessages[index]['id']),
       );
     }
     setState(() {});
@@ -183,45 +233,6 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    final pickedFile = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-
-    if (pickedFile != null) {
-      final imageUrl = await _chatService.uploadImage(
-        widget.recipientId,
-        pickedFile.path,
-      );
-
-      await _chatService.sendPrivateMessage(
-        recipientId: widget.recipientId,
-        text: '',
-        imageUrl: imageUrl,
-      );
-    }
-  }
-
-  Future<void> _pickVideo() async {
-    final pickedFile = await _imagePicker.pickVideo(
-      source: ImageSource.gallery,
-    );
-
-    if (pickedFile != null) {
-      final videoUrl = await _chatService.uploadVideo(
-        widget.recipientId,
-        pickedFile.path,
-      );
-
-      await _chatService.sendPrivateMessage(
-        recipientId: widget.recipientId,
-        text: '',
-        videoUrl: videoUrl,
-      );
-    }
-  }
-
   Future<void> _pickVoiceMessage() async {
     if (_isRecording) {
       await _stopRecording();
@@ -234,12 +245,15 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     try {
       if (await _audioRecorder.hasPermission()) {
         setState(() => _isRecording = true);
+
         final tempDir = await getTemporaryDirectory();
         final path = '${tempDir.path}/voice_message_${DateTime.now().millisecondsSinceEpoch}.aac';
+
         await _audioRecorder.start(
           path: path,
           encoder: AudioEncoder.aacLc,
         );
+
         setState(() => _audioPath = path);
       }
     } catch (e) {
@@ -256,14 +270,17 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     try {
       setState(() => _isRecording = false);
       final path = await _audioRecorder.stop();
+
       if (path != null) {
         setState(() => _audioPath = path);
+
         final voiceUrl = await _chatService.uploadVoiceMessage(
-          widget.recipientId,
+          widget.groupId,
           path,
         );
-        await _chatService.sendPrivateMessage(
-          recipientId: widget.recipientId,
+
+        await _chatService.sendMessage(
+          groupId: widget.groupId,
           text: 'Voice message',
           voiceUrl: voiceUrl,
         );
@@ -274,6 +291,25 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
           SnackBar(content: Text('Failed to stop recording: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    final pickedFile = await _imagePicker.pickVideo(
+      source: ImageSource.gallery,
+    );
+
+    if (pickedFile != null) {
+      final videoUrl = await _chatService.uploadVideo(
+        widget.groupId,
+        pickedFile.path,
+      );
+
+      await _chatService.sendMessage(
+        groupId: widget.groupId,
+        text: '',
+        videoUrl: videoUrl,
+      );
     }
   }
 
@@ -310,13 +346,15 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
 
   Future<void> _sendMessage() async {
     if (_messageController.text.isEmpty || _isSending) return;
+
     setState(() {
       _isSending = true;
       _showEmojiPicker = false;
     });
+
     try {
-      await _chatService.sendPrivateMessage(
-        recipientId: widget.recipientId,
+      await _chatService.sendMessage(
+        groupId: widget.groupId,
         text: _messageController.text,
       );
       _messageController.clear();
@@ -328,8 +366,51 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
         );
       }
     } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() => _isSending = true);
+
+        final imageUrl = await _chatService.uploadImage(
+          widget.groupId,
+          pickedFile.path,
+        );
+
+        if (imageUrl.isNotEmpty) {
+          await _chatService.sendMessage(
+            groupId: widget.groupId,
+            text: '',
+            imageUrl: imageUrl,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send image: ${e.toString()}')),
+        );
+      }
+    } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  void _toggleEmojiPicker() {
+    setState(() {
+      _showEmojiPicker = !_showEmojiPicker;
+      FocusScope.of(context).unfocus();
+    });
   }
 
   void _scrollToBottom() {
@@ -368,8 +449,8 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     if (confirmDelete && mounted) {
       try {
         await FirebaseFirestore.instance
-            .collection('private_chats')
-            .doc(_chatService.getChatId(widget.recipientId))
+            .collection('groups')
+            .doc(widget.groupId)
             .collection('messages')
             .get()
             .then((snapshot) {
@@ -380,6 +461,7 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
         if (mounted) {
           setState(() {
             _messages.clear();
+            _filteredMessages.clear();
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Chat cleared successfully')),
@@ -434,28 +516,40 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     }
   }
 
+  void _navigateToGroupMedia() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GroupMediaScreen(
+          messages: _messages,
+          groupName: widget.groupName,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => setState(() => _showEmojiPicker = false),
       child: Scaffold(
-        backgroundColor: kBackgroundColor,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: HeaderChat(
-            title: widget.recipientName,
-            backArrow: const Icon(Icons.arrow_back_ios, color: kPrimaryColor1, size: 25),
-            onBackPressed: () => Navigator.pop(context),
+            title: widget.groupName,
+            backArrow: const Icon(Icons.arrow_back, color: kPrimaryColor1, size: 25),
+            onBackPressed: () => Navigator.pop(context, GroupChat.createArguments(widget.groupId, widget.groupName, _messages)),
             showCircleAvatar: true,
-            circleAvatarImage: widget.recipientImage ?? 'assets/images/user.jpg',
+            circleAvatarImage: _groupImage,
             onClearChatPressed: _clearChat,
-            image: widget.recipientImage ?? 'assets/images/user.jpg',
+            image: _groupImage ?? 'assets/default_group.png',
             onSearchChanged: _onSearchChanged,
+            onGroupInfoPressed: _navigateToGroupMedia,
           ),
         ),
         body: Column(
           children: [
-            if (_searchQuery!.isNotEmpty)
+            if (_searchQuery.isNotEmpty)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -471,21 +565,22 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
                 ],
               ),
             Expanded(
-              child: _messages.isEmpty
+              child: _filteredMessages.isEmpty
                   ? const Center(child: Text('No messages yet'))
                   : ListView.builder(
                       controller: _scrollController,
                       reverse: true,
-                      itemCount: _messages.length,
+                      itemCount: _filteredMessages.length,
                       itemBuilder: (context, index) {
-                        final message = _messages[index];
+                        final message = _filteredMessages[index];
                         final isMe = message['senderId'] == _chatService.currentUserId;
                         final timestamp = message['timestamp'] as Timestamp?;
                         final dateLabel = timestamp != null ? _getDateLabel(timestamp) : '';
 
-                        final showDateSeparator = index == _messages.length - 1 ||
-                            (index < _messages.length - 1 &&
-                                _getDateLabel(_messages[index + 1]['timestamp']) != dateLabel);
+                        // Show date separator if it's the first message or different date
+                        final showDateSeparator = index == _filteredMessages.length - 1 ||
+                            (index < _filteredMessages.length - 1 &&
+                                _getDateLabel(_filteredMessages[index + 1]['timestamp']) != dateLabel);
 
                         if ((message['text']?.isEmpty ?? true) &&
                             (message['imageUrl']?.isEmpty ?? true) &&
@@ -512,10 +607,11 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
                                   ),
                                 ),
                               ),
-                            PrivateMessageBubble(
+                            MessageBubble(
                               message: message['text'] ?? '',
                               timestamp: message['timestamp'],
                               isMe: isMe,
+                              senderName: message['senderName'] ?? 'User',
                               imageUrl: message['imageUrl'],
                               videoUrl: message['videoUrl'],
                               voiceUrl: message['voiceUrl'],
@@ -530,7 +626,7 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
               controller: _messageController,
               onSend: _sendMessage,
               isSending: _isSending,
-              onEmojiPressed: () => setState(() => _showEmojiPicker = !_showEmojiPicker),
+              onEmojiPressed: _toggleEmojiPicker,
               onMediaPressed: _pickMedia,
               isRecording: _isRecording,
             ),
@@ -559,6 +655,13 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
       ),
     );
   }
-}
 
-enum MediaType { image, video, voice }
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp == null) return 'Just now';
+    if (timestamp is Timestamp) {
+      final date = timestamp.toDate();
+      return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    }
+    return timestamp.toString();
+  }
+}

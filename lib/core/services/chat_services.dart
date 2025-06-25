@@ -97,7 +97,24 @@ class ChatService {
           : recipientDoc.data()?['email']?.split('@').first ?? 'User';
       final recipientImage = recipientDoc.data()?['image'];
 
+      // Encrypt only the text message
       final encryptedText = text.isNotEmpty ? _encryption.encryptText(text) : '';
+
+      // Create message preview (unencrypted for recent chats)
+      String lastMessagePreview;
+      if (voiceUrl != null) {
+        lastMessagePreview = '🎤 Voice message';
+      } else if (imageUrl != null) {
+        lastMessagePreview = '📷 Photo';
+      } else if (videoUrl != null) {
+        lastMessagePreview = '🎬 Video';
+      } else {
+        lastMessagePreview = text.isEmpty 
+            ? '' 
+            : text.length > 30 
+                ? '${text.substring(0, 30)}...' 
+                : text;
+      }
 
       final chatId = getChatId(recipientId);
       await _firestore
@@ -105,12 +122,12 @@ class ChatService {
           .doc(chatId)
           .collection('messages')
           .add({
-        'text': encryptedText,
+        'text': encryptedText,  // Store encrypted text
         'senderId': user.uid,
         'senderName': senderName,
-        'imageUrl': imageUrl,
-        'videoUrl': videoUrl,
-        'voiceUrl': voiceUrl,
+        'imageUrl': imageUrl,  // Unencrypted
+        'videoUrl': videoUrl,  // Unencrypted
+        'voiceUrl': voiceUrl,  // Unencrypted
         'timestamp': FieldValue.serverTimestamp(),
         'createdAt': DateTime.now().toIso8601String(),
         'messageType': voiceUrl != null
@@ -122,11 +139,12 @@ class ChatService {
                     : 'text'
       });
 
+      // Update recent chats with unencrypted preview
       await _firestore.collection('users').doc(user.uid).collection('recent_chats').doc(recipientId).set({
         'recipientId': recipientId,
         'recipientName': recipientName,
         'recipientImage': recipientImage,
-        'lastMessage': text.isNotEmpty ? text : (voiceUrl != null ? 'Voice message' : imageUrl != null ? 'Image' : 'Video'),
+        'lastMessage': lastMessagePreview,
         'time': DateFormat('HH:mm').format(DateTime.now()),
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -135,7 +153,7 @@ class ChatService {
         'recipientId': user.uid,
         'recipientName': senderName,
         'recipientImage': userDoc.data()?['image'],
-        'lastMessage': text.isNotEmpty ? text : (voiceUrl != null ? 'Voice message' : imageUrl != null ? 'Image' : 'Video'),
+        'lastMessage': lastMessagePreview,
         'time': DateFormat('HH:mm').format(DateTime.now()),
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -158,21 +176,22 @@ class ChatService {
         .distinct()
         .handleError((error) => print("Stream error: $error"))
         .map((snapshot) {
-          print("Received ${snapshot.docs.length} private messages");
           return snapshot.docs.map((doc) {
             final data = doc.data();
+            // Decrypt only text content
             final decryptedText = data['text'] != null && data['text'].isNotEmpty
                 ? _encryption.decryptText(data['text'])
                 : '';
+          
             return {
               'id': doc.id,
-              'text': decryptedText,
+              'text': decryptedText,  // Return decrypted text
               'senderId': data['senderId'] ?? '',
               'senderName': data['senderName'] ?? 'Unknown',
               'timestamp': data['timestamp'] ?? Timestamp.now(),
-              'imageUrl': data['imageUrl'],
-              'videoUrl': data['videoUrl'],
-              'voiceUrl': data['voiceUrl'],
+              'imageUrl': data['imageUrl'],  // Unencrypted
+              'videoUrl': data['videoUrl'],  // Unencrypted
+              'voiceUrl': data['voiceUrl'],  // Unencrypted
             };
           }).toList();
         });
@@ -222,6 +241,7 @@ class ChatService {
           ? (firstName + ' ' + lastName).trim()
           : userDoc.data()?['email']?.split('@').first ?? 'User';
 
+      // Encrypt only the text message
       final encryptedText = text.isNotEmpty ? _encryption.encryptText(text) : '';
 
       await _firestore
@@ -229,12 +249,12 @@ class ChatService {
           .doc(groupId)
           .collection('messages')
           .add({
-        'text': encryptedText,
+        'text': encryptedText,  // Store encrypted text
         'senderId': user.uid,
         'senderName': senderName,
-        'imageUrl': imageUrl,
-        'videoUrl': videoUrl,
-        'voiceUrl': voiceUrl,
+        'imageUrl': imageUrl,  // Unencrypted
+        'videoUrl': videoUrl,  // Unencrypted
+        'voiceUrl': voiceUrl,  // Unencrypted
         'timestamp': FieldValue.serverTimestamp(),
         'createdAt': DateTime.now().toIso8601String(),
         'messageType': voiceUrl != null
@@ -265,18 +285,19 @@ class ChatService {
           print("Received ${snapshot.docs.length} messages");
           return snapshot.docs.map((doc) {
             final data = doc.data();
+            // Decrypt only text content
             final decryptedText = data['text'] != null && data['text'].isNotEmpty
                 ? _encryption.decryptText(data['text'])
                 : '';
             return {
               'id': doc.id,
-              'text': decryptedText,
+              'text': decryptedText,  // Return decrypted text
               'senderId': data['senderId'] ?? '',
               'senderName': data['senderName'] ?? 'Unknown',
               'timestamp': data['timestamp'] ?? Timestamp.now(),
-              'imageUrl': data['imageUrl'],
-              'videoUrl': data['videoUrl'],
-              'voiceUrl': data['voiceUrl'],
+              'imageUrl': data['imageUrl'],  // Unencrypted
+              'videoUrl': data['videoUrl'],  // Unencrypted
+              'voiceUrl': data['voiceUrl'],  // Unencrypted
             };
           }).toList();
         });

@@ -1,61 +1,52 @@
-import 'dart:async' show StreamSubscription;
+import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/chat_group/components/group_media_screen.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/components/private_chat_screen.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/components/private_message_bubble.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/core/services/chat_services.dart' show ChatService;
-import 'package:path_provider/path_provider.dart';
+import 'package:near_me_new_version/core/services/chat_services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
-import '../components/chat_input_field.dart';
-import '../components/message_bubble.dart';
-import '../components/header_chat.dart';
 
+import '../../../../chat_group/chat_group/components/chat_input_field.dart';
+import '../../../../chat_group/chat_group/components/header_chat.dart';
 
-enum MediaType { image, video, voice }
+class PrivateChatScreen extends StatefulWidget {
+  final String recipientId;
+  final String recipientName;
+  final String? recipientImage;
 
-class GroupChat extends StatefulWidget {
-  final String groupId;
-  final String groupName;
+  static const String privateChatScreenKey = '/PrivateChatScreen';
 
-  static const String routeName = '/group-chat';
-  static String get groupChatKey => routeName;
-  static Map<String, String> createArguments(String groupId, String groupName) {
-    return {
-      'groupId': groupId,
-      'groupName': groupName,
-    };
-  }
-
-  const GroupChat({
-    Key? key,
-    required this.groupId,
-    required this.groupName,
-  }) : super(key: key);
+  const PrivateChatScreen({
+    super.key,
+    required this.recipientId,
+    required this.recipientName,
+    this.recipientImage,
+  });
 
   @override
-  State<GroupChat> createState() => _GroupChatState();
+  State<PrivateChatScreen> createState() => _PrivateChatScreenState();
 }
 
-class _GroupChatState extends State<GroupChat> {
+class _PrivateChatScreenState extends State<PrivateChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
   late ChatService _chatService;
   List<Map<String, dynamic>> _messages = [];
-  List<Map<String, dynamic>> _filteredMessages = [];
   bool _isSending = false;
   bool _showEmojiPicker = false;
   StreamSubscription? _messageSubscription;
   late final Record _audioRecorder;
   bool _isRecording = false;
   String? _audioPath;
-  String? _groupImage;
-  String _searchQuery = '';
+  String? _searchQuery = '';
   int _currentSearchIndex = -1;
   List<int> _searchMatchIndices = [];
   DateTime? _selectedDate;
@@ -64,31 +55,8 @@ class _GroupChatState extends State<GroupChat> {
   void initState() {
     super.initState();
     _chatService = Provider.of<ChatService>(context, listen: false);
-    _setupMessageStream();
     _audioRecorder = Record();
-    _fetchGroupImage();
-    _filteredMessages = _messages;
-  }
-
-  Future<void> _fetchGroupImage() async {
-    try {
-      final groupDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .get();
-      if (mounted) {
-        setState(() {
-          _groupImage = groupDoc.data()?['imageUrl'] ?? 'assets/default_group.png';
-        });
-      }
-    } catch (e) {
-      print('Error fetching group image: $e');
-      if (mounted) {
-        setState(() {
-          _groupImage = 'assets/default_group.png';
-        });
-      }
-    }
+    _setupMessageStream();
   }
 
   @override
@@ -101,18 +69,14 @@ class _GroupChatState extends State<GroupChat> {
   }
 
   void _setupMessageStream() {
-    _messageSubscription = _chatService.getGroupMessages(widget.groupId).listen(
+    _messageSubscription = _chatService.getPrivateMessages(widget.recipientId).listen(
       (messages) {
         if (!mounted) return;
-        if (_messages.isEmpty || !_areMessagesEqual(_messages, messages) || messages.length > _messages.length) {
-          if (mounted) {
-            setState(() {
-              _messages = messages;
-              _filterMessages();
-            });
-            _scrollToBottom();
-          }
-        }
+        setState(() {
+          _messages = messages;
+          _filterMessages();
+        });
+        _scrollToBottom();
       },
       onError: (error) {
         if (mounted) {
@@ -124,26 +88,13 @@ class _GroupChatState extends State<GroupChat> {
     );
   }
 
-  bool _areMessagesEqual(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i]['id'] != b[i]['id']) return false;
-      if (a[i]['text'] != b[i]['text']) return false;
-      if (a[i]['imageUrl'] != b[i]['imageUrl']) return false;
-      if (a[i]['videoUrl'] != b[i]['videoUrl']) return false;
-      if (a[i]['voiceUrl'] != b[i]['voiceUrl']) return false;
-    }
-    return true;
-  }
-
   void _filterMessages() {
-    if (_searchQuery.isEmpty && _selectedDate == null) {
-      _filteredMessages = _messages;
+    if (_searchQuery!.isEmpty && _selectedDate == null) {
       _searchMatchIndices = [];
     } else {
-      _filteredMessages = _messages.where((msg) {
-        bool matchesSearch = _searchQuery.isEmpty ||
-            (msg['text']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      _messages = _messages.where((msg) {
+        bool matchesSearch = _searchQuery!.isEmpty ||
+            (msg['text']?.toLowerCase().contains(_searchQuery!.toLowerCase()) ?? false);
         bool matchesDate = _selectedDate == null ||
             (msg['timestamp'] is Timestamp &&
                 DateFormat('yyyy-MM-dd').format(msg['timestamp'].toDate()) ==
@@ -151,8 +102,8 @@ class _GroupChatState extends State<GroupChat> {
         return matchesSearch && matchesDate;
       }).toList();
       _searchMatchIndices = List.generate(
-        _filteredMessages.length,
-        (index) => _messages.indexWhere((m) => m['id'] == _filteredMessages[index]['id']),
+        _messages.length,
+        (index) => _messages.indexWhere((m) => m['id'] == _messages[index]['id']),
       );
     }
     setState(() {});
@@ -232,6 +183,45 @@ class _GroupChatState extends State<GroupChat> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final pickedFile = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null) {
+      final imageUrl = await _chatService.uploadImage(
+        widget.recipientId,
+        pickedFile.path,
+      );
+
+      await _chatService.sendPrivateMessage(
+        recipientId: widget.recipientId,
+        text: '',
+        imageUrl: imageUrl,
+      );
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    final pickedFile = await _imagePicker.pickVideo(
+      source: ImageSource.gallery,
+    );
+
+    if (pickedFile != null) {
+      final videoUrl = await _chatService.uploadVideo(
+        widget.recipientId,
+        pickedFile.path,
+      );
+
+      await _chatService.sendPrivateMessage(
+        recipientId: widget.recipientId,
+        text: '',
+        videoUrl: videoUrl,
+      );
+    }
+  }
+
   Future<void> _pickVoiceMessage() async {
     if (_isRecording) {
       await _stopRecording();
@@ -244,15 +234,12 @@ class _GroupChatState extends State<GroupChat> {
     try {
       if (await _audioRecorder.hasPermission()) {
         setState(() => _isRecording = true);
-
         final tempDir = await getTemporaryDirectory();
         final path = '${tempDir.path}/voice_message_${DateTime.now().millisecondsSinceEpoch}.aac';
-
         await _audioRecorder.start(
           path: path,
           encoder: AudioEncoder.aacLc,
         );
-
         setState(() => _audioPath = path);
       }
     } catch (e) {
@@ -269,17 +256,14 @@ class _GroupChatState extends State<GroupChat> {
     try {
       setState(() => _isRecording = false);
       final path = await _audioRecorder.stop();
-
       if (path != null) {
         setState(() => _audioPath = path);
-
         final voiceUrl = await _chatService.uploadVoiceMessage(
-          widget.groupId,
+          widget.recipientId,
           path,
         );
-
-        await _chatService.sendMessage(
-          groupId: widget.groupId,
+        await _chatService.sendPrivateMessage(
+          recipientId: widget.recipientId,
           text: 'Voice message',
           voiceUrl: voiceUrl,
         );
@@ -290,25 +274,6 @@ class _GroupChatState extends State<GroupChat> {
           SnackBar(content: Text('Failed to stop recording: $e')),
         );
       }
-    }
-  }
-
-  Future<void> _pickVideo() async {
-    final pickedFile = await _imagePicker.pickVideo(
-      source: ImageSource.gallery,
-    );
-
-    if (pickedFile != null) {
-      final videoUrl = await _chatService.uploadVideo(
-        widget.groupId,
-        pickedFile.path,
-      );
-
-      await _chatService.sendMessage(
-        groupId: widget.groupId,
-        text: '',
-        videoUrl: videoUrl,
-      );
     }
   }
 
@@ -345,15 +310,13 @@ class _GroupChatState extends State<GroupChat> {
 
   Future<void> _sendMessage() async {
     if (_messageController.text.isEmpty || _isSending) return;
-
     setState(() {
       _isSending = true;
       _showEmojiPicker = false;
     });
-
     try {
-      await _chatService.sendMessage(
-        groupId: widget.groupId,
+      await _chatService.sendPrivateMessage(
+        recipientId: widget.recipientId,
         text: _messageController.text,
       );
       _messageController.clear();
@@ -365,51 +328,8 @@ class _GroupChatState extends State<GroupChat> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSending = false);
-      }
-    }
-  }
-
-  Future<void> _pickImage() async {
-    try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-
-      if (pickedFile != null) {
-        setState(() => _isSending = true);
-
-        final imageUrl = await _chatService.uploadImage(
-          widget.groupId,
-          pickedFile.path,
-        );
-
-        if (imageUrl.isNotEmpty) {
-          await _chatService.sendMessage(
-            groupId: widget.groupId,
-            text: '',
-            imageUrl: imageUrl,
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send image: ${e.toString()}')),
-        );
-      }
-    } finally {
       if (mounted) setState(() => _isSending = false);
     }
-  }
-
-  void _toggleEmojiPicker() {
-    setState(() {
-      _showEmojiPicker = !_showEmojiPicker;
-      FocusScope.of(context).unfocus();
-    });
   }
 
   void _scrollToBottom() {
@@ -448,8 +368,8 @@ class _GroupChatState extends State<GroupChat> {
     if (confirmDelete && mounted) {
       try {
         await FirebaseFirestore.instance
-            .collection('groups')
-            .doc(widget.groupId)
+            .collection('private_chats')
+            .doc(_chatService.getChatId(widget.recipientId))
             .collection('messages')
             .get()
             .then((snapshot) {
@@ -460,7 +380,6 @@ class _GroupChatState extends State<GroupChat> {
         if (mounted) {
           setState(() {
             _messages.clear();
-            _filteredMessages.clear();
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Chat cleared successfully')),
@@ -499,6 +418,18 @@ class _GroupChatState extends State<GroupChat> {
     }
   }
 
+  void _navigateToMediaScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PrivateChatMediaScreen(
+          messages: _messages,
+          recipientName: widget.recipientName,
+        ),
+      ),
+    );
+  }
+
   String _getDateLabel(Timestamp timestamp) {
     final date = timestamp.toDate();
     final now = DateTime.now();
@@ -515,40 +446,29 @@ class _GroupChatState extends State<GroupChat> {
     }
   }
 
-  void _navigateToGroupMedia() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => GroupMediaScreen(
-          messages: _messages,
-          groupName: widget.groupName,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => setState(() => _showEmojiPicker = false),
       child: Scaffold(
+        backgroundColor: kBackgroundColor,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: HeaderChat(
-            title: widget.groupName,
-            backArrow: const Icon(Icons.arrow_back),
+            title: widget.recipientName,
+            backArrow: const Icon(Icons.arrow_back, color: kPrimaryColor1, size: 25),
             onBackPressed: () => Navigator.pop(context),
             showCircleAvatar: true,
-            circleAvatarImage: _groupImage,
+            circleAvatarImage: widget.recipientImage ?? 'assets/images/user.jpg',
             onClearChatPressed: _clearChat,
-            image: _groupImage ?? 'assets/default_group.png',
+            image: widget.recipientImage ?? 'assets/images/user.jpg',
             onSearchChanged: _onSearchChanged,
-            onGroupInfoPressed: _navigateToGroupMedia,
+            onGroupInfoPressed: _navigateToMediaScreen,
           ),
         ),
         body: Column(
           children: [
-            if (_searchQuery.isNotEmpty)
+            if (_searchQuery!.isNotEmpty)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -564,22 +484,21 @@ class _GroupChatState extends State<GroupChat> {
                 ],
               ),
             Expanded(
-              child: _filteredMessages.isEmpty
+              child: _messages.isEmpty
                   ? const Center(child: Text('No messages yet'))
                   : ListView.builder(
                       controller: _scrollController,
                       reverse: true,
-                      itemCount: _filteredMessages.length,
+                      itemCount: _messages.length,
                       itemBuilder: (context, index) {
-                        final message = _filteredMessages[index];
+                        final message = _messages[index];
                         final isMe = message['senderId'] == _chatService.currentUserId;
                         final timestamp = message['timestamp'] as Timestamp?;
                         final dateLabel = timestamp != null ? _getDateLabel(timestamp) : '';
 
-                        // Show date separator if it's the first message or different date
-                        final showDateSeparator = index == _filteredMessages.length - 1 ||
-                            (index < _filteredMessages.length - 1 &&
-                                _getDateLabel(_filteredMessages[index + 1]['timestamp']) != dateLabel);
+                        final showDateSeparator = index == _messages.length - 1 ||
+                            (index < _messages.length - 1 &&
+                                _getDateLabel(_messages[index + 1]['timestamp']) != dateLabel);
 
                         if ((message['text']?.isEmpty ?? true) &&
                             (message['imageUrl']?.isEmpty ?? true) &&
@@ -606,11 +525,10 @@ class _GroupChatState extends State<GroupChat> {
                                   ),
                                 ),
                               ),
-                            MessageBubble(
+                            PrivateMessageBubble(
                               message: message['text'] ?? '',
                               timestamp: message['timestamp'],
                               isMe: isMe,
-                              senderName: message['senderName'] ?? 'User',
                               imageUrl: message['imageUrl'],
                               videoUrl: message['videoUrl'],
                               voiceUrl: message['voiceUrl'],
@@ -625,7 +543,7 @@ class _GroupChatState extends State<GroupChat> {
               controller: _messageController,
               onSend: _sendMessage,
               isSending: _isSending,
-              onEmojiPressed: _toggleEmojiPicker,
+              onEmojiPressed: () => setState(() => _showEmojiPicker = !_showEmojiPicker),
               onMediaPressed: _pickMedia,
               isRecording: _isRecording,
             ),
@@ -654,13 +572,6 @@ class _GroupChatState extends State<GroupChat> {
       ),
     );
   }
-
-  String _formatTimestamp(dynamic timestamp) {
-    if (timestamp == null) return 'Just now';
-    if (timestamp is Timestamp) {
-      final date = timestamp.toDate();
-      return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-    }
-    return timestamp.toString();
-  }
 }
+
+enum MediaType { image, video, voice }

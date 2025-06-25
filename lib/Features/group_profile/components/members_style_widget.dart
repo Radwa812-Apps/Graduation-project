@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/Private_chat/screens/private_chat_screen.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_screen.dart';
 import '../../../core/constants.dart';
 import '../../Home/Home/components/round_image_widget.dart';
 

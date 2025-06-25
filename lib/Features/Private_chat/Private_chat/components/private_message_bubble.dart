@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:near_me_new_version/chat_group/chat_group/components/full_screen_image_viewer.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:near_me_new_version/Features/chat_group/components/full_screen_image_viewer.dart';
-import 'package:near_me_new_version/Features/chat_group/components/video_player_widget.dart';
+
+import '../../../../chat_group/chat_group/components/video_player_widget.dart';
 
 class PrivateMessageBubble extends StatefulWidget {
   final String message;
@@ -85,7 +86,24 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
   }
 
   Widget _buildTextContent() {
-    if (widget.message.isEmpty) return const SizedBox.shrink();
+    if (widget.message.isEmpty || widget.message == '[Decryption failed]') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.message.isEmpty ? '' : 'Unable to display message',
+            style: TextStyle(
+              color: widget.isMe ? Colors.white70 : Colors.grey,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: _buildTimestamp(),
+          ),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

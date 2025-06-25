@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/components/member_group_inside.dart';
 import 'package:near_me_new_version/Features/share_location/components/build_search_field.dart';
-import 'package:near_me_new_version/Features/Private_chat/screens/private_chat_screen.dart';
 
 class BuildSheetContent extends StatefulWidget {
   final ScrollController scrollController;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/chat_group/components/three_dots_manu.dart';
+import 'package:near_me_new_version/chat_group/chat_group/components/three_dots_manu.dart';
+import '../../../Features/Notifications/Components/search_icon.dart';
 import '../../../core/constants.dart';
 import '../../../core/font_style.dart';
-import '../../Notifications/Components/search_icon.dart';
 
 class HeaderChat extends StatefulWidget {
   final String title;
@@ -12,8 +12,8 @@ class HeaderChat extends StatefulWidget {
   final String? circleAvatarImage;
   final VoidCallback onClearChatPressed;
   final String image;
-  final ValueChanged<String>? onSearchChanged; // Add callback for search
-  final VoidCallback? onGroupInfoPressed; // Add callback for group info
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onGroupInfoPressed;
 
   const HeaderChat({
     Key? key,
@@ -107,7 +107,7 @@ class _HeaderChatState extends State<HeaderChat> {
                         onTap: widget.onGroupInfoPressed,
                         child: Text(
                           widget.title,
-                          style: TextStyles.NotificationsTilteText,
+                          style: TextStyles.NotificationsTilteText.copyWith(fontSize: 16), // Smaller text size
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

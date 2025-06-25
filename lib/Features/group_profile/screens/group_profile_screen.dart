@@ -10,7 +10,6 @@ import 'package:near_me_new_version/Features/group_profile/components/search_tex
 import 'package:near_me_new_version/Features/group_profile/components/split_between_features.dart';
 import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/Features/group_profile/components/features_one.dart';
 import 'package:near_me_new_version/Features/group_profile/components/leave_group.dart';
 import 'package:near_me_new_version/Features/group_profile/components/members_style_widget.dart';
@@ -18,6 +17,8 @@ import 'package:near_me_new_version/Features/group_profile/components/row_add_me
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
+
+import '../../../chat_group/chat_group/screens/group_chat.dart';
 
 class GroupProfileScreen extends StatefulWidget {
   static String groupProfileScreenKey = '/groupProfileScreen';
