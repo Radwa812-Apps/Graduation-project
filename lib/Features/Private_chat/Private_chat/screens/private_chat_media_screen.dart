@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/chat_group/chat_group/components/full_screen_image_viewer.dart';
+import 'package:near_me_new_version/Features/chat_group/chat_group/components/full_screen_image_viewer.dart';
 import 'package:near_me_new_version/core/constants.dart';
 
-import '../../../../chat_group/chat_group/components/video_player_widget.dart';
+import '../../../chat_group/chat_group/components/video_player_widget.dart';
 
 class PrivateChatMediaScreen extends StatelessWidget {
   final List<Map<String, dynamic>> messages;

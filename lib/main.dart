@@ -30,7 +30,7 @@ import 'package:near_me_new_version/Features/select_place/screens/select_place_s
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/Features/share_location/screens/test.dart';
-import 'package:near_me_new_version/chat_group/chat_group/screens/group_chat.dart';
+import 'package:near_me_new_version/Features/chat_group/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';

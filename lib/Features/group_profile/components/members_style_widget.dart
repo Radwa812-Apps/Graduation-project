@@ -11,80 +11,80 @@ class MembersStyleWidget extends StatefulWidget {
   final String? picture;
   final String? uid;
 
-  const MembersStyleWidget({super.key, required this.userName,this.picture,this.uid});
+  const MembersStyleWidget({
+    super.key, 
+    required this.userName,
+    this.picture,
+    this.uid,
+  });
 
   @override
   State<MembersStyleWidget> createState() => _MembersStyleWidgetState();
 }
 
 class _MembersStyleWidgetState extends State<MembersStyleWidget> {
+  Uint8List? userImage;
+
   @override
   void initState() {
     super.initState();
-    _loadUserImage();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserImage());
   }
-  Uint8List? userImage;
+
   void _loadUserImage() async {
-    if (widget.uid == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("User not authenticated"),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-    if (widget.uid != null) {
-      final image = await ProfileImageService().getDecryptedUserImage(widget.uid!);
-      if (image != null && mounted) {
-        setState(() {
-          userImage = image;
-        });
-      }
+    if (widget.uid == null || widget.uid!.isEmpty) return;
+    
+    final image = await ProfileImageService().getDecryptedUserImage(widget.uid!);
+    if (image != null && mounted) {
+      setState(() {
+        userImage = image;
+      });
     }
   }
+
+  void _navigateToPrivateChat() {
+    if (widget.uid == null || widget.userName == null) return;
+    
+    Navigator.pushNamed(
+      context,
+      PrivateChatScreen.privateChatScreenKey,
+      arguments: {
+        'recipientId': widget.uid!,
+        'recipientName': widget.userName!,
+        'recipientImage': widget.picture,
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
     return GestureDetector(
-      onTap: (() {
-        Navigator.pushNamed(
-          context,
-          PrivateChatScreen.privateChatScreenKey,
-          arguments: widget.userName,
-        );
-      }),
+      onTap: _navigateToPrivateChat, // Updated to use the new navigation method
       child: Container(
-        width: screenWidth * .96,
-        height: screenHeight * .08,
+        width: MediaQuery.of(context).size.width * .96,
+        height: MediaQuery.of(context).size.height * .08,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           color: kPrimaryColor1.withOpacity(.20),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(left: 10, top: 10),
-                  child: RoundImageWidget(
-                    imageBytes: userImage ,
-                    //name: kDefaultUserImge,
-                    width: 50,
-                    height: 50,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Text(
-                  widget.userName!,
-                  style: const TextStyle(
-                    color: kFontColor,
-                    fontSize: 20,
-                    fontFamily: kFontRegular,
-                  ),
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: RoundImageWidget(
+                imageBytes: userImage,
+                width: 50,
+                height: 50,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Text(
+              widget.userName ?? 'Unknown User',
+              style: const TextStyle(
+                color: kFontColor,
+                fontSize: 20,
+                fontFamily: kFontRegular,
+              ),
             ),
           ],
         ),

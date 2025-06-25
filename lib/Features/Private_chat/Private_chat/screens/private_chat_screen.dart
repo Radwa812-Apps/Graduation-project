@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/Private_chat/Private_chat/components/private_chat_screen.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_media_screen.dart';
 import 'package:near_me_new_version/Features/Private_chat/Private_chat/components/private_message_bubble.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:near_me_new_version/core/services/chat_services.dart';
@@ -13,8 +13,8 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../chat_group/chat_group/components/chat_input_field.dart';
-import '../../../../chat_group/chat_group/components/header_chat.dart';
+import '../../../chat_group/chat_group/components/chat_input_field.dart';
+import '../../../chat_group/chat_group/components/header_chat.dart';
 
 class PrivateChatScreen extends StatefulWidget {
   final String recipientId;
