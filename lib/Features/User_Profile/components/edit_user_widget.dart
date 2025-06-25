@@ -1,9 +1,14 @@
+import 'dart:typed_data';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
+import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/core/services/validator.dart';
 import '../../../../core/constants.dart';
+import '../../../core/services/profile_image_service.dart';
 import '../../Auth/Sign_up_and_in/components/phone_widget.dart';
 import '../../Home/Home/components/round_image_widget.dart';
 import '../../auth/Sign_up_and_in/components/functions.dart';
@@ -46,6 +51,36 @@ class _EditUserWidgetState extends State<EditUserWidget> {
       isChanged = true;
     });
   }
+bool _isLoading = false;
+Uint8List? userImage;
+final ProfileImageService _profileImageService = ProfileImageService();
+final GroupService _groupService = GroupService();
+@override
+void initState(){
+  super.initState();
+  _loadUserImage();
+}
+
+  void _loadUserImage() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("User not authenticated"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    if (user != null) {
+      final image = await ProfileImageService().getDecryptedUserImage(user.uid);
+      if (image != null && mounted) {
+        setState(() {
+          userImage = image;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +88,10 @@ class _EditUserWidgetState extends State<EditUserWidget> {
     double screenWidth = MediaQuery.of(context).size.width;
     // final GlobalKey<FormState> formKey = GlobalKey();
 
+    ImageProvider imageProvider = const AssetImage(kDefaultUserImge);
+    if (userImage != null) {
+      imageProvider = MemoryImage(userImage!);
+    }
     return BlocBuilder<ProfileBloc, ProfileState>(
       builder: (context, state) {
         if (state is UserEditedSuccessState) {
@@ -241,6 +280,7 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                                             dateOfBirth:
                                                 dateOfBirth ??
                                                 state.userModel.dateOfBirth,
+                                            userPicture: userImage!,
                                           ),
                                         );
                                         setState(() {
@@ -276,10 +316,12 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                   right: 0,
 
                   child: Center(
-                    child: RoundImageWidget(
-                      //name: kDefaultUserImge,
-                      width: 110.w,
-                      height: 110.h,
+                    child: GestureDetector(
+                      onTap: _pickAndUploadUserImage,
+                      child: CircleAvatar(
+                          radius: 70,
+                          backgroundImage: imageProvider,
+                        ),
                     ),
                   ),
                 ),
@@ -294,4 +336,53 @@ class _EditUserWidgetState extends State<EditUserWidget> {
       },
     );
   }
+  
+  Future<void> _pickAndUploadUserImage() async {
+  final User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("User not authenticated"),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+    return;
+  }
+  try {
+    setState(() => _isLoading = true);
+    
+    final compressedBytes = await _profileImageService.pickAndCompressImage(context);
+    if (compressedBytes == null) return;
+
+    _profileImageService.showUploadingDialog(context);
+
+    await _groupService.uploadUserPictureToFirestore(
+      userId: user.uid,
+      imageBytes: compressedBytes,
+    );
+
+    final decrypted = await ProfileImageService().getDecryptedUserImage(user.uid);
+    if (mounted && decrypted != null) {
+      setState(() {
+        userImage = decrypted;
+        onFieldChanged("p");
+      });
+    }
+
+    _profileImageService.showSuccessMessage(context);
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error: ${e.toString()}"),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop(); 
+      setState(() => _isLoading = false);
+    }
+  }
+}
+
 }

@@ -13,7 +13,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 class GroupService {
   // Create a new group
-Future<String?> makeNewGroup(
+  Future<String?> makeNewGroup(
     String name,
     String description, {
     List<String> geofencesIds = const [], // Default empty list
@@ -47,21 +47,22 @@ Future<String?> makeNewGroup(
       return null;
     }
   }
-// to use stream builder
-Stream<List<Group>> getMyGroupsStream() {
-  final currentUser = FirebaseAuth.instance.currentUser;
-  if (currentUser == null) return const Stream.empty();
 
-  return FirebaseFirestore.instance
-      .collection('groups')
-      .where('members', arrayContains: currentUser.uid)
-      .snapshots()
-      .map((snapshot) {
-        return snapshot.docs.map((doc) {
-          return Group.fromJson(doc.data(), doc.id);
-        }).toList();
-      });
-}
+  // to use stream builder
+  Stream<List<Group>> getMyGroupsStream() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return const Stream.empty();
+
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .where('members', arrayContains: currentUser.uid)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return Group.fromJson(doc.data(), doc.id);
+          }).toList();
+        });
+  }
 
   // Add group to user's list
   Future<void> addGroupToUser(String groupId) async {
@@ -105,27 +106,28 @@ Stream<List<Group>> getMyGroupsStream() {
       print("Error adding group to user: $e");
     }
   }
-  Stream<List<Group>> streamMyGroups() {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null) {
-    return const Stream.empty();
-  }
 
-  return FirebaseFirestore.instance
-      .collection('groups')
-      .where(
-        Filter.or(
-          Filter('members', arrayContains: user.uid),
-          Filter('createdBy', isEqualTo: user.uid),
-        ),
-      )
-      .snapshots()
-      .map((snapshot) {
-        return snapshot.docs
-            .map((doc) => Group.fromJson(doc.data(), doc.id))
-            .toList();
-      });
-}
+  Stream<List<Group>> streamMyGroups() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .where(
+          Filter.or(
+            Filter('members', arrayContains: user.uid),
+            Filter('createdBy', isEqualTo: user.uid),
+          ),
+        )
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => Group.fromJson(doc.data(), doc.id))
+              .toList();
+        });
+  }
 
   // Get user's groups
   Future<List<Group>> getMyGroups() async {
@@ -195,6 +197,7 @@ Stream<List<Group>> getMyGroupsStream() {
       return {
         'fName': data['fName'] ?? 'Unknown',
         'lName': data['lName'] ?? '',
+        'encryptedUserPicture': data['encryptedUserPicture'] ?? '',
       };
     } catch (e) {
       print("Error fetching user data: $e");
@@ -387,113 +390,143 @@ Stream<List<Group>> getMyGroupsStream() {
   }
 
   // image
- Future<void> uploadGroupPictureToFirestore({
-  required String groupId,
-  required Uint8List imageBytes,
-}) async {
-  try {
-    final encryptionKey = _generateRandomKey();
-    final encryptedImage = _encryptImage(imageBytes, encryptionKey);
-    
-    await FirebaseFirestore.instance.collection('groups').doc(groupId).update({
-      'encryptedGroupPicture': encryptedImage,
-      'encryptionKey': encryptionKey,
-      'lastUpdated': FieldValue.serverTimestamp(),
-    });
-    
-    print('✅ Image uploaded and encrypted successfully');
-  } catch (e) {
-    print('❌ Upload error: $e');
-    rethrow;
-  }
-}
+  Future<void> uploadGroupPictureToFirestore({
+    required String groupId,
+    required Uint8List imageBytes,
+  }) async {
+    try {
+      final encryptionKey = generateRandomKey();
+      final encryptedImage = encryptImage(imageBytes, encryptionKey);
 
-String _encryptImage(Uint8List imageBytes, String keyText) {
-  try {
-    final key = encrypt.Key.fromUtf8(keyText);
-    final iv = encrypt.IV.fromLength(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
-    final encrypted = encrypter.encryptBytes(imageBytes, iv: iv);     
-    final combined = iv.bytes + encrypted.bytes;
+      await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .update({
+            'encryptedGroupPicture': encryptedImage,
+            'encryptionKey': encryptionKey,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
 
-    return base64Encode(combined);
-  } catch (e) {
-    print('❌ Encryption error: $e');
-    throw Exception('Failed to encrypt image');
-  }
-}
-  // Download and decrypt group image
- Future<Uint8List?> getDecryptedGroupImage(String groupId) async {
-  try {
-    final doc = await FirebaseFirestore.instance
-        .collection('groups')
-        .doc(groupId)
-        .get();
-
-    if (doc.exists) {
-      final encryptedImage = doc.data()?['encryptedGroupPicture'] as String?;
-      final encryptionKey = doc.data()?['encryptionKey'] as String?;
-      
-      if (encryptedImage != null && encryptionKey != null) {
-        return _decryptImage(encryptedImage, encryptionKey);
-      }
+      print('✅ Image uploaded and encrypted successfully');
+    } catch (e) {
+      print('❌ Upload error: $e');
+      rethrow;
     }
-    return null;
-  } catch (e) {
-    print('❌ Get image error: $e');
-    return null;
   }
-}
 
-Uint8List _decodeAndDecryptImage(
-  String encryptedBase64, 
-  String keyText,
-  String ivBase64,
-) {
-  try {
-    final encryptedBytes = base64Decode(encryptedBase64);
-    final key = encrypt.Key.fromUtf8(keyText.padRight(32));
-    final iv = encrypt.IV(base64Decode(ivBase64));
-    final encrypter = encrypt.Encrypter(encrypt.AES(key));
-    
-    return Uint8List.fromList(
-      encrypter.decryptBytes(encrypt.Encrypted(encryptedBytes), iv: iv),
-    );
-  } catch (e) {
-    print('❌ Decryption failed: $e');
-    throw Exception('Failed to decrypt image');
+  // image
+  Future<void> uploadUserPictureToFirestore({
+    required String userId,
+    required Uint8List imageBytes,
+  }) async {
+    try {
+      final encryptionKey = generateRandomKey();
+      final encryptedImage = encryptImage(imageBytes, encryptionKey);
+
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'encryptedUserPicture': encryptedImage,
+        'encryptionKey': encryptionKey,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+
+      print('✅ Image uploaded and encrypted successfully');
+    } catch (e) {
+      print('❌ Upload error: $e');
+      rethrow;
+    }
   }
-}
+
+  String encryptImage(Uint8List imageBytes, String keyText) {
+    try {
+      final key = encrypt.Key.fromUtf8(keyText);
+      final iv = encrypt.IV.fromLength(16);
+      final encrypter = encrypt.Encrypter(
+        encrypt.AES(key, mode: encrypt.AESMode.cbc),
+      );
+      final encrypted = encrypter.encryptBytes(imageBytes, iv: iv);
+      final combined = iv.bytes + encrypted.bytes;
+
+      return base64Encode(combined);
+    } catch (e) {
+      print('❌ Encryption error: $e');
+      throw Exception('Failed to encrypt image');
+    }
+  }
+
+  // Download and decrypt group image
+  Future<Uint8List?> getDecryptedGroupImage(String groupId) async {
+    try {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(groupId)
+              .get();
+
+      if (doc.exists) {
+        final encryptedImage = doc.data()?['encryptedGroupPicture'] as String?;
+        final encryptionKey = doc.data()?['encryptionKey'] as String?;
+
+        if (encryptedImage != null && encryptionKey != null) {
+          return decryptImage(encryptedImage, encryptionKey);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('❌ Get image error: $e');
+      return null;
+    }
+  }
+
+  Uint8List _decodeAndDecryptImage(
+    String encryptedBase64,
+    String keyText,
+    String ivBase64,
+  ) {
+    try {
+      final encryptedBytes = base64Decode(encryptedBase64);
+      final key = encrypt.Key.fromUtf8(keyText.padRight(32));
+      final iv = encrypt.IV(base64Decode(ivBase64));
+      final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+      return Uint8List.fromList(
+        encrypter.decryptBytes(encrypt.Encrypted(encryptedBytes), iv: iv),
+      );
+    } catch (e) {
+      print('❌ Decryption failed: $e');
+      throw Exception('Failed to decrypt image');
+    }
+  }
 
   // random key
-  String _generateRandomKey({int length = 32}) {
+  String generateRandomKey({int length = 32}) {
     final random = math.Random.secure();
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return List.generate(length, (_) => chars[random.nextInt(chars.length)]).join();
+    const chars =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return List.generate(
+      length,
+      (_) => chars[random.nextInt(chars.length)],
+    ).join();
   }
-
- 
 
   // decryption
-  Uint8List _decryptImage(String encryptedBase64, String keyText) {
-  try {
-    final combined = base64Decode(encryptedBase64);
-    
-    
-    final iv = encrypt.IV(combined.sublist(0, 16));
-    final encryptedBytes = combined.sublist(16);
-    
-    final key = encrypt.Key.fromUtf8(keyText);
-    final encrypter = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
-    
-    return Uint8List.fromList(
-      encrypter.decryptBytes(encrypt.Encrypted(encryptedBytes), iv: iv),
-    );
-  } catch (e) {
-    print('❌ Decryption error: $e');
-    throw Exception('Failed to decrypt image');
+  Uint8List decryptImage(String encryptedBase64, String keyText) {
+    try {
+      final combined = base64Decode(encryptedBase64);
+
+      final iv = encrypt.IV(combined.sublist(0, 16));
+      final encryptedBytes = combined.sublist(16);
+
+      final key = encrypt.Key.fromUtf8(keyText);
+      final encrypter = encrypt.Encrypter(
+        encrypt.AES(key, mode: encrypt.AESMode.cbc),
+      );
+
+      return Uint8List.fromList(
+        encrypter.decryptBytes(encrypt.Encrypted(encryptedBytes), iv: iv),
+      );
+    } catch (e) {
+      print('❌ Decryption error: $e');
+      throw Exception('Failed to decrypt image');
+    }
   }
 }
-
-}
-

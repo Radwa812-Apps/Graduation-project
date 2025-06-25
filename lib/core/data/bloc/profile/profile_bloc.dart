@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,6 +27,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         updateData['phoneNumber'] = event.phoneNumber;
         updateData['dateOfBirth'] = event.dateOfBirth;
         updateData['email'] = event.email;
+        updateData['encryptedUserPicture'] =
+            event.userPicture;
         await users.doc(id).update(updateData);
 
         emit(UserEditedSuccessState(userModel: userModel!));

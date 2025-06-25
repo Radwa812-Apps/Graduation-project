@@ -1,8 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/components/member_group_inside.dart';
 import 'package:near_me_new_version/Features/share_location/components/build_search_field.dart';
+
+import '../../Private_chat/Private_chat/screens/private_chat_screen.dart';
 
 class BuildSheetContent extends StatefulWidget {
   final ScrollController scrollController;
@@ -41,6 +44,7 @@ class _BuildSheetContentState extends State<BuildSheetContent> {
           )
         else
           ...widget.groupMembers.map((member) {
+            //log("Member ID: ${member['uid']}, Name: ${member['name']}, Image: ${member['encryptedUserPicture']}, Last Location: ${member['lastLocation']}, Distance: ${member['distance']}");
             return Column(
               children: [
                 GestureDetector(
@@ -60,6 +64,8 @@ class _BuildSheetContentState extends State<BuildSheetContent> {
                     userName: member['name'] ?? 'Unknown',
                     lastLocatin: member['lastLocation'] ?? 'Unknown',
                     distance: member['distance'] ?? 'N/A',
+                    picture: member['encryptedUserPicture']??'',
+                    uid: member['uid']??''
                   ),
                 ),
                 const SizedBox(height: 10),

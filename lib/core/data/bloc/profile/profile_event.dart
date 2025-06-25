@@ -8,12 +8,15 @@ class EditUserEvent extends ProfileEvent {
   final String email;
   final String phoneNumber;
   final String dateOfBirth;
+  final Uint8List userPicture;
   EditUserEvent(
       {required this.fName,
       required this.lName,
       required this.email,
       required this.phoneNumber,
-      required this.dateOfBirth});
+      required this.dateOfBirth,
+      required this.userPicture,
+      });
 }
 
 class DeleteUserEvent extends ProfileEvent {

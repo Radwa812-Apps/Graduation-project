@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart'
-    show FirebaseFirestore, FirebaseFirestore, QuerySnapshot;
+    show FirebaseFirestore, QuerySnapshot;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -21,6 +21,7 @@ import 'package:near_me_new_version/Features/share_location/components/map_widge
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/core/constants.dart';
+import 'package:near_me_new_version/core/services/profile_image_service.dart';
 
 import '../../../chat_group/chat_group/screens/group_chat.dart';
 
@@ -29,7 +30,7 @@ class OrderTrackingPage extends StatefulWidget {
   final String groupName;
 
   const OrderTrackingPage({Key? key, this.groupId = '', this.groupName = ''})
-      : super(key: key);
+    : super(key: key);
 
   @override
   State<OrderTrackingPage> createState() => _OrderTrackingPageState();
@@ -53,8 +54,8 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   List<Map<String, dynamic>> groupMembers = [];
   BitmapDescriptor? customUserMarkerIcon;
   BitmapDescriptor? customSourceMarkerIcon;
-Uint8List? groupImage;
-
+  Uint8List? groupImage;
+  Uint8List? userImage;
   @override
   void initState() {
     log("initState............");
@@ -75,8 +76,9 @@ Uint8List? groupImage;
             'uid': uid,
             'name': '${userData['fName']} ${userData['lName']}',
             'imageUrl': userData['imageUrl'],
+            'encryptedUserPicture': userData['encryptedUserPicture'],
             'lastLocation': 'Active now',
-            'distance': '0.5km'
+            'distance': '0.5km',
           });
         }
       }
@@ -87,34 +89,37 @@ Uint8List? groupImage;
       }
     }
   }
-void _listenToGroupImageChanges() {
-  FirebaseFirestore.instance
-      .collection('groups')
-      .doc(widget.groupId)
-      .snapshots()
-      .listen((snapshot) async {
-    if (snapshot.exists) {
-      final updatedImage = await groupService.getDecryptedGroupImage(widget.groupId);
-      if (mounted) {
-        setState(() {
-          groupImage = updatedImage;
+
+  void _listenToGroupImageChanges() {
+    FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .snapshots()
+        .listen((snapshot) async {
+          if (snapshot.exists) {
+            final updatedImage = await groupService.getDecryptedGroupImage(
+              widget.groupId,
+            );
+            if (mounted) {
+              setState(() {
+                groupImage = updatedImage;
+              });
+            }
+          }
         });
-      }
-    }
-  });
-}
+  }
 
   Future<void> initialization() async {
     _createFixedMarker();
     _createFixedSourceMarker();
     user = firebase_auth.FirebaseAuth.instance.currentUser;
     isUserLiveTrackingOn = context.read<TrackingUserOnCubit>().state;
-   final image = await groupService.getDecryptedGroupImage(widget.groupId);
-  if (mounted) {
-    setState(() {
-      groupImage = image;
-    });
-  }
+    final image = await groupService.getDecryptedGroupImage(widget.groupId);
+    if (mounted) {
+      setState(() {
+        groupImage = image;
+      });
+    }
     _trackingSubscription = context.read<TrackingUserOnCubit>().stream.listen((
       state,
     ) {
@@ -131,9 +136,34 @@ void _listenToGroupImageChanges() {
   Future<void> _initializeTracking() async {
     _createFixedMarker();
     _createFixedSourceMarker();
+    _loadUserImage();
     log("Initializing live tracking for group: ${widget.groupId}");
     await _handleLiveLocation();
     _toggleLiveTracking(isLiveTrackingOn, isUserLiveTrackingOn);
+  }
+
+  void _loadUserImage() async {
+    user = firebase_auth.FirebaseAuth.instance.currentUser;
+    log("for uid: ${user?.uid})");
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("User not authenticated"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    if (user!.uid != null) {
+      final image = await ProfileImageService().getDecryptedUserImage(
+        user!.uid,
+      );
+      if (image != null && mounted) {
+        setState(() {
+          userImage = image;
+        });
+      }
+    }
   }
 
   Future<void> _createFixedMarker() async {
@@ -231,7 +261,9 @@ void _listenToGroupImageChanges() {
       _locationController.currentLocation!.latitude!,
       _locationController.currentLocation!.longitude!,
     );
-    log("Static map reset to initial position: ${_mapController.initialPosition}");
+    log(
+      "Static map reset to initial position: ${_mapController.initialPosition}",
+    );
     _mapController.updateCameraPosition(
       LatLng(
         _mapController.initialPosition!.latitude!,
@@ -286,7 +318,9 @@ void _listenToGroupImageChanges() {
   }
 
   void _listenToGroupLiveLocations() {
-    _firebaseController.getGroupLiveLocationsStream(widget.groupId).listen((snapshot) {
+    _firebaseController.getGroupLiveLocationsStream(widget.groupId).listen((
+      snapshot,
+    ) {
       final markers = _createMarkersFromSnapshot(snapshot);
       _mapController.updateMarkers(markers);
       if (mounted) {
@@ -309,7 +343,8 @@ void _listenToGroupImageChanges() {
         Marker(
           markerId: MarkerId('${userId}_current'),
           position: LatLng(curLat, curLng),
-          icon: customUserMarkerIcon ??
+          icon:
+              customUserMarkerIcon ??
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           infoWindow: InfoWindow(
             title: 'Current Location',
@@ -319,7 +354,8 @@ void _listenToGroupImageChanges() {
         Marker(
           markerId: MarkerId('${userId}_source'),
           position: LatLng(sourceLat, sourceLng),
-          icon: customSourceMarkerIcon ??
+          icon:
+              customSourceMarkerIcon ??
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           infoWindow: InfoWindow(
             title: 'Source Location',
@@ -360,23 +396,26 @@ void _listenToGroupImageChanges() {
       return;
     }
     final polylineCoordinates =
-        osrmRoute.map((latLng) => LatLng(latLng.latitude, latLng.longitude)).toList();
+        osrmRoute
+            .map((latLng) => LatLng(latLng.latitude, latLng.longitude))
+            .toList();
     log("Polyline coordinates: $polylineCoordinates");
     polylineCoordinatesSet = {
       Polyline(
         polylineId: const PolylineId("manual_route"),
-        points: polylineCoordinates.isNotEmpty
-            ? polylineCoordinates
-            : [
-                LatLng(
-                  _locationController.sourceLocation!.latitude!,
-                  _locationController.sourceLocation!.longitude!,
-                ),
-                LatLng(
-                  _locationController.currentLocation!.latitude!,
-                  _locationController.currentLocation!.longitude!,
-                ),
-              ],
+        points:
+            polylineCoordinates.isNotEmpty
+                ? polylineCoordinates
+                : [
+                  LatLng(
+                    _locationController.sourceLocation!.latitude!,
+                    _locationController.sourceLocation!.longitude!,
+                  ),
+                  LatLng(
+                    _locationController.currentLocation!.latitude!,
+                    _locationController.currentLocation!.longitude!,
+                  ),
+                ],
         color: Colors.blue,
         width: 5,
       ),
@@ -407,25 +446,25 @@ void _listenToGroupImageChanges() {
   }
 
   BoxDecoration _buildGroupAvatarDecoration() {
-  return BoxDecoration(
-    shape: BoxShape.circle,
-    border: Border.all(color: Colors.white, width: 4),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.2),
-        blurRadius: 10,
-        offset: const Offset(0, 5),
+    return BoxDecoration(
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 4),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.2),
+          blurRadius: 10,
+          offset: const Offset(0, 5),
+        ),
+      ],
+      image: DecorationImage(
+        image:
+            groupImage != null
+                ? MemoryImage(groupImage!)
+                : const AssetImage("assets/images/group.jpg") as ImageProvider,
+        fit: BoxFit.cover,
       ),
-    ],
-    image: DecorationImage(
-      image: groupImage != null
-          ? MemoryImage(groupImage!)
-          : const AssetImage("assets/images/group.jpg") as ImageProvider,
-      fit: BoxFit.cover,
-    ),
-  );
-}
-
+    );
+  }
 
   void _navigateToGroupProfile(BuildContext context) {
     Navigator.pushNamed(

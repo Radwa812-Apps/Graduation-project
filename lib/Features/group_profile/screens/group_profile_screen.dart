@@ -19,6 +19,7 @@ import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 
 import '../../../chat_group/chat_group/screens/group_chat.dart';
+import '../../../core/services/profile_image_service.dart';
 
 class GroupProfileScreen extends StatefulWidget {
   static String groupProfileScreenKey = '/groupProfileScreen';
@@ -31,7 +32,7 @@ class GroupProfileScreen extends StatefulWidget {
 class _GroupProfileScreenState extends State<GroupProfileScreen> {
   bool _isSearchExpanded = false;
   bool isMenuVisible = false;
-
+final ProfileImageService _profileImageService = ProfileImageService();
   final GroupService _groupService = GroupService();
   Group? _group;
   bool _isDataLoaded = false;
@@ -155,109 +156,149 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   );
 }
 */
+
   Future<void> _pickAndUploadGroupImage() async {
-    final ImagePicker picker = ImagePicker();
+    try {
+      setState(() => _isLoading = true);
 
-    final XFile? pickedFile = await showModalBottomSheet<XFile?>(
-      context: context,
-      isScrollControlled: true,
-      builder:
-          (context) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildImageOption(
-                    icon: Icons.photo_library_outlined,
-                    title: "Choose image from gallery",
-                    onTap: () async {
-                      final file = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        imageQuality: 70,
-                        maxWidth: 1200,
-                        maxHeight: 1200,
-                      );
-                      Navigator.pop(context, file);
-                    },
-                  ),
-                  const Divider(height: 1),
-                  _buildImageOption(
-                    icon: Icons.camera_alt_outlined,
-                    title: "Take a new photo",
-                    onTap: () async {
-                      final file = await picker.pickImage(
-                        source: ImageSource.camera,
-                        imageQuality: 70,
-                        maxWidth: 1200,
-                        maxHeight: 1200,
-                      );
-                      Navigator.pop(context, file);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
+      final compressedBytes = await _profileImageService.pickAndCompressImage(
+        context,
+      );
+      if (compressedBytes == null) return;
 
-    if (pickedFile != null) {
-      try {
-        setState(() => _isLoading = true);
+      _profileImageService.showUploadingDialog(context);
 
-        final imageBytes = await pickedFile.readAsBytes();
-        final compressedBytes = await _compressImage(imageBytes);
+      await _groupService.uploadGroupPictureToFirestore(
+        groupId: groupId,
+        imageBytes: compressedBytes,
+      );
 
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder:
-              (context) => AlertDialog(
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text("Uploading image..."),
-                  ],
-                ),
-              ),
-        );
+      final decrypted = await _groupService.getDecryptedGroupImage(groupId);
+      if (mounted && decrypted != null) {
+        setState(() {
+          groupImage = decrypted;
+        });
+      }
 
-        await _groupService.uploadGroupPictureToFirestore(
-          groupId: groupId,
-          imageBytes: compressedBytes,
-        );
-
-        final decrypted = await _groupService.getDecryptedGroupImage(groupId);
-        if (mounted && decrypted != null) {
-          setState(() {
-            groupImage = decrypted;
-          });
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Group photo updated successfully"),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("حدث خطأ: ${e.toString()}"),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      } finally {
-        if (mounted) {
-         Navigator.of(context, rootNavigator: true).pop(); 
- 
-          setState(() => _isLoading = false);
-        }
+      _profileImageService.showSuccessMessage(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: ${e.toString()}"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => _isLoading = false);
       }
     }
   }
+
+  // Future<void> _pickAndUploadGroupImage() async {
+  //   final ImagePicker picker = ImagePicker();
+
+  //   final XFile? pickedFile = await showModalBottomSheet<XFile?>(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     builder:
+  //         (context) => SafeArea(
+  //           child: Padding(
+  //             padding: const EdgeInsets.symmetric(vertical: 10),
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 _buildImageOption(
+  //                   icon: Icons.photo_library_outlined,
+  //                   title: "Choose image from gallery",
+  //                   onTap: () async {
+  //                     final file = await picker.pickImage(
+  //                       source: ImageSource.gallery,
+  //                       imageQuality: 70,
+  //                       maxWidth: 1200,
+  //                       maxHeight: 1200,
+  //                     );
+  //                     Navigator.pop(context, file);
+  //                   },
+  //                 ),
+  //                 const Divider(height: 1),
+  //                 _buildImageOption(
+  //                   icon: Icons.camera_alt_outlined,
+  //                   title: "Take a new photo",
+  //                   onTap: () async {
+  //                     final file = await picker.pickImage(
+  //                       source: ImageSource.camera,
+  //                       imageQuality: 70,
+  //                       maxWidth: 1200,
+  //                       maxHeight: 1200,
+  //                     );
+  //                     Navigator.pop(context, file);
+  //                   },
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //   );
+
+  //   if (pickedFile != null) {
+  //     try {
+  //       setState(() => _isLoading = true);
+
+  //       final imageBytes = await pickedFile.readAsBytes();
+  //       final compressedBytes = await _compressImage(imageBytes);
+
+  //       showDialog(
+  //         context: context,
+  //         barrierDismissible: false,
+  //         builder:
+  //             (context) => AlertDialog(
+  //               content: Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: const [
+  //                   CircularProgressIndicator(),
+  //                   SizedBox(height: 16),
+  //                   Text("Uploading image..."),
+  //                 ],
+  //               ),
+  //             ),
+  //       );
+
+  //       await _groupService.uploadGroupPictureToFirestore(
+  //         groupId: groupId,
+  //         imageBytes: compressedBytes,
+  //       );
+
+  //       final decrypted = await _groupService.getDecryptedGroupImage(groupId);
+  //       if (mounted && decrypted != null) {
+  //         setState(() {
+  //           groupImage = decrypted;
+  //         });
+  //       }
+
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text("Group photo updated successfully"),
+  //           duration: Duration(seconds: 2),
+  //         ),
+  //       );
+  //     } catch (e) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text("حدث خطأ: ${e.toString()}"),
+  //           duration: const Duration(seconds: 3),
+  //         ),
+  //       );
+  //     } finally {
+  //       if (mounted) {
+  //        Navigator.of(context, rootNavigator: true).pop();
+
+  //         setState(() => _isLoading = false);
+  //       }
+  //     }
+  //   }
+  // }
 
   Widget _buildImageOption({
     required IconData icon,
@@ -371,7 +412,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                   size: 28,
                 ),
                 onPressed: () {
-                 Navigator.pop(context, true);
+                  Navigator.pop(context, true);
                 },
               ),
             ),

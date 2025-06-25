@@ -1,10 +1,16 @@
 
+import 'dart:typed_data';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/User_Profile/components/button_widget.dart';
 import 'package:near_me_new_version/Features/User_Profile/screens/edit_screen.dart';
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
+//import 'package:near_me_new_version/core/data/models/userRadwa.dart';
+import 'package:near_me_new_version/core/services/group_services.dart';
+import 'package:near_me_new_version/core/services/profile_image_service.dart';
 import '../../../../core/constants.dart';
 import '../../Home/Home/components/round_image_widget.dart';
 import 'user_profile_info_widget.dart';
@@ -27,11 +33,46 @@ class UserProfileAll_InfoWidget extends StatefulWidget {
 }
 
 class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
+  bool _isLoading = false;
+  final ProfileImageService _profileImageService = ProfileImageService();
+  final GroupService _groupService = GroupService();
+  Uint8List? userImage;
+  @override
+  void initState() {
+    super.initState();
+    _loadUserImage();
+  }
+  
+  void _loadUserImage() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("User not authenticated"),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    if (user != null) {
+      final image = await ProfileImageService().getDecryptedUserImage(user.uid);
+      if (image != null && mounted) {
+        setState(() {
+          userImage = image;
+        });
+      }
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
 
+    ImageProvider imageProvider = const AssetImage(kDefaultUserImge);
+    if (userImage != null) {
+      imageProvider = MemoryImage(userImage!);
+    }
     return Center(
       child: Stack(
         clipBehavior: Clip.none,
@@ -109,6 +150,7 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
                                 lName: state.userModel.lName,
                                 fName: state.userModel.fName,
                                 phoneNumber: state.userModel.phoneNumber,
+                                userPicture: userImage!,
                               ),
                             );
                             Navigator.pushNamed(
@@ -137,15 +179,21 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
             right: 0,
 
             child: Center(
-              child: RoundImageWidget(
-               // name: kDefaultUserImge,
-                width: 110.w,
-                height: 110.h,
-              ),
+                child: CircleAvatar(
+                          radius: 70,
+                          backgroundImage: imageProvider,
+                        ),
+                // RoundImageWidget(
+                //   // assetImagePath: kDefaultUserImge, // Uncomment if you want to use a default asset image
+                //  // name: kDefaultUserImge,
+                //   width: 110.w,
+                //   height: 110.h,
+                // ),
+              
             ),
           ),
         ],
       ),
     );
   }
-}
+  }

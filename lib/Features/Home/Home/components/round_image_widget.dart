@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
@@ -22,6 +23,7 @@ class RoundImageWidget extends StatelessWidget {
     try {
       if (imageBytes != null) {
         imageProvider = MemoryImage(imageBytes!);
+        log("image byte not null..${imageBytes!.length}");
       } else {
         imageProvider = AssetImage(assetImagePath ?? 'assets/images/group.jpg');
       }
@@ -37,7 +39,7 @@ class RoundImageWidget extends StatelessWidget {
         height: height,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
-          print('❌ Image render failed: $error');
+          log('❌ Image render failed: $error');
           return Image.asset(
             'assets/images/default_group.png',
             width: width,
