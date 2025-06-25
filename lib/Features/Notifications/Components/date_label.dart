@@ -6,10 +6,7 @@ import '../../../core/constants.dart';
 class DateLabel extends StatefulWidget {
   final String dateText;
 
-  const DateLabel({
-    Key? key,
-    required this.dateText,
-  }) : super(key: key);
+  const DateLabel({Key? key, required this.dateText}) : super(key: key);
 
   @override
   _DateLabelState createState() => _DateLabelState();
@@ -56,13 +53,18 @@ class _DateLabelState extends State<DateLabel> {
     return GestureDetector(
       onTap: () => _openCalendar(context),
       child: Padding(
-        padding: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.only(
+          top: 10,
+          bottom: 10,
+          left: 10,
+          right: 10,
+        ),
         child: Container(
-          width: 45.w,
-          height: 14.h,
+          constraints: BoxConstraints(maxWidth: 100.w),
+          height: 20.h,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: const Color.fromRGBO(61, 83, 0, 0.29),
+            color: Colors.white,
           ),
           child: Center(
             child: Text(
@@ -70,8 +72,8 @@ class _DateLabelState extends State<DateLabel> {
               style: const TextStyle(
                 color: textColor,
                 fontFamily: 'Open Sans',
-                fontSize: 8,
-                fontWeight: FontWeight.normal,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),

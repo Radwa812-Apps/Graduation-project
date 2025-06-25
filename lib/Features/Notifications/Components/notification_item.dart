@@ -25,13 +25,13 @@ class NotificationItem extends StatelessWidget {
       onTap: onPressed,
       child: SizedBox(
         width: 300.w,
-        height: 90.h,
+        height: 100.h,
         child: Container(
           margin: EdgeInsets.only(bottom: 10.h),
           padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 8.h),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20.w),
+              topLeft: Radius.circular(10.w),
               topRight: Radius.circular(20.w),
               bottomLeft: Radius.circular(10.w),
               bottomRight: Radius.circular(10.w),
@@ -62,8 +62,8 @@ class NotificationItem extends StatelessWidget {
                       Text(
                         title!,
                         style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'OpenSans-Regular',
+                          color: kPrimaryColor1,
+                          fontFamily: 'OpenSans-Bold',
                           fontSize: 15.sp,
                           fontWeight: FontWeight.bold,
                         ),
@@ -77,7 +77,7 @@ class NotificationItem extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontFamily: 'OpenSans-Regular',
-                              fontSize: 16.sp,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -88,7 +88,7 @@ class NotificationItem extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.8),
                               fontFamily: 'OpenSans-Regular',
-                              fontSize: 15.sp,
+                              fontSize: 13.sp,
                               fontWeight: FontWeight.w400,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -110,9 +110,9 @@ class NotificationItem extends StatelessWidget {
                         color: kPrimaryColor1,
                         size: 16,
                       ),
-                      onPressed: () {},
+                      onPressed: onPressed,
                     ),
-                  SizedBox(height: 5.h),
+                  SizedBox(height: 20.h),
                   Text(
                     time,
                     style: TextStyle(

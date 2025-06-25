@@ -72,11 +72,12 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
   }
 
   Future<void> _loadExistingGeofences() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('groups')
-        .doc(widget.groupId)
-        .get();
-    
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(widget.groupId)
+            .get();
+
     if (doc.exists) {
       final data = doc.data() as Map<String, dynamic>;
       final geofences = List<String>.from(data['geofenceIds'] ?? []);
@@ -90,23 +91,53 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
     final userId = _auth.currentUser?.uid;
     if (userId == null) return;
 
-    final snapshot = await FirebaseFirestore.instance
-        .collection('userGeofences')
-        .doc(userId)
-        .collection('geofences')
-        .get();
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('userGeofences')
+            .doc(userId)
+            .collection('geofences')
+            .get();
 
-    final geofences = snapshot.docs.map((doc) => Geofence.fromFirestore(doc)).toList();
+    final geofences =
+        snapshot.docs.map((doc) => Geofence.fromFirestore(doc)).toList();
 
     setState(() {
       _allGeofences = geofences;
     });
   }
 
+  // void _toggleGeofenceSelection(String geofenceId) {
+  //   setState(() {
+  //     if (_selectedGeofences.contains(geofenceId)) {
+  //       _selectedGeofences.remove(geofenceId);
+  //     } else {
+  //       _temporarySelection[geofenceId] = true;
+  //     }
+  //   });
+  // }
+
+  static String _extractPlaceNameFromGeofenceId(String geofenceId) {
+    try {
+      final parts = geofenceId.split('_');
+      return parts.length >= 3 ? parts[2] : geofenceId;
+    } catch (e) {
+      print('Geofence ID parsing error: $e');
+      return geofenceId;
+    }
+  }
+
   void _toggleGeofenceSelection(String geofenceId) {
     setState(() {
       if (_selectedGeofences.contains(geofenceId)) {
-        _selectedGeofences.remove(geofenceId);
+        _removeGeofenceFromGroup(geofenceId);
+
+        final placeName = _extractPlaceNameFromGeofenceId(geofenceId);
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Removed geofence: $placeName')));
+      } else if (_temporarySelection.containsKey(geofenceId)) {
+        _temporarySelection.remove(geofenceId);
       } else {
         _temporarySelection[geofenceId] = true;
       }
@@ -122,11 +153,14 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
     }
 
     try {
+      final selectedCount = _temporarySelection.length;
       await FirebaseFirestore.instance
           .collection('groups')
           .doc(widget.groupId)
           .update({
-            'geofenceIds': FieldValue.arrayUnion(_temporarySelection.keys.toList()),
+            'geofenceIds': FieldValue.arrayUnion(
+              _temporarySelection.keys.toList(),
+            ),
           });
 
       setState(() {
@@ -135,7 +169,7 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Successfully added ${_temporarySelection.length} geofences')),
+        SnackBar(content: Text('Successfully added $selectedCount geofences')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,14 +235,16 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
         final isTemporarilySelected = _temporarySelection[geofence.id] ?? false;
 
         return Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 8.0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: DecoratedBox(
-            decoration: _placeItemDecoration(isInGroup || isTemporarilySelected),
+            decoration: _placeItemDecoration(
+              isInGroup || isTemporarilySelected,
+            ),
             child: ListTile(
-              leading: _buildPlaceIcon(index, isInGroup || isTemporarilySelected),
+              leading: _buildPlaceIcon(
+                index,
+                isInGroup || isTemporarilySelected,
+              ),
               title: Text(
                 geofence.placeName,
                 style: const TextStyle(
@@ -235,7 +271,6 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
     );
   }
 
-  // باقي الدوال المساعدة (بنفس الطريقة مع تغيير الأسماء فقط)
   Widget _buildActionButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -266,9 +301,8 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
           ElevatedButton(
             onPressed: _addSelectedGeofences,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _temporarySelection.isNotEmpty
-                  ? Colors.blue
-                  : Colors.grey,
+              backgroundColor:
+                  _temporarySelection.isNotEmpty ? Colors.blue : Colors.grey,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
@@ -285,11 +319,12 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
 
   List<Geofence> _filterGeofences(List<Geofence> geofences) {
     return geofences.where((geofence) {
-      return geofence.placeName.toLowerCase().contains(_searchQuery.toLowerCase());
+      return geofence.placeName.toLowerCase().contains(
+        _searchQuery.toLowerCase(),
+      );
     }).toList();
   }
 
-  // باقي الدوال تبقى كما هي مع تغيير الأسماء فقط
   BoxDecoration _placeItemDecoration(bool isSelected) {
     return BoxDecoration(
       color: Colors.white.withOpacity(0.7),
@@ -297,9 +332,10 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
       border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1.0),
       boxShadow: [
         BoxShadow(
-          color: isSelected
-              ? Colors.green.withOpacity(0.5)
-              : Colors.white.withOpacity(0.9),
+          color:
+              isSelected
+                  ? Colors.green.withOpacity(0.5)
+                  : Colors.white.withOpacity(0.9),
           blurRadius: 5,
           spreadRadius: 1,
         ),
@@ -317,9 +353,10 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
         border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: isSelected
-                ? Colors.green.withOpacity(0.5)
-                : Colors.grey.withOpacity(0.4),
+            color:
+                isSelected
+                    ? Colors.green.withOpacity(0.5)
+                    : Colors.grey.withOpacity(0.4),
             blurRadius: 1,
             spreadRadius: 2,
             offset: const Offset(0, 2),

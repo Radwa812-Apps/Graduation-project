@@ -27,6 +27,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../core/services/get_service_key.dart';
+import '../../../core/services/handle_dublicate_noti.dart';
 import '../../../core/services/send_notification_service.dart';
 
 class TrackingScreen extends StatelessWidget {
@@ -83,9 +84,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   void initState() {
     super.initState();
     notificationService.requestNotificationPermission();
-   notificationService.getDeviceToken();
-
-
+    notificationService.getDeviceToken();
 
     _notificationBloc = NotificationBloc(repository: _notificationRepository);
     _initNotifications();
@@ -379,66 +378,76 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     );
   }
 
-static Future<void> _sendPushNotifications({
-  required List<String> recipients,
-  required String title,
-  required String body,
-}) async {
-  try {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
-      print('No internet connection');
-      return;
-    }
+  static Future<void> _sendPushNotifications({
+    required List<String> recipients,
+    required String title,
+    required String body,
+  }) async {
+    try {
 
-    print('🦕 Preparing to notify ${recipients.length} recipients');
 
-    // Get valid FCM tokens
-    final tokens = await _fetchValidFcmTokens(recipients);
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        print('No internet connection');
+        return;
+      }
+ // Remove duplicates
+    final uniqueRecipients = recipients.toSet().toList();
+    
+    print('🦕 Preparing to notify ${uniqueRecipients.length} unique recipients');
 
-    if (tokens.isEmpty) {
-      print('🦕 No valid device tokens found');
-      return;
-    }
 
-    // Send in batches (FCM limit: 500 per request)
-    const batchSize = 500;
-    for (var i = 0; i < tokens.length; i += batchSize) {
-      final batch = tokens.sublist(
-        i,
-        i + batchSize > tokens.length ? tokens.length : i + batchSize,
-      );
+      print('🦕 Preparing to notify ${recipients.length} recipients');
 
-      print('🦕 Sending to batch ${i ~/ batchSize + 1} (${batch.length} devices)');
+      // Get valid FCM tokens
+      final tokens = await _fetchValidFcmTokens(recipients);
 
-      int attempts = 0;
-      bool success = false;
-      while (attempts < 3 && !success) {
-        try {
-          // Send to each token in the batch
-          for (final token in batch) {
-            await SendNotificationService.sendNotificationUsingApi(
-              fcmToken: token,
-              title: title,
-              body: body,
-              data: {
-                'type': 'geofence_update',
-                'event_timestamp': DateTime.now().toIso8601String(),
-              },
-            );
+      if (tokens.isEmpty) {
+        print('🦕 No valid device tokens found');
+        return;
+      }
+
+      // Send in batches (FCM limit: 500 per request)
+      const batchSize = 500;
+      for (var i = 0; i < tokens.length; i += batchSize) {
+        final batch = tokens.sublist(
+          i,
+          i + batchSize > tokens.length ? tokens.length : i + batchSize,
+        );
+
+        print(
+          '🦕 Sending to batch ${i ~/ batchSize + 1} (${batch.length} devices)',
+        );
+
+        int attempts = 0;
+        bool success = false;
+        while (attempts < 3 && !success) {
+          try {
+            // Send to each token in the batch
+            for (final token in batch) {
+              await SendNotificationService.sendNotificationUsingApi(
+                fcmToken: token,
+                title: title,
+                body: body,
+                data: {
+                  'type': 'geofence_update',
+                  'event_timestamp': DateTime.now().toIso8601String(),
+                },
+              );
+            }
+            success = true;
+          } catch (e) {
+            attempts++;
+            print('Attempt $attempts failed: $e');
+            await Future.delayed(Duration(seconds: 2));
           }
-          success = true;
-        } catch (e) {
-          attempts++;
-          print('Attempt $attempts failed: $e');
-          await Future.delayed(Duration(seconds: 2));
         }
       }
+    } catch (e) {
+      print('🦕 Notification send error: $e');
     }
-  } catch (e) {
-    print('🦕 Notification send error: $e');
   }
-}
+
   @pragma('vm:entry-point')
   static Future<void> geofenceTriggered(GeofenceCallbackParams params) async {
     try {
@@ -453,6 +462,16 @@ static Future<void> _sendPushNotifications({
 
       if (userId == null) {
         print('No authenticated user found');
+        return;
+      }
+      // Check if we should process this event
+      final geofenceIdd = params.geofences.first.id;
+      if (!NotificationSentCache.shouldSendNotification(
+        userId,
+        geofenceIdd,
+        params.event,
+      )) {
+        print('🦕 Duplicate geofence event - skipping');
         return;
       }
 
@@ -493,8 +512,9 @@ static Future<void> _sendPushNotifications({
         final members = List<String>.from(groupDoc['members'] ?? []);
         allMembers.addAll(members);
         print(
-          '🦕🦕🦕🦕🦕🦕🦕🦕🦕Group ${groupDoc.id} has ${members.length} members',
+          '👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻Group ${groupDoc.id} has ${members.length} members',
         );
+        
       }
 
       // Exclude current user
@@ -569,7 +589,8 @@ static Future<void> _sendPushNotifications({
       print('Geofence processing error: $e');
     }
   }
- static Future<List<String>> _fetchValidFcmTokens(List<String> userIds) async {
+
+  static Future<List<String>> _fetchValidFcmTokens(List<String> userIds) async {
     final List<String> validTokens = [];
 
     for (final userId in userIds) {
@@ -618,7 +639,7 @@ static Future<void> _sendPushNotifications({
       print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Error updating FCM token: $e');
     }
   }
- 
+
   static void _validateFcmResponse(http.Response response) {
     try {
       // تسجيل البيانات الأساسية للاستجابة
@@ -678,18 +699,6 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
       rethrow;
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
 
   static String _extractPlaceNameFromGeofenceId(String geofenceId) {
     try {

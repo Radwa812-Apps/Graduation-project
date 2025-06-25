@@ -12,7 +12,7 @@ class SendNotificationService {
   }) async {
     String serverKey = await GetServerKey().getServerKeyToken();
     String url =
-        'https://fcm.googleapis.com/v1/projects/new-version-nearme/messages:send';
+        'https://fcm.googleapis.com/v1/projects/new-version-nearme/messages:send'; 
 
     var headers = {
       'Content-Type': 'application/json',
