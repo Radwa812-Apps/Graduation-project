@@ -26,7 +26,9 @@ class FirebaseController {
 
   Future<bool?> checkIfGroupHasUserLiveLocations(String groupId) async {
     final user = await firebase_auth.FirebaseAuth.instance.currentUser;
-    log("checkIfGroupHasUserLiveLocations, user: ${user?.uid}, groupId: $groupId");
+    log(
+      "checkIfGroupHasUserLiveLocations, user: ${user?.uid}, groupId: $groupId",
+    );
     try {
       final docSnapshot =
           await _firestore
@@ -50,13 +52,13 @@ class FirebaseController {
     }
     log("Stopping alert animation for group: $groupId");
     FirebaseFirestore.instance
-    .collection('groups')
-    .doc(groupId)
-    .collection('group_alerts')
-    .doc(user!.uid)
-    .update({'alert_triggered': false});
+        .collection('groups')
+        .doc(groupId)
+        .collection('group_alerts')
+        .doc(user!.uid)
+        .update({'alert_triggered': false});
   }
-  
+
   Future<void> updateLiveLocation(
     String groupId,
     firebase_auth.User? user,
@@ -64,7 +66,9 @@ class FirebaseController {
     LocationData? currentLocation, [
     LocationData? sourceLocation,
   ]) async {
-    log("Updating live location for group: $groupId, user: ${user?.uid}, isEnabled: $isEnabled");
+    log(
+      "Updating live location for group: $groupId, user: ${user?.uid}, isEnabled: $isEnabled",
+    );
     final hasLiveLocations = await this.checkIfGroupHasUserLiveLocations(
       groupId,
     );
@@ -106,7 +110,9 @@ class FirebaseController {
     LocationData? sourceLocation,
   ) async {
     try {
-      log("Creating live location instance for group: $groupId, user: ${user.uid}");
+      log(
+        "Creating live location instance for group: $groupId, user: ${user.uid}",
+      );
       await _firestore
           .collection('groups')
           .doc(groupId)

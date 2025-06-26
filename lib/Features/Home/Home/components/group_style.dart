@@ -41,7 +41,7 @@ class _GroupStyleState extends State<GroupStyle>
     super.initState();
     _setupAnimation();
     _listenToGroupChanges();
-     _loadGroupImage();
+    _loadGroupImage();
   }
 
   void _setupAnimation() {
@@ -71,7 +71,7 @@ class _GroupStyleState extends State<GroupStyle>
       end: Colors.red.withOpacity(0.3),
     ).animate(_animationController);
   }
-  
+
   void _listenToGroupChanges() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || widget.groupId == null) {

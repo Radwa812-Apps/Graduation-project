@@ -13,7 +13,7 @@ class MembersStyleWidget extends StatefulWidget {
   final String? uid;
 
   const MembersStyleWidget({
-    super.key, 
+    super.key,
     required this.userName,
     this.picture,
     this.uid,
@@ -34,8 +34,10 @@ class _MembersStyleWidgetState extends State<MembersStyleWidget> {
 
   void _loadUserImage() async {
     if (widget.uid == null || widget.uid!.isEmpty) return;
-    
-    final image = await ProfileImageService().getDecryptedUserImage(widget.uid!);
+
+    final image = await ProfileImageService().getDecryptedUserImage(
+      widget.uid!,
+    );
     if (image != null && mounted) {
       setState(() {
         userImage = image;
@@ -45,7 +47,7 @@ class _MembersStyleWidgetState extends State<MembersStyleWidget> {
 
   void _navigateToPrivateChat() {
     if (widget.uid == null || widget.userName == null) return;
-    
+
     Navigator.pushNamed(
       context,
       PrivateChatScreen.privateChatScreenKey,
@@ -59,7 +61,9 @@ class _MembersStyleWidgetState extends State<MembersStyleWidget> {
 
   @override
   Widget build(BuildContext context) {
-    log("MembersStyleWidget build called, userName: ${widget.userName}, uid: ${widget.uid}");
+    log(
+      "MembersStyleWidget build called, userName: ${widget.userName}, uid: ${widget.uid}",
+    );
     return GestureDetector(
       onTap: _navigateToPrivateChat, // Updated to use the new navigation method
       child: Container(

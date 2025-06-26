@@ -36,9 +36,10 @@ class _RowCheckboxState extends State<RowCheckbox> {
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
       decoration: BoxDecoration(
         border: Border.all(
-          color: isChecked
-              ? kPrimaryColor1.withOpacity(0.1)
-              : Colors.grey.withOpacity(0.5),
+          color:
+              isChecked
+                  ? kPrimaryColor1.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.5),
           width: 1.5,
         ),
         color: isChecked ? kPrimaryColor1.withOpacity(0.1) : Colors.white,
@@ -95,13 +96,14 @@ class _RowCheckboxState extends State<RowCheckbox> {
                       width: 2,
                     ),
                   ),
-                  child: isChecked
-                      ? const Icon(
-                          Icons.check,
-                          size: 16,
-                          color: Colors.white,
-                        )
-                      : null,
+                  child:
+                      isChecked
+                          ? const Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Colors.white,
+                          )
+                          : null,
                 ),
                 const SizedBox(width: 10),
               ],

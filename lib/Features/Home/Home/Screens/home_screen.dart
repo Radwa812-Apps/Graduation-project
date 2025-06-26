@@ -64,7 +64,6 @@ class _HomeScreenState extends State<HomeScreen> {
   //     });
   //   }
   // }
-
   void _loadGroups() async {
     List<Group> fetchedGroups = await _groupService.getMyGroups();
     setState(() {
@@ -73,7 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadRecentChats() async {
-    List<Map<String, dynamic>> recentChats = await _chatService.getRecentChats();
+    List<Map<String, dynamic>> recentChats =
+        await _chatService.getRecentChats();
     setState(() {
       _recentChats = recentChats;
     });
@@ -162,130 +162,133 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(height: 20.h),
                 Expanded(
-                  child: _selectedTab == 'Groups'
-                      ? StreamBuilder<List<Group>>(
-                          stream: _groupService.getMyGroupsStream(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            final groups = snapshot.data ?? [];
+                  child:
+                      _selectedTab == 'Groups'
+                          ? StreamBuilder<List<Group>>(
+                            stream: _groupService.getMyGroupsStream(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                              final groups = snapshot.data ?? [];
 
-                            if (groups.isEmpty) {
+                              if (groups.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 100),
+                                  child: Image.asset(
+                                    'assets/images/noGroups.png',
+                                    width: screenWidth * .8.w,
+                                    height: screenHeight * .8.h,
+                                  ),
+                                );
+                              }
+
+                              return ListView.builder(
+                                itemCount: groups.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w,
+                                      vertical: 4.h,
+                                    ),
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        final result = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => OrderTrackingPage(
+                                                  groupId: groups[index].id,
+                                                  groupName: groups[index].name,
+                                                ),
+                                          ),
+                                        );
+                                        if (mounted) setState(() {});
+                                      },
+                                      child: GroupStyle(
+                                        groupName: groups[index].name,
+                                        groupId: groups[index].id,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          )
+                          : _recentChats.isEmpty
+                          ? Padding(
+                            padding: const EdgeInsets.only(top: 100),
+                            child: Image.asset(
+                              'assets/images/noChats.png',
+                              width: screenWidth * .8.w,
+                              height: screenHeight * .8.h,
+                            ),
+                          )
+                          : ListView.builder(
+                            itemCount: _recentChats.length,
+                            itemBuilder: (context, index) {
+                              final chat = _recentChats[index];
                               return Padding(
-                                padding: const EdgeInsets.only(top: 100),
-                                child: Image.asset(
-                                  'assets/images/noGroups.png',
-                                  width: screenWidth * .8.w,
-                                  height: screenHeight * .8.h,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10.w,
+                                  vertical: 4.h,
+                                ),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => PrivateChatScreen(
+                                              recipientId:
+                                                  chat['recipientId'] ?? '',
+                                              recipientName:
+                                                  chat['recipientName'] ??
+                                                  'Unknown',
+                                              recipientImage:
+                                                  chat['recipientImage'],
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage:
+                                          chat['recipientImage'] != null
+                                              ? NetworkImage(
+                                                chat['recipientImage'],
+                                              )
+                                              : const AssetImage(
+                                                'assets/images/user.jpg',
+                                              ),
+                                      radius: 25,
+                                    ),
+                                    title: Text(
+                                      chat['recipientName'] ?? 'Unknown',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      chat['lastMessage'] ?? '',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    trailing: Text(
+                                      chat['time'] ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               );
-                            }
-
-                            return ListView.builder(
-                              itemCount: groups.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w,
-                                    vertical: 4.h,
-                                  ),
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final result = await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              OrderTrackingPage(
-                                            groupId: groups[index].id,
-                                            groupName: groups[index].name,
-                                          ),
-                                        ),
-                                      );
-                                      if (mounted) setState(() {});
-                                    },
-                                    child: GroupStyle(
-                                      groupName: groups[index].name,
-                                      groupId: groups[index].id,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        )
-                      : _recentChats.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 100),
-                              child: Image.asset(
-                                'assets/images/noChats.png',
-                                width: screenWidth * .8.w,
-                                height: screenHeight * .8.h,
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _recentChats.length,
-                              itemBuilder: (context, index) {
-                                final chat = _recentChats[index];
-                                return Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w,
-                                    vertical: 4.h,
-                                  ),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              PrivateChatScreen(
-                                            recipientId:
-                                                chat['recipientId'] ?? '',
-                                            recipientName:
-                                                chat['recipientName'] ??
-                                                    'Unknown',
-                                            recipientImage:
-                                                chat['recipientImage'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundImage: chat['recipientImage'] !=
-                                                null
-                                            ? NetworkImage(
-                                                chat['recipientImage'])
-                                            : const AssetImage(
-                                                'assets/images/user.jpg'),
-                                        radius: 25,
-                                      ),
-                                      title: Text(
-                                        chat['recipientName'] ?? 'Unknown',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        chat['lastMessage'] ?? '',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      trailing: Text(
-                                        chat['time'] ?? '',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                            },
+                          ),
                 ),
               ],
             ),

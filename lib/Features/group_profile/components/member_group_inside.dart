@@ -42,24 +42,28 @@ class _MemberGroupInsideState extends State<MemberGroupInside> {
 
   Future<void> _loadUserImage() async {
     if (_isLoading) return;
-    
+
     try {
       setState(() => _isLoading = true);
-      
+
       if (widget.uid.isEmpty) {
         developer.log('No UID provided for user: ${widget.userName}');
         return;
       }
 
-      final image = await ProfileImageService().getDecryptedUserImage(widget.uid);
-      
+      final image = await ProfileImageService().getDecryptedUserImage(
+        widget.uid,
+      );
+
       if (image != null && mounted) {
         setState(() => userImage = image);
       }
     } catch (e, stackTrace) {
-      developer.log('Error loading user image', 
-          error: e, 
-          stackTrace: stackTrace);
+      developer.log(
+        'Error loading user image',
+        error: e,
+        stackTrace: stackTrace,
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -69,7 +73,9 @@ class _MemberGroupInsideState extends State<MemberGroupInside> {
 
   @override
   Widget build(BuildContext context) {
-    log("Building MemberGroupInside widget for user: ${widget.userName}, UID: ${widget.uid}");
+    log(
+      "Building MemberGroupInside widget for user: ${widget.userName}, UID: ${widget.uid}",
+    );
     return Container(
       height: 80,
       width: double.infinity,
