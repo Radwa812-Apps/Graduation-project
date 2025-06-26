@@ -95,7 +95,7 @@ void main() async {
     ),
   );*/
   const encryptionKey = 'your-256-bit-super-secret-key!!';
-  FirebaseMessaging.instance.getToken().then(print);
+  //FirebaseMessaging.instance.getToken().then(print);
   
   runApp(
     ScreenUtilInit(

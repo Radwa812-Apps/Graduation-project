@@ -44,26 +44,26 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasSubscribedToStream = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_hasSubscribedToStream) {
-      _hasSubscribedToStream = true;
-      _groupService.streamMyGroups().listen((fetchedGroups) {
-        if (mounted) {
-          setState(() {
-            _groups = fetchedGroups;
-          });
-        }
-      });
-      _chatService.streamRecentChats().listen((recentChats) {
-        if (mounted) {
-          setState(() {
-            _recentChats = recentChats;
-          });
-        }
-      });
-    }
-  }
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   if (!_hasSubscribedToStream) {
+  //     _hasSubscribedToStream = true;
+  //     _groupService.streamMyGroups().listen((fetchedGroups) {
+  //       if (mounted) {
+  //         setState(() {
+  //           _groups = fetchedGroups;
+  //         });
+  //       }
+  //     });
+  //     _chatService.streamRecentChats().listen((recentChats) {
+  //       if (mounted) {
+  //         setState(() {
+  //           _recentChats = recentChats;
+  //         });
+  //       }
+  //     });
+  //   }
+  // }
 
   void _loadGroups() async {
     List<Group> fetchedGroups = await _groupService.getMyGroups();
@@ -135,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    log("Building HomeScreen with selected tab: $_selectedTab");
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(

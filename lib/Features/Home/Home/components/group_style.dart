@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -34,13 +35,13 @@ class _GroupStyleState extends State<GroupStyle>
 
   final GroupService _groupService = GroupService();
   Uint8List? groupImage;
-
+  late final StreamSubscription _subscription;
   @override
   void initState() {
     super.initState();
     _setupAnimation();
     _listenToGroupChanges();
-    // _loadGroupImage();
+     _loadGroupImage();
   }
 
   void _setupAnimation() {
@@ -49,46 +50,58 @@ class _GroupStyleState extends State<GroupStyle>
       duration: const Duration(milliseconds: 500),
     )..addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        _animationController.reverse();
-        if (_isAlerted) {
-          FirebaseFirestore.instance
-              .collection('groups')
-              .doc(widget.groupId)
-              .update({'alert_triggered': false});
-        }
+        //_animationController.reverse();
+        _animationController.repeat(reverse: true); //Add commentMore actions
+        log("animation..");
+        // if (_isAlerted) {
+        //   FirebaseFirestore.instance
+        //       .collection('groups')
+        //       .doc(widget.groupId)
+        //       .update({'alert_triggered': false});
+        // }
       }
     });
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 1.2,
+      end: 1.05,
     ).animate(_animationController);
     _colorAnimation = ColorTween(
       begin: Colors.white,
       end: Colors.red.withOpacity(0.3),
     ).animate(_animationController);
   }
-
+  
   void _listenToGroupChanges() {
-    FirebaseFirestore.instance
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || widget.groupId == null) {
+      log("User not authenticated or groupId is null");
+      return;
+    }
+    _subscription = FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)
+        .collection('group_alerts')
+        .doc(user.uid)
         .snapshots()
         .listen((snapshot) async {
           if (snapshot.exists) {
             final triggered = snapshot.data()?['alert_triggered'] ?? false;
 
-            final updatedImage = await _groupService.getDecryptedGroupImage(
-              widget.groupId!,
-            );
+            // final updatedImage = await _groupService.getDecryptedGroupImage(
+            //   widget.groupId!,
+
+            // );
 
             if (mounted) {
               setState(() {
-                groupImage = updatedImage;
-                if (triggered && !_isAlerted) {
-                  _isAlerted = true;
-                  _animationController.forward();
-                }
+                //groupImage = updatedImage;
+                // if (triggered && !_isAlerted) {
+                //   _isAlerted = true;
+                //   _animationController.forward();
+                // }
+                _isAlerted = triggered; //Add commentMore actions
+                _animationController.forward();
               });
             }
           }
@@ -109,11 +122,15 @@ class _GroupStyleState extends State<GroupStyle>
   @override
   void dispose() {
     _animationController.dispose();
+    _subscription.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    log(
+      "Building GroupStyle widget for group: ${widget.groupName}, ID: ${widget.groupId}",
+    );
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
 
@@ -201,8 +218,7 @@ class _GroupStyleState extends State<GroupStyle>
                               GroupNotifications.groupNotificationsKey,
                               arguments: {
                                 'groupName': widget.groupName,
-                                'groupId':
-                                   widget.groupId , 
+                                'groupId': widget.groupId,
                               },
                             );
                           },

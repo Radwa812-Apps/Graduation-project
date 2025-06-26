@@ -8,6 +8,7 @@ import android.os.IBinder
 import android.util.Log
 import android.view.*
 import android.widget.Button
+import com.google.firebase.firestore.SetOptions
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import java.util.*
@@ -239,50 +240,79 @@ class FloatingButtonService : Service() {
             Log.e(TAG, "Firestore client already terminated: ${e.message}")
         }
        }
-
-    private fun sendAlertsToGroups(groupIds: List<String>) {
-        Log.d(TAG, "sendAlertsToGroups called with ${groupIds.size} groups")
-        val batch = firestore.batch()
-        val timestamp = Date()
-        val userId = auth.currentUser?.uid ?: ""
-
-        groupIds.forEach { groupId ->
-            val groupRef = firestore.collection("groups").document(groupId)
-            Log.d(TAG, "Updating group: $groupId")
-            batch.update(groupRef, mapOf(
-                "alert" to true,
-                "alert_timestamp" to timestamp,
-                "alert_color" to "#FF0000",
-                "last_alert_sender" to userId,
-                "alert_triggered" to true
-            ))
-        }
-
-        val alertRef = firestore.collection("group_risk_alerts").document()
-        Log.d(TAG, "Setting alertRef: $alertRef")
-        batch.set(alertRef, mapOf(
-            "groupIds" to groupIds,
-            "userId" to userId,
-            "timestamp" to timestamp,
-            "status" to "active"
-        ))
-
-        batch.commit()
-            .addOnSuccessListener {
-                showToast("Alerts sent successfully to ${groupIds.size} groups")
-                Log.d(TAG, "Batch commit successful for groups: $groupIds")
-
-                val intent = Intent(this, MainActivity::class.java)
-                intent.putExtra("alertSent", true)
-                intent.putStringArrayListExtra("groupIds", ArrayList(groupIds))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                startActivity(intent)
-            }
-            .addOnFailureListener { e ->
-                showToast("Failed to send alerts")
-                Log.e(TAG, "Batch commit failed for groups: $groupIds, Error: ${e.message}", e)
-            }
+private fun sendAlertsToGroups(groupIds: List<String>) {
+    if (groupIds.isEmpty()) {
+        Log.w(TAG, "No group IDs provided")
+        return
     }
+
+    val userId = auth.currentUser?.uid ?: run {
+        Log.e(TAG, "User not authenticated")
+        showToast("User not authenticated")
+        return
+    }
+
+    val timestamp = Date()
+
+    // لكل مجموعة، نجلب الأعضاء أولاً ثم ننشئ Batch جديد
+    groupIds.forEach { groupId ->
+        val groupRef = firestore.collection("groups").document(groupId)
+        
+        groupRef.get().addOnSuccessListener { document ->
+            if (document.exists()) {
+                val members = document.get("members") as? List<String> ?: emptyList()
+                
+                // إنشاء Batch جديد لكل مجموعة
+                val batch = firestore.batch()
+                
+                // 1. تحديث بيانات المجموعة الرئيسية
+                batch.update(groupRef, mapOf(
+                    "alert" to true,
+                    "alert_timestamp" to timestamp,
+                    "alert_color" to "#FF0000",
+                    "last_alert_sender" to userId,
+                    "alert_triggered" to true
+                ))
+
+                // 2. إضافة تنبيهات لكل عضو
+                members.forEach { memberId ->
+                    val memberAlertRef = groupRef.collection("group_alerts").document(memberId)
+                    batch.set(memberAlertRef, mapOf(
+                        "alert" to true,
+                        "alert_timestamp" to timestamp,
+                        "alert_color" to "#FF0000",
+                        "last_alert_sender" to userId,
+                        "alert_triggered" to true
+                    ), SetOptions.merge())
+                }
+
+                // 3. إضافة التنبيه العام (إذا لزم الأمر)
+                val alertRef = firestore.collection("group_risk_alerts").document()
+                batch.set(alertRef, mapOf(
+                    "groupIds" to listOf(groupId), // نرسل مجموعة واحدة فقط هنا
+                    "userId" to userId,
+                    "timestamp" to timestamp,
+                    "status" to "active"
+                ))
+
+                // تنفيذ الباتش
+                batch.commit()
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Alerts sent for group $groupId")
+                        showToast("تم إرسال التنبيهات للمجموعة $groupId")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to send alerts for group $groupId", e)
+                        showToast("فشل إرسال التنبيهات للمجموعة $groupId")
+                    }
+            } else {
+                Log.e(TAG, "Group $groupId does not exist")
+            }
+        }.addOnFailureListener { e ->
+            Log.e(TAG, "Error fetching group $groupId members", e)
+        }
+    }
+}
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

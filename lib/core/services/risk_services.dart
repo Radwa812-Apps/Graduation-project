@@ -114,6 +114,7 @@ class RiskServices {
   }
 
   void resetToggleAlert() async {
+    log("resetToggleAlert called");
     User? user = _auth.currentUser;
     if (user == null) {
       return;

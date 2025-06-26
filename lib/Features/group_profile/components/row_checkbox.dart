@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import '../../../core/constants.dart';
 import '../../Home/Home/components/round_image_widget.dart';
@@ -29,6 +31,7 @@ class _RowCheckboxState extends State<RowCheckbox> {
 
   @override
   Widget build(BuildContext context) {
+    log("RowCheckbox build called, isChecked: $isChecked");
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
       decoration: BoxDecoration(

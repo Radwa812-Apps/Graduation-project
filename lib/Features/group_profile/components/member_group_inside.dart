@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -68,6 +69,7 @@ class _MemberGroupInsideState extends State<MemberGroupInside> {
 
   @override
   Widget build(BuildContext context) {
+    log("Building MemberGroupInside widget for user: ${widget.userName}, UID: ${widget.uid}");
     return Container(
       height: 80,
       width: double.infinity,

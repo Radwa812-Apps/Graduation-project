@@ -43,9 +43,17 @@ class FirebaseController {
   }
 
   void stopAlertAnimation(String groupId) {
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      log("No user logged in, cannot stop alert animation.");
+      return;
+    }
+    log("Stopping alert animation for group: $groupId");
     FirebaseFirestore.instance
     .collection('groups')
     .doc(groupId)
+    .collection('group_alerts')
+    .doc(user!.uid)
     .update({'alert_triggered': false});
   }
   

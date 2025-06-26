@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -58,6 +59,7 @@ class _MembersStyleWidgetState extends State<MembersStyleWidget> {
 
   @override
   Widget build(BuildContext context) {
+    log("MembersStyleWidget build called, userName: ${widget.userName}, uid: ${widget.uid}");
     return GestureDetector(
       onTap: _navigateToPrivateChat, // Updated to use the new navigation method
       child: Container(
