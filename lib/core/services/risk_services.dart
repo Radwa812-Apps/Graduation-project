@@ -8,6 +8,8 @@ import 'package:near_me_new_version/Features/share_location/components/firebase_
 import 'package:near_me_new_version/core/data/bloc/Risk/bloc_singletons.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/data/models/location.dart';
+import 'package:near_me_new_version/core/services/group_services.dart';
+import 'package:near_me_new_version/core/services/send_notification_service.dart';
 
 class RiskServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -127,5 +129,89 @@ class RiskServices {
     } else {
       log("no selected groups!!");
     }
+  }
+
+  void sendRiskNotification({
+    required String userId,
+    required List<String> groupIds,
+  }) async {
+    User? user = _auth.currentUser;
+
+    if (user == null) {
+      log("User is not authenticated");
+      return;
+    }
+    for (String groupId in groupIds) {
+      // Get group document
+      final groupDoc =
+          await FirebaseFirestore.instance
+              .collection('groups')
+              .doc(groupId)
+              .get();
+
+      if (groupDoc.exists) {
+        final groupData = groupDoc.data() as Map<String, dynamic>?;
+        final String? userName;
+        final List<dynamic>? members = groupData?['members'];
+        Future<Map<String, String>?> userData = GroupService().getUserData(
+          userId,
+        );
+        if (userData == null) {
+          log("User data not found for userId: $userId");
+          continue;
+        } else {
+          final userMap = await userData;
+          final String? userFName = userMap?['fName'];
+          final String? userLName = userMap?['lName'];
+          if (userFName == null || userLName == null) {
+            log("User name not found for userId: $userId");
+          }
+          userName = "$userFName $userLName";
+        }
+
+        if (members != null && members.isNotEmpty) {
+          for (var memberId in members) {
+            // Skip sending notification to the user who triggered the alert
+            if (memberId == userId) {
+              continue;
+            }
+
+            final userDoc =
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(memberId)
+                    .get();
+
+            if (userDoc.exists) {
+              final userData = userDoc.data() as Map<String, dynamic>?;
+              final String? token = userData?['fcmToken'];
+
+              if (token != null && token.isNotEmpty) {
+                await SendNotificationService.sendNotificationUsingApi(
+                  fcmToken: token,
+                  title: userName ?? 'Risk Alert',
+                  body: 'I need Help!',
+                  data: {
+                    'type': 'geofence_update',
+                    'event_timestamp': DateTime.now().toIso8601String(),
+                  },
+                );
+              } else {
+                log("fcmToken not found for user $memberId");
+              }
+            } else {
+              log("User document does not exist for $memberId");
+            }
+          }
+        } else {
+          log("No members found in group $groupId");
+        }
+      } else {
+        log("Group document does not exist for $groupId");
+      }
+    }
+    log(
+      "Risk notification sent to all group members.................................",
+    );
   }
 }

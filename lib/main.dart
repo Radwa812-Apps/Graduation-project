@@ -45,6 +45,7 @@ import 'package:near_me_new_version/core/services/chat_services.dart'
 import 'package:near_me_new_version/core/services/cloudinary_service.dart';
 import 'package:near_me_new_version/core/services/location_noti.dart';
 import 'package:near_me_new_version/core/services/risk_services.dart';
+import 'package:near_me_new_version/core/services/send_notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Features/Home/Home/Screens/home_screen.dart';
@@ -140,6 +141,27 @@ void main() async {
     if (call.method == 'onFloatingButtonPressed') {
       print('Floating button pressed from Android!');
       _riskServices.handleRiskbutton();
+    }
+    if (call.method == 'sendAlertToSelectedGroups') {
+      try {
+        final Map<Object?, Object?> rawParams =
+            call.arguments as Map<Object?, Object?>;
+        final Map<String, dynamic> params = rawParams.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+        final List<String> groups = List<String>.from(params['groups']);
+        final String userId = params['userId'] as String;
+
+        print('''
+      Received parameters:
+      Groups: ${groups.join(', ')}
+      userId: $userId
+      ''');
+
+        _riskServices.sendRiskNotification(groupIds: groups, userId: userId);
+      } catch (e) {
+        print('Error handling parameters: $e');
+      }
     }
   });
 }

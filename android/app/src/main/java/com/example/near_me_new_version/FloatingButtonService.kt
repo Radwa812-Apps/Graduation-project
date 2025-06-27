@@ -235,22 +235,43 @@ class FloatingButtonService : Service() {
                 showToast("Failed to load groups")
                 Log.e(TAG, "Error loading groups for user: ${user.uid}, Error: ${e.message}", e)
             }
-    
         }catch (e: IllegalStateException) {
             Log.e(TAG, "Firestore client already terminated: ${e.message}")
         }
-       }
-private fun sendAlertsToGroups(groupIds: List<String>) {
-    if (groupIds.isEmpty()) {
-        Log.w(TAG, "No group IDs provided")
-        return
     }
-
+    
+    private fun sendAlertsToGroups(groupIds: List<String>) {    
+        if (groupIds.isEmpty()) {
+            Log.w(TAG, "No group IDs provided")
+            return
+        }
     val userId = auth.currentUser?.uid ?: run {
         Log.e(TAG, "User not authenticated")
         showToast("User not authenticated")
         return
     }
+    val flutterEngine = FlutterEngineCache.getInstance().get("my_engine_id")
+        if (flutterEngine != null) {
+            methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.near_me_new_version/floating_button")
+        }
+    val params = mapOf(
+        "groups" to groupIds,
+        "userId" to userId
+    )
+    methodChannel?.invokeMethod("sendAlertToSelectedGroups", params, object : MethodChannel.Result {
+        override fun success(result: Any?) {
+            Log.d(TAG, "Alerts sent successfully")
+        }
+        
+        override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
+            Log.e(TAG, "Failed to send alerts: $errorMessage")
+        }
+        
+        override fun notImplemented() {
+            Log.e(TAG, "Method not implemented")
+        }
+    })     
+    
 
     val timestamp = Date()
 
@@ -299,11 +320,11 @@ private fun sendAlertsToGroups(groupIds: List<String>) {
                 batch.commit()
                     .addOnSuccessListener {
                         Log.d(TAG, "Alerts sent for group $groupId")
-                        showToast("تم إرسال التنبيهات للمجموعة $groupId")
+                        showToast("alert sent successfuly to $groupId")
                     }
                     .addOnFailureListener { e ->
                         Log.e(TAG, "Failed to send alerts for group $groupId", e)
-                        showToast("فشل إرسال التنبيهات للمجموعة $groupId")
+                        showToast("failed to send alert to $groupId")
                     }
             } else {
                 Log.e(TAG, "Group $groupId does not exist")
