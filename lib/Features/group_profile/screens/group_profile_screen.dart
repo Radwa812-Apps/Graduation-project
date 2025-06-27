@@ -18,7 +18,7 @@ import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 
-import '../../chat_group/chat_group/screens/group_chat.dart';
+import '../../chat_group/screens/group_chat.dart';
 import '../../../core/services/profile_image_service.dart';
 
 class GroupProfileScreen extends StatefulWidget {

@@ -13,8 +13,8 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
-import '../../../chat_group/chat_group/components/chat_input_field.dart';
-import '../../../chat_group/chat_group/components/header_chat.dart';
+import '../../../chat_group/components/chat_input_field.dart';
+import '../../../chat_group/components/header_chat.dart';
 
 class PrivateChatScreen extends StatefulWidget {
   final String recipientId;
