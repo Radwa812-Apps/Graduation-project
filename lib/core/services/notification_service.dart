@@ -3,14 +3,18 @@ import 'package:app_settings/app_settings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_screen.dart';
+import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/core/services/send_notification_service.dart';
 
 class NotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  late BuildContext _context;
 
-  Future<void> initialize() async {
+  Future<void> initialize(BuildContext context) async {
+    _context = context;
     await requestNotificationPermission();
     await _initializeLocalNotifications();
     _setupFirebaseListeners();
@@ -28,8 +32,41 @@ class NotificationService {
 
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
-      // Optional: Add onSelectNotification callback if needed
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (response.payload != null) {
+          final data = jsonDecode(response.payload!);
+          handleNotificationNavigation(_context, data);
+        }
+      },
     );
+  }
+
+  static void handleNotificationNavigation(BuildContext context, Map<String, dynamic> data) {
+    try {
+      final type = data['type'];
+      if (type == 'private_chat') {
+        Navigator.pushNamed(
+          context,
+          PrivateChatScreen.privateChatScreenKey,
+          arguments: {
+            'recipientId': data['recipientId'],
+            'recipientName': data['senderName'],
+            'recipientImage': null, // You can pass image if available
+          },
+        );
+      } else if (type == 'group_chat') {
+        Navigator.pushNamed(
+          context,
+          GroupChat.routeName,
+          arguments: {
+            'groupId': data['groupId'],
+            'groupName': data['groupName'],
+          },
+        );
+      }
+    } catch (e) {
+      print('Error handling notification navigation: $e');
+    }
   }
 
   Future<void> requestNotificationPermission() async {
@@ -78,7 +115,9 @@ class NotificationService {
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      // Handle when app is opened from notification
+      if (message.data.isNotEmpty) {
+        handleNotificationNavigation(_context, message.data);
+      }
       print('Message opened from notification: ${message.notification?.title}');
     });
   }

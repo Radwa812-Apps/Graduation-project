@@ -31,6 +31,51 @@ class ChatService {
     final ids = [userId, recipientId]..sort();
     return '${ids[0]}_${ids[1]}';
   }
+  Future<void> markMessagesAsRead(String chatId, String recipientId) async {
+  try {
+    final userId = currentUserId;
+    if (userId == null) return;
+
+    // For private chats
+    final messages = await _firestore
+        .collection('private_chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('senderId', isEqualTo: recipientId)
+        .where('read', isEqualTo: false)
+        .get();
+
+    for (var doc in messages.docs) {
+      await doc.reference.update({'read': true, 'readAt': FieldValue.serverTimestamp()});
+    }
+  } catch (e) {
+    print('Error marking messages as read: $e');
+  }
+}
+
+Future<void> markGroupMessagesAsRead(String groupId) async {
+  try {
+    final userId = currentUserId;
+    if (userId == null) return;
+
+    // For group chats
+    final messages = await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .where('readBy', whereNotIn: [userId])
+        .get();
+
+    for (var doc in messages.docs) {
+      await doc.reference.update({
+        'readBy': FieldValue.arrayUnion([userId]),
+        'readAt': FieldValue.serverTimestamp()
+      });
+    }
+  } catch (e) {
+    print('Error marking group messages as read: $e');
+  }
+}
 
   Future<String> uploadVoiceMessage(String chatId, String voicePath) async {
     try {
@@ -91,7 +136,7 @@ class ChatService {
       final senderName = (firstName + ' ' + lastName).trim().isNotEmpty
           ? (firstName + ' ' + lastName).trim()
           : userDoc.data()?['email']?.split('@').first ?? 'User';
-
+      final senderImage = userDoc.data()?['image'];
       final recipientDoc = await _firestore.collection('users').doc(recipientId).get();
       final recipientName = recipientDoc.data()?['firstName'] != null
           ? "${recipientDoc.data()!['firstName']} ${recipientDoc.data()!['lastName'] ?? ''}".trim()
@@ -137,7 +182,8 @@ class ChatService {
                 ? 'image'
                 : videoUrl != null
                     ? 'video'
-                    : 'text'
+                    : 'text',
+        'read': false,
       });
 
       // Update recent chats with unencrypted preview
@@ -182,8 +228,9 @@ class ChatService {
           'type': 'private_chat',
           'chatId': chatId,
           'senderId': user.uid,
-          'senderName': senderName,
-          'recipientId': recipientId,
+            'senderName': senderName,
+            'senderImage': senderImage,
+            'recipientId': recipientId,
         },
       );
     }
@@ -338,7 +385,8 @@ class ChatService {
                 ? 'image'
                 : videoUrl != null
                     ? 'video'
-                    : 'text'
+                    : 'text',
+        'readBy': [user.uid],
       });
       print('Message sent successfully to group $groupId');
     } catch (e) {

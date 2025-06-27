@@ -67,6 +67,18 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     _audioRecorder.dispose();
     super.dispose();
   }
+  @override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  _markMessagesAsRead();
+}
+
+void _markMessagesAsRead() async {
+  await _chatService.markMessagesAsRead(
+    _chatService.getChatId(widget.recipientId),
+    widget.recipientId,
+  );
+}
 
   void _setupMessageStream() {
     _messageSubscription = _chatService.getPrivateMessages(widget.recipientId).listen(
@@ -532,6 +544,7 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
                               imageUrl: message['imageUrl'],
                               videoUrl: message['videoUrl'],
                               voiceUrl: message['voiceUrl'],
+                              isRead: message['read'] ?? false, // Add this line
                             ),
                           ],
                         );
