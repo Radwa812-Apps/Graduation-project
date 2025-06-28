@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:near_me_new_version/Features/chat_group/chat_group/components/three_dots_manu.dart';
-import '../../../Notifications/Components/search_icon.dart';
-import '../../../../core/constants.dart';
-import '../../../../core/font_style.dart';
+import 'package:near_me_new_version/Features/chat_group/components/three_dots_manu.dart';
+import '../../Notifications/Components/search_icon.dart';
+import '../../../core/constants.dart';
+import '../../../core/font_style.dart';
 
 class HeaderChat extends StatefulWidget {
   final String title;

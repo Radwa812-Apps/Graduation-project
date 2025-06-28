@@ -70,6 +70,15 @@ class _GroupChatState extends State<GroupChat> {
     _fetchGroupImage();
     _filteredMessages = _messages;
   }
+  @override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  _markMessagesAsRead();
+}
+
+void _markMessagesAsRead() async {
+  await _chatService.markGroupMessagesAsRead(widget.groupId);
+}
 
   Future<void> _fetchGroupImage() async {
     try {
@@ -615,6 +624,7 @@ class _GroupChatState extends State<GroupChat> {
                               imageUrl: message['imageUrl'],
                               videoUrl: message['videoUrl'],
                               voiceUrl: message['voiceUrl'],
+                                readCount: (message['readBy'] as List?)?.length ?? 1, // Add this line
                             ),
                           ],
                         );

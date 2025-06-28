@@ -4,6 +4,7 @@ import 'package:near_me_new_version/core/Encryption/encrypt_message.dart';
 import 'dart:io';
 import 'package:near_me_new_version/core/services/cloudinary_service.dart';
 import 'package:intl/intl.dart';
+import 'package:near_me_new_version/core/services/notification_service.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore;
@@ -30,6 +31,51 @@ class ChatService {
     final ids = [userId, recipientId]..sort();
     return '${ids[0]}_${ids[1]}';
   }
+  Future<void> markMessagesAsRead(String chatId, String recipientId) async {
+  try {
+    final userId = currentUserId;
+    if (userId == null) return;
+
+    // For private chats
+    final messages = await _firestore
+        .collection('private_chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('senderId', isEqualTo: recipientId)
+        .where('read', isEqualTo: false)
+        .get();
+
+    for (var doc in messages.docs) {
+      await doc.reference.update({'read': true, 'readAt': FieldValue.serverTimestamp()});
+    }
+  } catch (e) {
+    print('Error marking messages as read: $e');
+  }
+}
+
+Future<void> markGroupMessagesAsRead(String groupId) async {
+  try {
+    final userId = currentUserId;
+    if (userId == null) return;
+
+    // For group chats
+    final messages = await _firestore
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .where('readBy', whereNotIn: [userId])
+        .get();
+
+    for (var doc in messages.docs) {
+      await doc.reference.update({
+        'readBy': FieldValue.arrayUnion([userId]),
+        'readAt': FieldValue.serverTimestamp()
+      });
+    }
+  } catch (e) {
+    print('Error marking group messages as read: $e');
+  }
+}
 
   Future<String> uploadVoiceMessage(String chatId, String voicePath) async {
     try {
@@ -90,13 +136,13 @@ class ChatService {
       final senderName = (firstName + ' ' + lastName).trim().isNotEmpty
           ? (firstName + ' ' + lastName).trim()
           : userDoc.data()?['email']?.split('@').first ?? 'User';
-
+      final senderImage = userDoc.data()?['image'];
       final recipientDoc = await _firestore.collection('users').doc(recipientId).get();
       final recipientName = recipientDoc.data()?['firstName'] != null
           ? "${recipientDoc.data()!['firstName']} ${recipientDoc.data()!['lastName'] ?? ''}".trim()
           : recipientDoc.data()?['email']?.split('@').first ?? 'User';
       final recipientImage = recipientDoc.data()?['image'];
-
+      final recipientToken = recipientDoc.data()?['fcmToken'];
       // Encrypt only the text message
       final encryptedText = text.isNotEmpty ? _encryption.encryptText(text) : '';
 
@@ -136,7 +182,8 @@ class ChatService {
                 ? 'image'
                 : videoUrl != null
                     ? 'video'
-                    : 'text'
+                    : 'text',
+        'read': false,
       });
 
       // Update recent chats with unencrypted preview
@@ -157,6 +204,36 @@ class ChatService {
         'time': DateFormat('HH:mm').format(DateTime.now()),
         'timestamp': FieldValue.serverTimestamp(),
       });
+      if (recipientToken != null && recipientToken.isNotEmpty) {
+      final notificationTitle = 'New message from $senderName';
+      String notificationBody;
+      
+      if (voiceUrl != null) {
+        notificationBody = '🎤 Voice message';
+      } else if (imageUrl != null) {
+        notificationBody = '📷 Photo';
+      } else if (videoUrl != null) {
+        notificationBody = '🎬 Video';
+      } else {
+        notificationBody = text.isEmpty ? '' : text.length > 30 
+            ? '${text.substring(0, 30)}...' 
+            : text;
+      }
+
+      await NotificationService.sendChatNotification(
+        recipientToken: recipientToken,
+        title: notificationTitle,
+        body: notificationBody,
+        data: {
+          'type': 'private_chat',
+          'chatId': chatId,
+          'senderId': user.uid,
+            'senderName': senderName,
+            'senderImage': senderImage,
+            'recipientId': recipientId,
+        },
+      );
+    }
 
       print('Private message sent successfully to $recipientId');
     } catch (e) {
@@ -240,6 +317,51 @@ class ChatService {
       final senderName = (firstName + ' ' + lastName).trim().isNotEmpty
           ? (firstName + ' ' + lastName).trim()
           : userDoc.data()?['email']?.split('@').first ?? 'User';
+          final groupDoc = await _firestore.collection('groups').doc(groupId).get();
+    final members = List<String>.from(groupDoc.data()?['members'] ?? []);
+    
+    // Remove current user from members list
+    members.removeWhere((memberId) => memberId == user.uid);
+
+    if (members.isNotEmpty) {
+      final usersSnapshot = await _firestore.collection('users')
+          .where(FieldPath.documentId, whereIn: members)
+          .get();
+
+      for (final userDoc in usersSnapshot.docs) {
+        final token = userDoc.data()['fcmToken'];
+        if (token != null && token.isNotEmpty) {
+          final notificationTitle = 'New message in ${groupDoc.data()?['name'] ?? 'group'}';
+          String notificationBody;
+          
+          if (voiceUrl != null) {
+            notificationBody = '$senderName sent a 🎤 voice message';
+          } else if (imageUrl != null) {
+            notificationBody = '$senderName sent a 📷 photo';
+          } else if (videoUrl != null) {
+            notificationBody = '$senderName sent a 🎬 video';
+          } else {
+            notificationBody = text.isEmpty ? '' : '$senderName: ${text.length > 30 
+                ? '${text.substring(0, 30)}...' 
+                : text}';
+          }
+
+          await NotificationService.sendChatNotification(
+            recipientToken: token,
+            title: notificationTitle,
+            body: notificationBody,
+            data: {
+              'type': 'group_chat',
+              'groupId': groupId,
+              'groupName': groupDoc.data()?['name'] ?? 'Group',
+              'senderId': user.uid,
+              'senderName': senderName,
+            },
+          );
+        }
+      }
+    }
+
 
       // Encrypt only the text message
       final encryptedText = text.isNotEmpty ? _encryption.encryptText(text) : '';
@@ -263,7 +385,8 @@ class ChatService {
                 ? 'image'
                 : videoUrl != null
                     ? 'video'
-                    : 'text'
+                    : 'text',
+        'readBy': [user.uid],
       });
       print('Message sent successfully to group $groupId');
     } catch (e) {

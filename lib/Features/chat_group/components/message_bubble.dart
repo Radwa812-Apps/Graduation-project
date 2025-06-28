@@ -1,37 +1,36 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+/*import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:near_me_new_version/Features/chat_group/components/full_screen_image_viewer.dart';
+import 'package:near_me_new_version/Features/chat_group/components/video_player_widget.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-import '../../../chat_group/components/video_player_widget.dart';
-
-/*class PrivateMessageBubble extends StatefulWidget {
+class MessageBubble extends StatefulWidget {
   final String message;
   final dynamic timestamp;
   final bool isMe;
+  final String senderName;
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
-  final bool isRead;
 
-  const PrivateMessageBubble({
+  const MessageBubble({
     Key? key,
     required this.message,
     required this.timestamp,
     required this.isMe,
+    required this.senderName,
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
-    required this.isRead,
   }) : super(key: key);
 
   @override
-  State<PrivateMessageBubble> createState() => _PrivateMessageBubbleState();
+  State<MessageBubble> createState() => _MessageBubbleState();
 }
 
-class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
+class _MessageBubbleState extends State<MessageBubble> {
   late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
   Duration _duration = Duration.zero;
@@ -88,27 +87,18 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
   }
 
   Widget _buildTextContent() {
-    if (widget.message.isEmpty || widget.message == '[Decryption failed]') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.message.isEmpty ? '' : 'Unable to display message',
-            style: TextStyle(
-              color: widget.isMe ? Colors.white70 : Colors.grey,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: _buildTimestamp(),
-          ),
-        ],
-      );
-    }
+    if (widget.message.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         Text(
           widget.message,
           style: TextStyle(
@@ -140,6 +130,14 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         GestureDetector(
           onTap: () => _showFullImage(context, widget.imageUrl!),
           child: ClipRRect(
@@ -179,6 +177,14 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         SizedBox(
           height: 200,
           child: VideoPlayerWidget(url: widget.videoUrl!),
@@ -195,6 +201,14 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         Row(
           children: [
             IconButton(
@@ -264,66 +278,90 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Align(
         alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: widget.isMe ? kPrimaryColor1 : Colors.grey[200],
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(widget.isMe ? 12 : 0),
-                topRight: Radius.circular(widget.isMe ? 0 : 12),
-                bottomLeft: const Radius.circular(12),
-                bottomRight: const Radius.circular(12),
+        child: widget.imageUrl != null && widget.imageUrl!.isNotEmpty ||
+                widget.videoUrl != null && widget.videoUrl!.isNotEmpty ||
+                widget.voiceUrl != null && widget.voiceUrl!.isNotEmpty
+            ? ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                child: _buildContent(),
+              )
+            : ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                child: _buildContent(),
               ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
-                  _buildImageContent()
-                else if (widget.videoUrl != null && widget.videoUrl!.isNotEmpty)
-                  _buildVideoContent()
-                else if (widget.voiceUrl != null && widget.voiceUrl!.isNotEmpty)
-                  _buildVoiceContent()
-                else
-                  _buildTextContent(),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
-}*/
 
-class PrivateMessageBubble extends StatefulWidget {
+  Widget _buildContent() {
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.isMe ? kPrimaryColor1 : Colors.grey[200],
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(widget.isMe ? 12 : 0),
+          topRight: Radius.circular(widget.isMe ? 0 : 12),
+          bottomLeft: const Radius.circular(12),
+          bottomRight: const Radius.circular(12),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+            _buildImageContent()
+          else if (widget.videoUrl != null && widget.videoUrl!.isNotEmpty)
+            _buildVideoContent()
+          else if (widget.voiceUrl != null && widget.voiceUrl!.isNotEmpty)
+            _buildVoiceContent()
+          else
+            _buildTextContent(),
+        ],
+      ),
+    );
+  }
+}
+*/
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:near_me_new_version/Features/chat_group/components/full_screen_image_viewer.dart';
+import 'package:near_me_new_version/Features/chat_group/components/video_player_widget.dart';
+import 'package:near_me_new_version/core/constants.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+class MessageBubble extends StatefulWidget {
   final String message;
   final dynamic timestamp;
   final bool isMe;
-  final bool isRead;
+  final String senderName;
+  final int readCount;
   final String? imageUrl;
   final String? videoUrl;
   final String? voiceUrl;
 
-  const PrivateMessageBubble({
+  const MessageBubble({
     Key? key,
     required this.message,
     required this.timestamp,
     required this.isMe,
-    required this.isRead,
+    required this.senderName,
+    required this.readCount,
     this.imageUrl,
     this.videoUrl,
     this.voiceUrl,
   }) : super(key: key);
 
   @override
-  State<PrivateMessageBubble> createState() => _PrivateMessageBubbleState();
+  State<MessageBubble> createState() => _MessageBubbleState();
 }
 
-class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
+class _MessageBubbleState extends State<MessageBubble> {
   late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
   Duration _duration = Duration.zero;
@@ -369,7 +407,7 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return widget.timestamp.toString();
   }
 
-    Widget _buildTimestampWithReadReceipt() {
+  Widget _buildTimestampWithReadCount() {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -382,36 +420,30 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
         ),
         if (widget.isMe) SizedBox(width: 4),
         if (widget.isMe)
-          Icon(
-            widget.isRead ? Icons.done_all : Icons.done,
-            size: 16,
-            color: widget.isRead ? Colors.blue : Colors.grey,
+          Text(
+            '${widget.readCount} read',
+            style: TextStyle(
+              fontSize: 11,
+              color: widget.isMe ? Colors.white70 : Colors.grey[600],
+            ),
           ),
       ],
     );
   }
+
   Widget _buildTextContent() {
-    if (widget.message.isEmpty || widget.message == '[Decryption failed]') {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.message.isEmpty ? '' : 'Unable to display message',
-            style: TextStyle(
-              color: widget.isMe ? Colors.white70 : Colors.grey,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: _buildTimestampWithReadReceipt(),
-          ),
-        ],
-      );
-    }
+    if (widget.message.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         Text(
           widget.message,
           style: TextStyle(
@@ -420,7 +452,7 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
         ),
         Align(
           alignment: Alignment.bottomRight,
-          child: _buildTimestampWithReadReceipt(),
+          child: _buildTimestampWithReadCount(),
         ),
       ],
     );
@@ -443,6 +475,14 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         GestureDetector(
           onTap: () => _showFullImage(context, widget.imageUrl!),
           child: ClipRRect(
@@ -472,7 +512,7 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
         ),
         Align(
           alignment: Alignment.bottomRight,
-          child: _buildTimestampWithReadReceipt(),
+          child: _buildTimestampWithReadCount(),
         ),
       ],
     );
@@ -485,13 +525,21 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         SizedBox(
           height: 200,
           child: VideoPlayerWidget(url: widget.videoUrl!),
         ),
         Align(
           alignment: Alignment.bottomRight,
-          child: _buildTimestampWithReadReceipt(),
+          child: _buildTimestampWithReadCount(),
         ),
       ],
     );
@@ -504,6 +552,14 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (!widget.isMe)
+          Text(
+            widget.senderName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? Colors.white : Colors.black,
+            ),
+          ),
         Row(
           children: [
             IconButton(
@@ -557,7 +613,7 @@ class _PrivateMessageBubbleState extends State<PrivateMessageBubble> {
         ),
         Align(
           alignment: Alignment.bottomRight,
-          child: _buildTimestampWithReadReceipt(),
+          child: _buildTimestampWithReadCount(),
         ),
       ],
     );

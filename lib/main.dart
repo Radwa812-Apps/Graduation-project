@@ -2,7 +2,6 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -22,22 +21,19 @@ import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/add_use
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/signUp_verifiy_email.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_up_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/group_inside.dart'
-    as live_location_map;
 import 'package:near_me_new_version/Features/group_profile/screens/search_member.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/tracking.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/Features/share_location/screens/test.dart';
-import 'package:near_me_new_version/Features/chat_group/chat_group/screens/group_chat.dart';
+import 'package:near_me_new_version/Features/chat_group/screens/group_chat.dart';
 import 'package:near_me_new_version/components/mainScaffold.dart';
 import 'package:near_me_new_version/core/data/bloc/Auth/auth_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/bloc_singletons.dart';
 import 'package:near_me_new_version/core/data/bloc/custom_places/custom_places_bloc.dart';
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
-import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/data/models/chat_model_temp.dart';
 import 'package:near_me_new_version/core/services/Auth_functions.dart';
 import 'package:near_me_new_version/core/services/chat_services.dart'
@@ -45,7 +41,6 @@ import 'package:near_me_new_version/core/services/chat_services.dart'
 import 'package:near_me_new_version/core/services/cloudinary_service.dart';
 import 'package:near_me_new_version/core/services/location_noti.dart';
 import 'package:near_me_new_version/core/services/risk_services.dart';
-import 'package:near_me_new_version/core/services/send_notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Features/Home/Home/Screens/home_screen.dart';
@@ -57,12 +52,9 @@ import 'Features/Permissions/Screens/permissions.dart';
 import 'Features/User_Profile/screens/edit_screen.dart';
 import 'Features/auth/Forgot_password/Screens/send_email_for_pass.dart';
 import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
-import 'Features/group_profile/screens/group_inside.dart' as group_inside;
 import 'Features/group_profile/screens/group_profile_screen.dart';
 import 'Features/group_profile/screens/media.dart';
 import 'package:flutter/services.dart';
-import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart'
-    as live_location;
 
 const platform = MethodChannel(
   'com.example.near_me_new_version/floating_button',
