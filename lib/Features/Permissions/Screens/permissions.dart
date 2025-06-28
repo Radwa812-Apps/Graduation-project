@@ -118,7 +118,7 @@ class _PermissionsState extends State<Permissions> {
   @override
   Widget build(BuildContext context) {
     bool anySwitchActive = switchStatus.contains(true);
-
+    final args = ModalRoute.of(context)?.settings.arguments;
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(
@@ -126,7 +126,14 @@ class _PermissionsState extends State<Permissions> {
           padding: const EdgeInsets.all(18.0),
           child: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Icon(Icons.arrow_back_ios, color: Colors.black),
+                ),
                 Center(
                   child: Text(
                     'Permissions',
@@ -180,26 +187,27 @@ class _PermissionsState extends State<Permissions> {
                       onChanged: (value) => updateSwitchStatus(4, value),
                     ),
                     SizedBox(height: 20.h),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                PermissionLocation.permissionLocationKey,
-                              );
-                            },
-                            style: AppButtonStyles.elevatedButtonStyle(),
-                            child: Text(
-                              anySwitchActive ? 'Next' : 'Skip',
-                              style: TextStyles.permissionButtonText,
+                    if (args != 'SettingScreen')
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  PermissionLocation.permissionLocationKey,
+                                );
+                              },
+                              style: AppButtonStyles.elevatedButtonStyle(),
+                              child: Text(
+                                anySwitchActive ? 'Next' : 'Skip',
+                                style: TextStyles.permissionButtonText,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

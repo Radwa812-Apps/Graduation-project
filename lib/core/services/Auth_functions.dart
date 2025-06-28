@@ -13,6 +13,18 @@ class Services {
     'users',
   );
 
+
+void setUserOnlineStatus(bool isOnline) {
+    
+final uid = FirebaseAuth.instance.currentUser!.uid;
+final firestore = FirebaseFirestore.instance;
+  firestore.collection('users').doc(uid).update({
+    "status": isOnline ? "Active" : "offline",
+    "lastSeen": FieldValue.serverTimestamp(),
+  }).catchError((error) {
+    print("Failed to update user status: $error");
+  });
+}
   Future<void> addUser({
     required String fName,
     required String lName,

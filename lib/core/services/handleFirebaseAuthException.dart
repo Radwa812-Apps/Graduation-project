@@ -1,10 +1,15 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../messages.dart';
 
-void handleFirebaseAuthException(FirebaseAuthException e, BuildContext context) {
+void handleFirebaseAuthException(
+  FirebaseAuthException e,
+  BuildContext context,
+) {
   switch (e.code) {
     case 'account-exists-with-different-credential':
       AppMessages().sendVerification(
@@ -111,6 +116,7 @@ void handlePlatformException(PlatformException e, BuildContext context) {
         Colors.red.withOpacity(0.8),
         'Google Sign-In failed. Please try again.',
       );
+      log("${e.message.toString()}");
       break;
     case 'sign_in_required':
       AppMessages().sendVerification(

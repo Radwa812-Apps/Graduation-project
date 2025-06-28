@@ -79,7 +79,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
             'name': '${userData['fName']} ${userData['lName']}',
             'imageUrl': userData['imageUrl'],
             'encryptedUserPicture': userData['encryptedUserPicture'],
-            'lastLocation': 'Active now',
+            'status': userData['status'] ?? 'offline',
             'distance': '0.5km',
           });
         }

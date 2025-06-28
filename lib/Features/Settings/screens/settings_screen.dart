@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:near_me_new_version/Features/Map_After_SignUp/Screens/map1.dart';
+import 'package:near_me_new_version/Features/Permissions/Screens/permissions.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
 
 import 'package:near_me_new_version/core/data/bloc/profile/profile_bloc.dart';
@@ -17,6 +18,26 @@ import '../../auth/Sign_up_and_in/components/text_form_widget.dart';
 import '../components/confirm_message_widget.dart';
 import '../components/icon_and_text_widget.dart';
 
+class MyCustomClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    path.lineTo(0, size.height - 30);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 30,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
 class SettingsScreen extends StatelessWidget {
   static String settingsScreenKey = '/SettingsScreen';
   double spaceBetweenRows = 40.h;
@@ -27,11 +48,17 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
-      body: SingleChildScrollView(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Text(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(90.h),
+        child: ClipPath(
+          clipper: MyCustomClipper(), // كلاس مخصص لإنشاء المنحنى
+          child: Container(
+            color: Colors.transparent,
+            child: AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              title: Text(
                 'Settings',
                 style: TextStyle(
                   color: kFontColor,
@@ -39,6 +66,14 @@ class SettingsScreen extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: SafeArea(
+          child: Column(
+            children: [
               SizedBox(height: spaceBetweenRows),
               IconAndTextWidget(
                 iconData: Icons.location_on_outlined,
@@ -46,7 +81,11 @@ class SettingsScreen extends StatelessWidget {
                 iconSize: 25.sp,
                 fontSize: 22.sp,
                 onTap: () {
-                  Navigator.pushNamed(context, Map1.map1Key,arguments: 'SettingsScreen');
+                  Navigator.pushNamed(
+                    context,
+                    Map1.map1Key,
+                    arguments: 'SettingsScreen',
+                  );
                 },
               ),
               SizedBox(height: spaceBetweenRows),
@@ -124,7 +163,11 @@ class SettingsScreen extends StatelessWidget {
                 iconSize: 25.sp,
                 fontSize: 22.sp,
                 onTap: () {
-                  Navigator.pushNamed(context, '/permissions');
+                  Navigator.pushNamed(
+                    context,
+                    Permissions.permissionsKey,
+                    arguments: 'SettingScreen',
+                  );
                 },
               ),
               SizedBox(height: spaceBetweenRows),
@@ -177,10 +220,13 @@ class SettingsScreen extends StatelessWidget {
                         context: context,
                         builder: (BuildContext context) {
                           return AlertDialog(
-                            backgroundColor: kPrimaryColor2,
+                            backgroundColor: Colors.white,
                             title: const Text(
-                              "Confirm Account Deletion",
-                              style: TextStyle(color: Colors.white),
+                              "Confirm",
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 0, 0, 0),
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             content: Form(
                               key: formKey,
@@ -189,14 +235,14 @@ class SettingsScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   TextFormFieldWidget(
-                                    lineFocusColor: kFontColor,
+                                    lineFocusColor: Colors.black,
                                     hintColor: Colors.grey,
-                                    lineColor: Colors.grey,
+                                    lineColor: Colors.black,
                                     controller: emailController,
                                     hint: 'Email',
                                     prefixIcon: const Icon(
                                       Icons.email_outlined,
-                                      color: Colors.grey,
+                                      color: Color.fromARGB(255, 0, 0, 0),
                                     ),
                                     keyboardType: TextInputType.emailAddress,
                                     validatior: ((p0) {
@@ -214,12 +260,12 @@ class SettingsScreen extends StatelessWidget {
                                   TextFormFieldWidget(
                                     lineFocusColor: kFontColor,
                                     hintColor: Colors.grey,
-                                    lineColor: Colors.grey,
+                                    lineColor: Colors.black,
                                     controller: passwordController,
                                     hint: 'Password',
                                     prefixIcon: const Icon(
                                       Icons.lock_outline,
-                                      color: Colors.grey,
+                                      color: Color.fromARGB(255, 0, 0, 0),
                                     ),
                                     keyboardType: TextInputType.text,
                                     isPassword: true,
@@ -247,14 +293,17 @@ class SettingsScreen extends StatelessWidget {
                                     width: 70.w,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(40),
-                                      color: kPrimaryColor1
+                                      color: kSpecialColor,
                                     ),
                                     child: TextButton(
                                       onPressed:
                                           () => Navigator.of(context).pop(),
                                       child: const Text(
                                         "Cancel",
-                                        style: TextStyle(color: Colors.white),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ),

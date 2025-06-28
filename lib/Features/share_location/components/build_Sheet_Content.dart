@@ -52,20 +52,21 @@ class _BuildSheetContentState extends State<BuildSheetContent> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PrivateChatScreen(
-                          recipientId: member['uid'] ?? '',
-                          recipientName: member['name'] ?? 'Unknown',
-                          recipientImage: member['imageUrl'],
-                        ),
+                        builder:
+                            (context) => PrivateChatScreen(
+                              recipientId: member['uid'] ?? '',
+                              recipientName: member['name'] ?? 'Unknown',
+                              recipientImage: member['imageUrl'],
+                            ),
                       ),
                     );
                   },
                   child: MemberGroupInside(
                     userName: member['name'] ?? 'Unknown',
-                    lastLocatin: member['lastLocation'] ?? 'Unknown',
+                    status: member['status'] ?? 'offline',
                     distance: member['distance'] ?? 'N/A',
-                    picture: member['encryptedUserPicture']??'',
-                    uid: member['uid']??''
+                    picture: member['encryptedUserPicture'] ?? '',
+                    uid: member['uid'] ?? '',
                   ),
                 ),
                 const SizedBox(height: 10),
