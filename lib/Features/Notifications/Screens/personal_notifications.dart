@@ -185,9 +185,7 @@
 //   }
 // }
 
-
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -222,10 +220,12 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
   late Stream<QuerySnapshot> _notificationsStream =
       Stream<QuerySnapshot>.empty();
 
+  String _userName = 'Loading...';
   @override
   void initState() {
     super.initState();
     _loadNotifications();
+    _loadUserName();
   }
 
   Future<void> _loadNotifications() async {
@@ -249,6 +249,20 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
     }
   }
 
+  Future<void> _loadUserName() async {
+    try {
+      final userDoc =
+          await _firestore.collection('users').doc(widget.userId).get();
+      if (userDoc.exists) {
+        setState(() {
+          _userName = userDoc.data()?['fName'] ?? 'User';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading user name: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -264,10 +278,14 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
           child: Column(
             children: [
               HeaderNotifications(
-                title: widget.title,
-                backArrow: null,
-                showCircleAvatar: false,
-                image: "assets/images/group.jpg",
+                title: _userName,
+                backArrow: Icon(
+                  Icons.arrow_back_ios,
+                  color: kPrimaryColor1,
+                  size: 25.sp,
+                ),
+                showCircleAvatar: true,
+                image: "assets/images/user.jpg",
               ),
               Expanded(
                 child: Padding(
@@ -291,7 +309,8 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
                       }
 
                       // Group notifications by date
-                      final Map<String, List<DocumentSnapshot>> groupedNotifications = {};
+                      final Map<String, List<DocumentSnapshot>>
+                      groupedNotifications = {};
                       final now = DateTime.now();
                       final today = DateTime(now.year, now.month, now.day);
                       final yesterday = today.subtract(const Duration(days: 1));
@@ -301,7 +320,9 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
                         final date = timestamp.toDate();
                         final dateKey = _getDateKey(date, today, yesterday);
 
-                        groupedNotifications.putIfAbsent(dateKey, () => []).add(doc);
+                        groupedNotifications
+                            .putIfAbsent(dateKey, () => [])
+                            .add(doc);
                       }
 
                       // Build the list of widgets
@@ -309,11 +330,13 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
                       groupedNotifications.forEach((dateKey, docs) {
                         // Add date label
                         items.add(DateLabel(dateText: dateKey));
-                        
+
                         // Add notifications for this date
                         for (final doc in docs) {
                           final data = doc.data() as Map<String, dynamic>;
-                          final messageData = jsonDecode(data['messageLocation']);
+                          final messageData = jsonDecode(
+                            data['messageLocation'],
+                          );
                           items.add(_buildNotificationItem(data, messageData));
                         }
                       });
@@ -337,7 +360,7 @@ class _PersonalNotificationsState extends State<PersonalNotifications> {
 
   String _getDateKey(DateTime date, DateTime today, DateTime yesterday) {
     final dateOnly = DateTime(date.year, date.month, date.day);
-    
+
     if (dateOnly == today) {
       return 'Today';
     } else if (dateOnly == yesterday) {

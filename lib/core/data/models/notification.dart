@@ -51,9 +51,8 @@ class Notifications {
     final userName = locationData['userName'] ?? '';
     final eventType = locationData['eventType'] ?? '';
     String geofenceName = locationData['geofenceName'] ?? '';
-    final combinedMessage = '$userName - $eventType - $geofenceName';
+    final combinedMessage = '$userName $eventType $geofenceName';
 
-    // Handle groupCustomPlacesIds conversion
     List<String> groupIds = [];
     if (data['groupsID'] != null) {
       if (data['groupsID'] is List) {

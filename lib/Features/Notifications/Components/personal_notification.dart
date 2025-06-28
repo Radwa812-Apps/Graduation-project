@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/constants.dart';
+
 class PersonalNotificationItem extends StatelessWidget {
   final String message;
   final String time;
@@ -23,24 +24,18 @@ class PersonalNotificationItem extends StatelessWidget {
         margin: EdgeInsets.only(bottom: 10.h),
         padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 8.h),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.w),
-            topRight: Radius.circular(20.w),
-            bottomLeft: Radius.circular(10.w),
-            bottomRight: Radius.circular(10.w),
-          ),
-          color: Color.fromRGBO(181, 158, 90, 0.675).withOpacity(0.5),
+          color: const Color.fromARGB(255, 172, 220, 170).withOpacity(0.2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10.0,
-              spreadRadius: 2.0,
-              offset: Offset(0, 4),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              spreadRadius: 1,
+              offset: const Offset(0, 1),
             ),
           ],
-          border: Border.all(
-            color: Colors.white.withOpacity(0.5),
-            width: 1.w,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
           ),
         ),
         child: Row(
@@ -57,7 +52,7 @@ class PersonalNotificationItem extends StatelessWidget {
                         child: Text(
                           message,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: const Color.fromARGB(255, 95, 94, 94),
                             fontFamily: 'OpenSans-Regular',
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w400,
@@ -76,7 +71,7 @@ class PersonalNotificationItem extends StatelessWidget {
               children: [
                 if (showForwardIcon)
                   IconButton(
-                    icon:  Icon(
+                    icon: Icon(
                       Icons.arrow_forward_ios,
                       color: kPrimaryColor1,
                       size: 16.sp,

@@ -26,6 +26,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../core/constants.dart' show kFontColor;
 import '../../../core/services/get_service_key.dart';
 import '../../../core/services/handle_dublicate_noti.dart';
 import '../../../core/services/send_notification_service.dart';
@@ -452,8 +453,8 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     try {
       final eventName =
           params.event == GeofenceEvent.enter
-              ? "ENTER"
-              : (params.event == GeofenceEvent.exit ? "EXIT" : "DWELL");
+              ? "just arrived"
+              : (params.event == GeofenceEvent.exit ? "just left" : "DWELL");
 
       final geofenceId = params.geofences.first.id;
       final currentUser = FirebaseAuth.instance.currentUser;
@@ -523,8 +524,8 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       final placeName = _extractPlaceNameFromGeofenceId(geofenceId);
       final eventVerb =
           params.event == GeofenceEvent.enter
-              ? "entered"
-              : (params.event == GeofenceEvent.exit ? "exited" : "is in");
+              ? "just arrived"
+              : (params.event == GeofenceEvent.exit ? "just left" : "is in");
 
       // Save notification locally
       final repository = NotificationRepository(
@@ -565,8 +566,8 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         priority: Priority.high,
       );
 
-      final notificationTitle = 'Geofence Event - $firstName';
-      final notificationBody = '$firstName $eventVerb $placeName';
+      final notificationTitle = firstName;
+      final notificationBody = '$eventVerb $placeName';
 
       await notificationsPlugin.show(
         params.hashCode,
@@ -804,7 +805,7 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
                             'Radius: ${geofence.radiusMeters}m',
                             style: const TextStyle(
                               fontSize: 10,
-                              color: Colors.grey,
+                              color: kFontColor,
                             ),
                           ),
                           onTap: () {

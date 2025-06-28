@@ -30,24 +30,18 @@ class NotificationItem extends StatelessWidget {
           margin: EdgeInsets.only(bottom: 10.h),
           padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 8.h),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10.w),
-              topRight: Radius.circular(20.w),
-              bottomLeft: Radius.circular(10.w),
-              bottomRight: Radius.circular(10.w),
-            ),
-            color: Color.fromRGBO(181, 158, 90, 0.675).withOpacity(0.5),
+            color: const Color.fromARGB(255, 172, 220, 170).withOpacity(0.2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10.0,
-                spreadRadius: 2.0,
-                offset: Offset(0, 4),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                spreadRadius: 1,
+                offset: const Offset(0, 1),
               ),
             ],
-            border: Border.all(
-              color: Colors.white.withOpacity(0.5),
-              width: 1.0,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
             ),
           ),
           child: Row(
@@ -68,51 +62,55 @@ class NotificationItem extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    if (title != null) SizedBox(height: 1.h),
-                    Row(
-                      children: [
-                        if (name != null)
-                          Text(
-                            '$name:',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontFamily: 'OpenSans-Regular',
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w400,
+                    if (title != null) SizedBox(height: 7.h),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          if (name != null)
+                            CircleAvatar(
+                              radius: 15.w,
+                              backgroundImage: AssetImage(
+                                'assets/images/user.jpg',
+                              ),
+                              backgroundColor: Colors.grey[300],
+                            ),
+                          if (name != null) SizedBox(width: 10.w),
+
+                          Flexible(
+                            child: Text(
+                              message,
+                              style: TextStyle(
+                                color: const Color.fromARGB(255, 95, 94, 94),
+                                fontFamily: 'OpenSans-Regular',
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
-                        if (name != null) SizedBox(width: 10.w),
-                        Flexible(
-                          child: Text(
-                            message,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontFamily: 'OpenSans-Regular',
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w400,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
+
               Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  if (showForwardIcon)
-                    IconButton(
-                      icon: const Icon(
-                        Icons.arrow_forward_ios,
-                        color: kPrimaryColor1,
-                        size: 16,
-                      ),
-                      onPressed: onPressed,
+                  if (showForwardIcon) SizedBox(height: 20.h),
+
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.arrow_forward_ios,
+                      color: kPrimaryColor1,
+                      size: 16,
                     ),
-                  SizedBox(height: 20.h),
+                    onPressed: onPressed,
+                  ),
+
                   Text(
                     time,
                     style: TextStyle(
