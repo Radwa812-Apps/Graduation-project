@@ -13,18 +13,21 @@ class Services {
     'users',
   );
 
+  void setUserOnlineStatus(bool isOnline) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final firestore = FirebaseFirestore.instance;
+    firestore
+        .collection('users')
+        .doc(uid)
+        .update({
+          "status": isOnline ? "Active" : "offline",
+          "lastSeen": FieldValue.serverTimestamp(),
+        })
+        .catchError((error) {
+          print("Failed to update user status: $error");
+        });
+  }
 
-void setUserOnlineStatus(bool isOnline) {
-    
-final uid = FirebaseAuth.instance.currentUser!.uid;
-final firestore = FirebaseFirestore.instance;
-  firestore.collection('users').doc(uid).update({
-    "status": isOnline ? "Active" : "offline",
-    "lastSeen": FieldValue.serverTimestamp(),
-  }).catchError((error) {
-    print("Failed to update user status: $error");
-  });
-}
   Future<void> addUser({
     required String fName,
     required String lName,
@@ -34,6 +37,7 @@ final firestore = FirebaseFirestore.instance;
     required String profilPicture,
     required String role,
     required String fcmToken,
+    bool isTracking = false, // Default value for tracking
   }) async {
     try {
       final User? user = FirebaseAuth.instance.currentUser;
@@ -58,6 +62,7 @@ final firestore = FirebaseFirestore.instance;
         'fcmToken': fcmToken, // تخزين التوكن
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
+        'isTracking': isTracking, // حالة التتبع
       });
 
       print("✅ User profile created for ${user.uid}");
@@ -154,5 +159,50 @@ final firestore = FirebaseFirestore.instance;
       );
     });
     return customplacesList;
+  }
+}
+
+Future<void> saveTrackingState(bool isTracking) async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId == null) {
+    throw Exception('User not authenticated');
+  }
+
+  try {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'isTracking': isTracking,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    FirebaseCrashlytics.instance.recordError(
+      e,
+      StackTrace.current,
+      reason: 'Failed to save tracking state',
+    );
+    rethrow;
+  }
+}
+
+Future<bool> loadTrackingState() async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId == null) return false;
+
+  try {
+    final doc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    if (!doc.exists) return false;
+
+    final data = doc.data();
+    if (data == null) return false;
+
+    return data['isTracking'] as bool? ?? false;
+  } catch (e) {
+    FirebaseCrashlytics.instance.recordError(
+      e,
+      StackTrace.current,
+      reason: 'Failed to load tracking state',
+    );
+    return false;
   }
 }

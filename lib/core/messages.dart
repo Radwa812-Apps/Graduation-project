@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart' show BuildContext, Color;
 
@@ -9,6 +8,12 @@ class AppMessages {
         duration: const Duration(seconds: 3),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 130,
+          left: 20,
+          right: 20,
+        ),
         content: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

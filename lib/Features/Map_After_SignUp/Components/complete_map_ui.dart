@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:near_me_new_version/Features/Map_After_SignUp/Components/search.dart';
 import '../../../core/constants.dart';
 import '../../../core/services/map.dart';
 import 'autoComplete_map.dart';
@@ -12,9 +13,9 @@ class CompleteMapUi extends StatefulWidget {
     super.key,
     required this.service,
     required this.controller,
-    required this.GetSearchedPlace,
-    required this.goToPlace,
+    required this.GetSearchedPlace, required this.goToPlace,
   });
+  
 
   final MapServices service;
   final TextEditingController controller;
@@ -107,36 +108,17 @@ class _CompleteMapUiState extends State<CompleteMapUi> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: TextField(
-                            onChanged: (value) {
-                              setModalState(() {
-                                searchQuery = value;
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: 'Search...',
-                              border: InputBorder.none,
-                              suffixIcon: IconButton(
-                                onPressed: (() {}),
-                                icon: const Icon(
-                                  Icons.search,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 12,
-                              ),
-                            ),
-                          ),
+                        SearchInMap(
+                          onChanged: (value) {
+                            setModalState(() {
+                              searchQuery = value;
+                            });
+                          },
                         ),
                         const SizedBox(height: 20),
+
                         GeofencesCrudOp(
+
                           searchQuery: searchQuery,
                           goToPlace: widget.goToPlace,
                         ),

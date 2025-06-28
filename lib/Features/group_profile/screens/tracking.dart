@@ -18,15 +18,17 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:native_geofence/native_geofence.dart';
 import 'package:native_geofence/src/typedefs.dart';
+import 'package:near_me_new_version/Features/Map_After_SignUp/Screens/map1.dart';
 import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
 import 'package:near_me_new_version/core/data/models/notification.dart';
+import 'package:near_me_new_version/core/services/Auth_functions.dart';
 import 'package:near_me_new_version/core/services/location_noti.dart';
 import 'package:near_me_new_version/core/services/notification_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../core/constants.dart' show kFontColor;
+import '../../../core/constants.dart' show kFontColor, kPrimaryColor1;
 import '../../../core/services/get_service_key.dart';
 import '../../../core/services/handle_dublicate_noti.dart';
 import '../../../core/services/send_notification_service.dart';
@@ -68,7 +70,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   // Tracking control
   bool _isTracking = false;
   StreamSubscription<Position>? _positionStreamSubscription;
-
+  StreamSubscription<User?>? _authStateSubscription;
   // UI elements
   Set<Circle> _geofenceCircles = {};
   final Set<Marker> _markers = {};
@@ -92,7 +94,18 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId != null) {
       initializeGeofencing(userId);
+      loadTrackingState;
+      _loadInitialTrackingState(userId);
     }
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      user,
+    ) {
+      if (user != null && mounted) {
+        _loadInitialTrackingState(user.uid);
+      } else if (mounted) {
+        setState(() => _isTracking = false);
+      }
+    });
     _initLocationServices();
   }
 
@@ -100,7 +113,22 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   void dispose() {
     _positionStreamSubscription?.cancel();
     _notificationBloc.close();
+    _authStateSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadInitialTrackingState(String userId) async {
+    final isTracking = await loadTrackingState();
+    if (mounted) {
+      setState(() {
+        _isTracking = isTracking;
+      });
+    }
+
+    if (isTracking) {
+      // If tracking was active, restart it
+      await _toggleAutoTracking();
+    }
   }
 
   Future<void> initializeGeofencing(String userId) async {
@@ -229,48 +257,48 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   }
 
   Future<void> _toggleAutoTracking() async {
-    if (_isTracking) {
-      // Stop tracking
+    final newState = !_isTracking;
+
+    if (newState) {
+      // Start tracking logic
+      final hasPermission = await _checkLocationPermissions();
+      if (!hasPermission) return;
+
+      final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!isServiceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enable location services')),
+        );
+        return;
+      }
+
+      setState(() => _isTracking = true);
+      _positionStreamSubscription = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.best,
+          distanceFilter: 5,
+        ),
+      ).listen((Position position) async {
+        if (!mounted || !_isTracking) return;
+        await _checkPositionAgainstGeofences(
+          LatLng(position.latitude, position.longitude),
+          isAutoTracking: true,
+        );
+        if (mounted) {
+          setState(() => _lastPosition = position);
+        }
+      });
+    } else {
+      // Stop tracking logic
       await _positionStreamSubscription?.cancel();
       setState(() {
         _isTracking = false;
         _positionStreamSubscription = null;
       });
-      return;
     }
 
-    // Start tracking
-    final hasPermission = await _checkLocationPermissions();
-    if (!hasPermission) return;
-
-    final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!isServiceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enable location services')),
-      );
-      return;
-    }
-
-    setState(() => _isTracking = true);
-
-    _positionStreamSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 5, // Update when moving at least 10 meters
-      ),
-    ).listen((Position position) async {
-      if (!mounted || !_isTracking) return;
-
-      await _checkPositionAgainstGeofences(
-        /////////////////////
-        LatLng(position.latitude, position.longitude),
-        isAutoTracking: true,
-      );
-
-      if (mounted) {
-        setState(() => _lastPosition = position);
-      }
-    });
+    // Save the new state
+    await saveTrackingState(newState);
   }
 
   Future<void> _checkPositionAgainstGeofences(
@@ -728,6 +756,130 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
     }
   }
 
+  Future<void> _showDeleteConfirmationDialog(ActiveGeofence geofence) async {
+    final geofenceName = _extractPlaceNameFromGeofenceId(geofence.id);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text(
+              'Delete Geofence',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('You are about to delete:'),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    geofenceName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'This action cannot be undone.',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+                child: const Text('CANCEL'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text(
+                  'DELETE',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+          ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Show loading indicator
+        final overlay =
+            Overlay.of(context).context.findRenderObject() as RenderBox;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Center(child: CircularProgressIndicator()),
+        );
+
+        // Remove from native manager
+        await NativeGeofenceManager.instance.removeGeofenceById(geofence.id);
+
+        // Remove from Firestore
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId != null) {
+          await FirebaseFirestore.instance
+              .collection('userGeofences')
+              .doc(userId)
+              .collection('geofences')
+              .doc(geofence.id)
+              .delete();
+        }
+
+        // Update UI
+        if (mounted) {
+          setState(() {
+            activeGeofences.removeWhere((g) => g.id == geofence.id);
+            _geofenceStates.remove(geofence.id);
+            _updateGeofenceCircles(activeGeofences);
+            if (_currentGeofenceId == geofence.id) {
+              _currentGeofenceId = null;
+            }
+          });
+        }
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('"$geofenceName" deleted successfully'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) Navigator.of(context).pop(); // Close loading dialog
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -777,128 +929,314 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
               ),
             ),
             Expanded(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Active Geofences (${activeGeofences.length})',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Header with counter
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Active Geofences',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${activeGeofences.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: activeGeofences.length,
-                      itemBuilder: (context, index) {
-                        final geofence = activeGeofences[index];
-                        final geofenceName = _extractPlaceNameFromGeofenceId(
-                          geofence.id,
-                        );
-                        return ListTile(
-                          title: Text(geofenceName),
-                          subtitle: Text(
-                            'Lat: ${geofence.location.latitude.toStringAsFixed(4)}  ,   '
-                            'Lng: ${geofence.location.longitude.toStringAsFixed(4)}  ,  '
-                            'Radius: ${geofence.radiusMeters}m',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: kFontColor,
-                            ),
-                          ),
-                          onTap: () {
-                            _moveCameraToGeofence(geofence);
-                          },
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              try {
-                                final userId =
-                                    FirebaseAuth.instance.currentUser?.uid;
 
-                                await NativeGeofenceManager.instance
-                                    .removeGeofenceById(geofence.id);
-
-                                await FirebaseFirestore.instance
-                                    .collection('userGeofences')
-                                    .doc(userId)
-                                    .collection('geofences')
-                                    .doc(
-                                      geofence.id,
-                                    ) // Use the geofence's ID as the document ID
-                                    .delete();
-
-                                // Optional: Show success message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Geofence deleted successfully',
+                    // Geofences List
+                    Expanded(
+                      child:
+                          activeGeofences.isEmpty
+                              ? LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return SingleChildScrollView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minHeight: constraints.maxHeight,
+                                      ),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.location_off,
+                                              size: 48,
+                                              color: Colors.grey[400],
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              'No geofences added',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 32,
+                                                  ),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    Map1.map1Key,
+                                                  );
+                                                },
+                                                child: Text(
+                                                  'Tap the map to add your first geofence',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: kPrimaryColor1,
+                                                    decoration:
+                                                        TextDecoration
+                                                            .underline,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                              : ListView.separated(
+                                padding: const EdgeInsets.all(8),
+                                itemCount: activeGeofences.length,
+                                separatorBuilder:
+                                    (context, index) =>
+                                        const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final geofence = activeGeofences[index];
+                                  final geofenceName =
+                                      _extractPlaceNameFromGeofenceId(
+                                        geofence.id,
+                                      );
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 4,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(10),
+                                      onTap:
+                                          () => _moveCameraToGeofence(geofence),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(
+                                                  context,
+                                                ).primaryColor.withOpacity(0.1),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.location_pin,
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).primaryColor,
+                                                size: 20,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    geofenceName,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.location_on,
+                                                        size: 14,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '${geofence.location.latitude.toStringAsFixed(4)}, '
+                                                        '${geofence.location.longitude.toStringAsFixed(4)}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              Colors.grey[600],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete_outline,
+                                              ),
+                                              color: Colors.red[400],
+                                              onPressed:
+                                                  () =>
+                                                      _showDeleteConfirmationDialog(
+                                                        geofence,
+                                                      ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
+                    // Control Buttons
+                    Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: _toggleAutoTracking,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        _isTracking
+                                            ? Colors.red[400]
+                                            : Theme.of(context).primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                );
-
-                                if (userId != null) {
-                                  await _loadActiveGeofences(userId);
-                                }
-                                setState(() {
-                                  _geofenceStates.remove(geofence.id);
-                                  if (_currentGeofenceId == geofence.id) {
-                                    _currentGeofenceId = null;
-                                  }
-                                });
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${e.toString()}'),
+                                  icon: Icon(
+                                    _isTracking ? Icons.stop : Icons.play_arrow,
                                   ),
-                                );
-                              }
-                            },
+                                  label: Text(
+                                    _isTracking
+                                        ? 'STOP TRACKING'
+                                        : 'START TRACKING',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _testManualPoint,
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    side: BorderSide(
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  icon: Icon(
+                                    Icons.location_searching,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  label: Text(
+                                    'TEST LOCATION',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton(
-                              onPressed: _toggleAutoTracking,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    _isTracking ? Colors.red : Colors.green,
-                                minimumSize: const Size(150, 50),
-                              ),
-                              child: Text(
-                                _isTracking
-                                    ? 'Stop Tracking'
-                                    : 'Start Tracking',
-                                style: const TextStyle(fontSize: 16),
-                              ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _isTracking
+                                ? 'Tracking your location in background'
+                                : 'Press start to begin tracking',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
                             ),
-                            ElevatedButton(
-                              onPressed: _testManualPoint,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                minimumSize: const Size(150, 50),
-                              ),
-                              child: const Text(
-                                'Test Location',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

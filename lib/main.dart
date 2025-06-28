@@ -202,7 +202,34 @@ class _NearMeAppState extends State<NearMeApp> {
       future: SharedPreferences.getInstance(),
       builder: ((context, snapshot) {
         if (!snapshot.hasData) {
-          return const MaterialApp(
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              primarySwatch: MaterialColor(0xFF3D633B, const <int, Color>{
+                50: Color.fromRGBO(34, 55, 33, 1),
+                100: Color.fromRGBO(40, 66, 39, 1),
+                200: Color.fromRGBO(47, 77, 46, 1),
+                300: Color.fromRGBO(54, 88, 52, 1),
+                400: Color.fromRGBO(61, 99, 59, 1),
+                500: Color.fromRGBO(68, 110, 66, 1),
+                600: Color.fromRGBO(86, 124, 84, 1),
+                700: Color.fromRGBO(105, 139, 103, 1),
+                800: Color.fromRGBO(124, 153, 122, 1),
+                900: Color.fromRGBO(161, 182, 160, 1),
+              }),
+              colorScheme: ColorScheme.light(
+                primary: Color.fromRGBO(61, 99, 59, 1),
+                secondary: Color.fromRGBO(105, 139, 103, 1),
+              ),
+              // تأكد من تعيين هذه القيم أيضاً:
+              appBarTheme: AppBarTheme(
+                backgroundColor: Color.fromRGBO(61, 99, 59, 1),
+              ),
+              floatingActionButtonTheme: FloatingActionButtonThemeData(
+                backgroundColor: Color.fromRGBO(61, 99, 59, 1),
+              ),
+            ),
+
             home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
         } else {

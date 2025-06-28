@@ -118,6 +118,7 @@ class _SignUpVerificationEmailPageState
       final String fname = arguments['fname'] as String;
       final String lname = arguments['lname'] as String;
       final fcmToken = await FirebaseMessaging.instance.getToken();
+
       await widget.services.addUser(
         fName: fname,
         lName: lname,
@@ -127,6 +128,7 @@ class _SignUpVerificationEmailPageState
         profilPicture: 'assets/images/user.jpg',
         role: 'Not admin',
         fcmToken: fcmToken ?? '',
+        isTracking: false, // Default value for tracking
       );
     }
   }
