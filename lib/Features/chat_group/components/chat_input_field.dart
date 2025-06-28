@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants.dart';
+import '../../../core/constants.dart';
 
 class ChatInputField extends StatefulWidget {
   final TextEditingController controller;
