@@ -44,26 +44,26 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _hasSubscribedToStream = false;
 
   @override
-  // void didChangeDependencies() {
-  //   super.didChangeDependencies();
-  //   if (!_hasSubscribedToStream) {
-  //     _hasSubscribedToStream = true;
-  //     _groupService.streamMyGroups().listen((fetchedGroups) {
-  //       if (mounted) {
-  //         setState(() {
-  //           _groups = fetchedGroups;
-  //         });
-  //       }
-  //     });
-  //     _chatService.streamRecentChats().listen((recentChats) {
-  //       if (mounted) {
-  //         setState(() {
-  //           _recentChats = recentChats;
-  //         });
-  //       }
-  //     });
-  //   }
-  // }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasSubscribedToStream) {
+      _hasSubscribedToStream = true;
+      _groupService.streamMyGroups().listen((fetchedGroups) {
+        if (mounted) {
+          setState(() {
+            _groups = fetchedGroups;
+          });
+        }
+      });
+      _chatService.streamRecentChats().listen((recentChats) {
+        if (mounted) {
+          setState(() {
+            _recentChats = recentChats;
+          });
+        }
+      });
+    }
+  }
   void _loadGroups() async {
     List<Group> fetchedGroups = await _groupService.getMyGroups();
     setState(() {
@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child:
                       _selectedTab == 'Groups'
                           ? StreamBuilder<List<Group>>(
-                            stream: _groupService.getMyGroupsStream(),
+                            stream: _groupService.streamMyGroups(),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {

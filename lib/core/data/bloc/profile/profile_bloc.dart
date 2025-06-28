@@ -27,8 +27,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         updateData['phoneNumber'] = event.phoneNumber;
         updateData['dateOfBirth'] = event.dateOfBirth;
         updateData['email'] = event.email;
-        updateData['encryptedUserPicture'] =
-            event.userPicture;
+        
         await users.doc(id).update(updateData);
 
         emit(UserEditedSuccessState(userModel: userModel!));

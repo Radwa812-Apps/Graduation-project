@@ -41,7 +41,7 @@ class _GroupStyleState extends State<GroupStyle>
     super.initState();
     _setupAnimation();
     _listenToGroupChanges();
-    _loadGroupImage();
+     _loadGroupImage();
   }
 
   void _setupAnimation() {

@@ -150,7 +150,7 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
                                 lName: state.userModel.lName,
                                 fName: state.userModel.fName,
                                 phoneNumber: state.userModel.phoneNumber,
-                                userPicture: userImage!,
+                                
                               ),
                             );
                             Navigator.pushNamed(

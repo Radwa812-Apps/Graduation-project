@@ -153,22 +153,11 @@ class RiskServices {
         final groupData = groupDoc.data() as Map<String, dynamic>?;
         final String? userName;
         final List<dynamic>? members = groupData?['members'];
-        Future<Map<String, String>?> userData = GroupService().getUserData(
-          userId,
-        );
-        if (userData == null) {
-          log("User data not found for userId: $userId");
+        userName = await getUserName(userId);
+        if (userName == null) {
+          log("User name not found for userId: $userId");
           continue;
-        } else {
-          final userMap = await userData;
-          final String? userFName = userMap?['fName'];
-          final String? userLName = userMap?['lName'];
-          if (userFName == null || userLName == null) {
-            log("User name not found for userId: $userId");
-          }
-          userName = "$userFName $userLName";
         }
-
         if (members != null && members.isNotEmpty) {
           for (var memberId in members) {
             // Skip sending notification to the user who triggered the alert
@@ -213,5 +202,25 @@ class RiskServices {
     log(
       "Risk notification sent to all group members.................................",
     );
+  }
+
+  Future<String?> getUserName(String userId) async {
+    Future<Map<String, String>?> userData = GroupService().getUserData(
+      userId,
+    );
+    final String userName;
+    if (userData == null) {
+      log("User data not found for userId: $userId");
+      return null;
+    } else {
+      final userMap = await userData;
+      final String? userFName = userMap?['fName'];
+      final String? userLName = userMap?['lName'];
+      if (userFName == null || userLName == null) {
+        log("User name not found for userId: $userId");
+      }
+      userName = "$userFName $userLName";
+    }
+    return userName;
   }
 }

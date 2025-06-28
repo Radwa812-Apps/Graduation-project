@@ -18,10 +18,12 @@ import 'package:near_me_new_version/Features/share_location/components/is_tracki
 import 'package:near_me_new_version/Features/share_location/components/location_controller.dart';
 import 'package:near_me_new_version/Features/share_location/components/map_controller.dart';
 import 'package:near_me_new_version/Features/share_location/components/map_widget.dart';
+import 'package:near_me_new_version/Features/share_location/screens/test.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:near_me_new_version/core/services/profile_image_service.dart';
+import 'package:near_me_new_version/core/services/risk_services.dart';
 
 import '../../chat_group/chat_group/screens/group_chat.dart';
 
@@ -52,7 +54,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   Set<Polyline> polylineCoordinatesSet = {};
   String currentUerName = '';
   List<Map<String, dynamic>> groupMembers = [];
-  BitmapDescriptor? customUserMarkerIcon;
+  //BitmapDescriptor? customUserMarkerIcon;
   BitmapDescriptor? customSourceMarkerIcon;
   Uint8List? groupImage;
   Uint8List? userImage;
@@ -110,7 +112,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   }
 
   Future<void> initialization() async {
-    _createFixedMarker();
+    //_createFixedMarker();
     _createFixedSourceMarker();
     user = firebase_auth.FirebaseAuth.instance.currentUser;
     isUserLiveTrackingOn = context.read<TrackingUserOnCubit>().state;
@@ -134,7 +136,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   }
 
   Future<void> _initializeTracking() async {
-    _createFixedMarker();
+    //_createFixedMarker();
     _createFixedSourceMarker();
     _loadUserImage();
     log("Initializing live tracking for group: ${widget.groupId}");
@@ -166,14 +168,27 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     }
   }
 
-  Future<void> _createFixedMarker() async {
-    customUserMarkerIcon = await createCircleMarkerWithImage(
-      'assets/images/user_photo.jpeg',
-      circleRadius: 60.0,
-      circleColor: Colors.blueAccent,
-      borderWidth: 4.0,
-      borderColor: Colors.white,
-    );
+  Future<BitmapDescriptor> _createFixedMarker(Uint8List? imageBytes) async {
+    BitmapDescriptor customUserMarkerIcon;
+    if (imageBytes != null) {
+      customUserMarkerIcon = await createCircleMarkerWithImage(
+        imageBytes,
+        circleRadius: 60.0,
+        circleColor: const Color.fromARGB(255, 255, 255, 255),
+        borderWidth: 4.0,
+        borderColor: Colors.white,
+      );
+    } else {
+      customUserMarkerIcon = await createCircleMarkerWithDefaultImage(
+        kDefaultUserImge,
+        circleRadius: 60.0,
+        circleColor: const Color.fromARGB(255, 255, 255, 255),
+        borderWidth: 4.0,
+        borderColor: const Color.fromARGB(255, 37, 30, 30),
+      );
+    }
+
+    return customUserMarkerIcon;
   }
 
   Future<void> _createFixedSourceMarker() async {
@@ -246,10 +261,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     _locationController.destinationLocation = newLoc;
     _updateFirebaseLocation(true);
 
-    _mapController.updateCameraPosition(
-      LatLng(newLoc.latitude!, newLoc.longitude!),
-      zoom: 13.5,
-    );
+    // _mapController.updateCameraPosition(
+    //   LatLng(newLoc.latitude!, newLoc.longitude!),
+    //   zoom: 13.5,
+    // );
     if (mounted) {
       setState(() {});
     }
@@ -320,8 +335,8 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
   void _listenToGroupLiveLocations() {
     _firebaseController.getGroupLiveLocationsStream(widget.groupId).listen((
       snapshot,
-    ) {
-      final markers = _createMarkersFromSnapshot(snapshot);
+    ) async {
+      final markers = await _createMarkersFromSnapshot(snapshot);
       _mapController.updateMarkers(markers);
       if (mounted) {
         setState(() {});
@@ -329,7 +344,19 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     });
   }
 
-  Set<Marker> _createMarkersFromSnapshot(QuerySnapshot snapshot) {
+  String? userName = '';
+  Future<Uint8List?> getUserImage(String userId) async {
+    final decryptedImage = await ProfileImageService().getDecryptedUserImage(
+      userId,
+    );
+    if (decryptedImage == null) {
+      log("No image found for user: $userId");
+      return null;
+    }
+    return decryptedImage;
+  }
+
+  Future<Set<Marker>> _createMarkersFromSnapshot(QuerySnapshot snapshot) async {
     log("Creating markers from snapshot: ${snapshot.docs.length} documents");
     final markers = <Marker>{};
     for (var doc in snapshot.docs) {
@@ -338,6 +365,14 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       final sourceLat = double.parse(doc['sourceLat'].toString());
       final sourceLng = double.parse(doc['sourceLng'].toString());
       final userId = doc.id;
+      final userName = doc['userName'] ?? ' ';
+      final userImage = await getUserImage(userId);
+      BitmapDescriptor? customUserMarkerIcon;
+      if (userImage != null) {
+        customUserMarkerIcon = await _createFixedMarker(userImage!);
+      } else {
+        customUserMarkerIcon = await _createFixedMarker(null);
+      }
 
       markers.addAll([
         Marker(
@@ -348,7 +383,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           infoWindow: InfoWindow(
             title: 'Current Location',
-            snippet: 'User ID: $userId',
+            snippet: '$userName',
           ),
         ),
         Marker(
@@ -359,7 +394,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
               BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           infoWindow: InfoWindow(
             title: 'Source Location',
-            snippet: 'User ID: $userId',
+            snippet: '$userName',
           ),
         ),
       ]);

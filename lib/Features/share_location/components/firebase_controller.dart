@@ -6,6 +6,7 @@ import 'dart:developer';
 import 'package:near_me_new_version/core/data/models/userRadwa.dart';
 import 'package:near_me_new_version/core/services/live_location_services.dart'
     as _firebaseController;
+import 'package:near_me_new_version/core/services/risk_services.dart';
 
 class FirebaseController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -113,6 +114,7 @@ class FirebaseController {
       log(
         "Creating live location instance for group: $groupId, user: ${user.uid}",
       );
+      final userName = await RiskServices().getUserName(user.uid);
       await _firestore
           .collection('groups')
           .doc(groupId)
@@ -124,6 +126,7 @@ class FirebaseController {
             'sourceLat': sourceLocation?.latitude,
             'sourceLng': sourceLocation?.longitude,
             'timestamp': FieldValue.serverTimestamp(),
+            'userName': userName,
           });
     } catch (e) {
       log("Error updating live location: $e");

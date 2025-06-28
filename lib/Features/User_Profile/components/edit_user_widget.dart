@@ -280,7 +280,7 @@ void initState(){
                                             dateOfBirth:
                                                 dateOfBirth ??
                                                 state.userModel.dateOfBirth,
-                                            userPicture: userImage!,
+                                            
                                           ),
                                         );
                                         setState(() {
