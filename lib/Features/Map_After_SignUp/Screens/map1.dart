@@ -170,7 +170,9 @@ class _Map1State extends State<Map1> {
             ActiveGeofence(
               id: zone.id,
               location: zone.location,
-              radiusMeters: zone.radiusMeters, triggers: zone.triggers, androidSettings: zone.androidSettings,
+              radiusMeters: zone.radiusMeters,
+              triggers: zone.triggers,
+              androidSettings: zone.androidSettings,
             ),
           ];
           _updateGeofenceCircles(activeGeofences);
@@ -189,8 +191,6 @@ class _Map1State extends State<Map1> {
       }
     }
   }
-
-
 
   // Save geofence to Firestore under user's collection
   Future<void> _saveGeofenceToDatabase(Geofence geofence, String userId) async {
@@ -400,13 +400,9 @@ class _Map1State extends State<Map1> {
         }).toSet();
   }
 
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments;
     final markers = convertToMarkers(customPlaces);
     return BlocConsumer<CustomPlacesBloc, CustomPlacesState>(
       listener: (context, state) {
@@ -478,12 +474,13 @@ class _Map1State extends State<Map1> {
                     goToPlace: goToPlace,
                   ),
                 ),
-                Positioned(
-                  bottom: 20.h,
-                  left: 270.w,
-                  right: 10.w,
-                  child: const SkipBtn(),
-                ),
+                if (args != 'SettingsScreen')
+                  Positioned(
+                    bottom: 20.h,
+                    left: 270.w,
+                    right: 10.w,
+                    child: const SkipBtn(),
+                  ),
               ],
             ),
           ),

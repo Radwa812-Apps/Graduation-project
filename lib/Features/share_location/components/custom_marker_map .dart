@@ -144,7 +144,6 @@ Future<BitmapDescriptor?> imageToBitmapDescriptor({
   return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
 }
 
-
 Future<BitmapDescriptor> createCircleMarkerWithDefaultImage(
   String userAssetPath, {
   double circleRadius = 50.0,

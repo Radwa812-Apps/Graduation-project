@@ -198,6 +198,7 @@ class GroupService {
         'fName': data['fName'] ?? 'Unknown',
         'lName': data['lName'] ?? '',
         'encryptedUserPicture': data['encryptedUserPicture'] ?? '',
+        'status' :data['status']?? 'offline'
       };
     } catch (e) {
       print("Error fetching user data: $e");
@@ -529,4 +530,21 @@ class GroupService {
       throw Exception('Failed to decrypt image');
     }
   }
+  Future<String?> getUserOnlineStatus(String uid) async {
+  try {
+    final DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data() as Map<String, dynamic>;
+      return data['status'] ?? "unknown";
+    } else {
+      print("User document not found for UID: $uid");
+      return null;
+    }
+  } catch (e) {
+    print("Error getting user status: $e");
+    return null;
+  }
+}
 }

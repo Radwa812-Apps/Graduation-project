@@ -172,7 +172,8 @@ class _PermissionLocationState extends State<PermissionLocation> {
                     const Spacer(),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, Map1.map1Key);
+                        Navigator.pushNamed(context, Map1.map1Key,
+                            arguments: 'PermissionLocation');
                       },
                       style: AppButtonStyles.elevatedButtonStyle(),
                       child: const Text(

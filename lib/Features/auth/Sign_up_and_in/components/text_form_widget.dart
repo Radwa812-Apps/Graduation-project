@@ -44,15 +44,13 @@ class _TextFormFieldWidgetState extends State<TextFormFieldWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: 20.w,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: TextFormField(
         onChanged: widget.onchange,
         validator: widget.validatior,
         controller: widget.controller,
         style: TextStyle(
-          color: Colors.white,
+          color: const Color.fromARGB(255, 0, 0, 0),
           fontSize: 20.sp,
           fontFamily: kFontRegular,
         ),
@@ -63,40 +61,33 @@ class _TextFormFieldWidgetState extends State<TextFormFieldWidget> {
         decoration: InputDecoration(
           hintText: widget.hint,
           prefixIcon: widget.prefixIcon,
-          prefixIconConstraints: BoxConstraints(
-            minWidth: 35.w,
-          ),
-          suffixIcon: widget.isPassword
-              ? IconButton(
-                  icon: Icon(
-                    _obscureText
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscureText = !_obscureText;
-                    });
-                  },
-                )
-              : null,
+          prefixIconConstraints: BoxConstraints(minWidth: 35.w),
+          suffixIcon:
+              widget.isPassword
+                  ? IconButton(
+                    icon: Icon(
+                      _obscureText
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureText = !_obscureText;
+                      });
+                    },
+                  )
+                  : null,
           hintStyle: TextStyle(
             color: widget.hintColor,
             fontSize: 20.sp,
             fontFamily: kFontRegular,
           ),
           focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: widget.lineFocusColor,
-              width: 1.5.w,
-            ),
+            borderSide: BorderSide(color: widget.lineFocusColor, width: 1.5.w),
           ),
           enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: widget.lineColor,
-              width: 1.5.w,
-            ),
+            borderSide: BorderSide(color: widget.lineColor, width: 1.5.w),
           ),
         ),
       ),

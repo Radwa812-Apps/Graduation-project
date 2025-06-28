@@ -10,7 +10,7 @@ import '../../Home/Home/components/round_image_widget.dart';
 
 class MemberGroupInside extends StatefulWidget {
   final String userName;
-  final String lastLocatin;
+  final String status;
   final String distance;
   final bool isOwner;
   final String picture;
@@ -19,7 +19,7 @@ class MemberGroupInside extends StatefulWidget {
   const MemberGroupInside({
     super.key,
     required this.userName,
-    required this.lastLocatin,
+    required this.status,
     required this.distance,
     this.isOwner = false,
     required this.picture,
@@ -135,7 +135,7 @@ class _MemberGroupInsideState extends State<MemberGroupInside> {
                   ),
                   SizedBox(height: 1.h),
                   Text(
-                    widget.lastLocatin,
+                    widget.status,
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 15.sp,
@@ -146,17 +146,17 @@ class _MemberGroupInsideState extends State<MemberGroupInside> {
               ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.only(right: 16.w),
-            child: Text(
-              widget.distance,
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 15.sp,
-                fontFamily: kFontRegular,
-              ),
-            ),
-          ),
+          // Padding(
+          //   padding: EdgeInsets.only(right: 16.w),
+          //   child: Text(
+          //     widget.distance,
+          //     style: TextStyle(
+          //       color: Colors.grey,
+          //       fontSize: 15.sp,
+          //       fontFamily: kFontRegular,
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

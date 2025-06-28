@@ -171,7 +171,24 @@ class _NearMeAppState extends State<NearMeApp> {
   @override
   void initState() {
     log("main init");
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        Services().setUserOnlineStatus(true);
+      }
+    });
     _handleRiskSwitch();
+    //Services().setUserOnlineStatus(true);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      Services().setUserOnlineStatus(true);
+    } else {
+      Services().setUserOnlineStatus(false);
+    }
   }
 
   void _handleRiskSwitch() async {
@@ -305,5 +322,11 @@ class _NearMeAppState extends State<NearMeApp> {
         }
       }),
     );
+  }
+
+  @override
+  void dispose() {
+    Services().setUserOnlineStatus(false);
+    super.dispose();
   }
 }

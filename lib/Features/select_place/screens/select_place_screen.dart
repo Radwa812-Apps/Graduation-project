@@ -260,6 +260,7 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const Map1()),
+
             );
           },
           child: const Column(
