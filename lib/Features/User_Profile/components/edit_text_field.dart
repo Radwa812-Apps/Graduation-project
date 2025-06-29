@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 import '../../../core/constants.dart';
 
 class EditTextField extends StatelessWidget {
@@ -12,6 +11,8 @@ class EditTextField extends StatelessWidget {
   final Function(String)? onChanged;
   final String? Function(String?) validatior;
   final GlobalKey<FormFieldState> ky;
+  final double? fontSize; // جعل حجم الخط قابل للتخصيص
+
   const EditTextField({
     super.key,
     required this.hintText,
@@ -22,59 +23,84 @@ class EditTextField extends StatelessWidget {
     this.onChanged,
     required this.ky,
     required this.validatior,
+    this.fontSize,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 15.w),
-      child: TextFormField(
-        key: ky,
-        validator: validatior,
-        controller: controller,
-        readOnly: readOnly!,
-        keyboardType: keyboardType,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hintText,
-          border: InputBorder.none,
-          prefixIcon: Padding(
-            padding: EdgeInsets.only(right: 12.w),
-            child: Icon(
-              iconData,
-              color: kPrimaryColor1,
-              size: 22.sp,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // تحديد حجم الشاشة
+        final bool isSmallScreen = constraints.maxWidth < 400;
+        final bool isMediumScreen =
+            constraints.maxWidth >= 400 && constraints.maxWidth < 600;
+
+        // ضبط أحجام الخطوط بشكل ديناميكي
+        final double textSize =
+            fontSize ??
+            (isSmallScreen
+                ? 16.sp
+                : isMediumScreen
+                ? 18.sp
+                : 20.sp);
+        final double iconSize =
+            isSmallScreen
+                ? 20.sp
+                : isMediumScreen
+                ? 22.sp
+                : 24.sp;
+        final double borderWidth = isSmallScreen ? 1.0.w : 1.5.w;
+
+        return Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 10.w : 15.w,
+          ),
+          child: TextFormField(
+            key: ky,
+            validator: validatior,
+            controller: controller,
+            readOnly: readOnly!,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            decoration: InputDecoration(
+              hintText: hintText,
+              border: InputBorder.none,
+              prefixIcon: Padding(
+                padding: EdgeInsets.only(right: isSmallScreen ? 8.w : 12.w),
+                child: Icon(iconData, color: kPrimaryColor1, size: iconSize),
+              ),
+              suffixIcon: Icon(
+                Icons.edit,
+                color: kPrimaryColor1,
+                size: iconSize,
+              ),
+              hintStyle: TextStyle(
+                fontSize: textSize,
+                fontFamily: kFontRegular,
+                color: kFontColor,
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: kPrimaryColor1,
+                  width: borderWidth,
+                ),
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: kPrimaryColor1,
+                  width: borderWidth,
+                ),
+              ),
+            ),
+            style: TextStyle(
+              fontSize: textSize,
+              fontFamily: kFontRegular,
+              color: kFontColor,
+              height: 1.2, // تحسين تباعد الأسطر
             ),
           ),
-          suffixIcon: Icon(
-            Icons.edit,
-            color: kPrimaryColor1,
-            size: 22.sp,
-          ),
-          hintStyle: TextStyle(
-            fontSize: 20.sp,
-            fontFamily: kFontRegular,
-            color: kFontColor,
-          ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: kPrimaryColor1,
-              width: 1.5.w,
-            ),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: kPrimaryColor1,
-              width: 1.5.w,
-            ),
-          ),
-        ),
-        style: TextStyle(
-          fontSize: 20.sp,
-          fontFamily: kFontRegular,
-          color: kFontColor,
-        ),
-      ),
+        );
+      },
     );
   }
 }

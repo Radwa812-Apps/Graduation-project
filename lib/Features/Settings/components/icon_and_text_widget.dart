@@ -90,10 +90,7 @@ class _IconAndTextWidgetState extends State<IconAndTextWidget>
                 if (widget.isExpandable)
                   RotationTransition(
                     turns: _iconRotation,
-                    child: const Icon(
-                      Icons.expand_more,
-                      color: kPrimaryColor1,
-                    ),
+                    child: const Icon(Icons.expand_more, color: kPrimaryColor1),
                   ),
               ],
             ),

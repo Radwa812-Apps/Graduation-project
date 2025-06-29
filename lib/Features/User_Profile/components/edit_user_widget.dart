@@ -85,263 +85,344 @@ class _EditUserWidgetState extends State<EditUserWidget> {
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
-    // final GlobalKey<FormState> formKey = GlobalKey();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // تحديد الأبعاد بناءً على حجم الشاشة
+        final bool isSmallScreen = constraints.maxHeight < 700;
+        final bool isMediumScreen =
+            constraints.maxHeight >= 700 && constraints.maxHeight < 900;
 
-    ImageProvider imageProvider = const AssetImage(kDefaultUserImge);
-    if (userImage != null) {
-      imageProvider = MemoryImage(userImage!);
-    }
-    return BlocBuilder<ProfileBloc, ProfileState>(
-      builder: (context, state) {
-        if (state is UserEditedSuccessState) {
-          return Center(
-            // child: Form(
-            //   key: formKey,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(top: widget.paddingTopContainer),
-                  child: Container(
-                    width: screenWidth * 0.80.w,
-                    height: screenHeight * 0.72.h,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor1.withOpacity(.20),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          SizedBox(height: 70.h),
-                          const Text(
-                            'Edit Your Profile',
-                            style: TextStyle(
-                              color: kFontColor,
-                              fontFamily: kFontBold,
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: screenWidth * 0.06.w),
+        // ضبط أحجام الخطوط بشكل ديناميكي
+        final double titleFontSize =
+            isSmallScreen
+                ? 20.sp
+                : isMediumScreen
+                ? 24.sp
+                : 26.sp;
+        final double fieldFontSize =
+            isSmallScreen
+                ? 11.sp
+                : isMediumScreen
+                ? 13.sp
+                : 15.sp;
+        final double buttonFontSize =
+            isSmallScreen
+                ? 16.sp
+                : isMediumScreen
+                ? 17.sp
+                : 18.sp;
 
-                          // First Name Field
-                          EditTextField(
-                            hintText: state.userModel.fName,
-                            iconData: Icons.person_outlined,
-                            controller: firstNameController,
-                            onChanged: ((p0) {
-                              onFieldChanged(p0);
-                              fName = p0;
-                            }),
-                            ky: name,
-                            validatior: ((p0) {
-                              Validator.validateEmptyField('First Nmae', p0);
-                              // return "Fist Name should not contain any spaces.";
-                            }),
-                          ),
+        // ضبط الأبعاد الأخرى
+        final double imagePositionTop = isSmallScreen ? -30.h : 25.h;
+        final double paddingTopContainer = isSmallScreen ? 70.h : 100.h;
+        final double spaceBetweenFields = isSmallScreen ? 15.h : 25.h;
+        final double buttonHeight = isSmallScreen ? 50.h : 65.h;
+        final double buttonWidth = isSmallScreen ? 80.w : 100.w;
+        final double avatarRadius = isSmallScreen ? 50.r : 70.r;
 
-                          SizedBox(height: widget.spaceWithRows),
-
-                          // Last Name Field
-                          EditTextField(
-                            hintText: state.userModel.lName,
-                            iconData: Icons.group_outlined,
-                            controller: lastNameController,
-                            onChanged: ((p0) {
-                              onFieldChanged(p0);
-                              lName = p0;
-                            }),
-                            ky: name2,
-                            validatior: ((p0) {
-                              Validator.validateEmptyField('First Nmae', p0);
-                            }),
+        return BlocBuilder<ProfileBloc, ProfileState>(
+          builder: (context, state) {
+            if (state is UserEditedSuccessState) {
+              return Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: paddingTopContainer),
+                        child: Container(
+                          width: constraints.maxWidth * 0.85,
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor1.withOpacity(.20),
+                            borderRadius: BorderRadius.circular(20.r),
                           ),
-                          SizedBox(height: widget.spaceWithRows),
-
-                          // Phone Number Field
-                          PhoneNumberWidget(
-                            hint: state.userModel.phoneNumber
-                                .split("number: ")[1]
-                                .replaceAll(")", ""),
-                            onchange: ((p0) {
-                              onFieldChanged(p0.toString());
-                              setState(() {
-                                phoneNumber = p0.toString();
-                              });
-                            }),
-                            dropdownIconColor: kFontColor,
-                            dropdownTextStyleColor: kFontColor,
-                            enabledBorderColor: kPrimaryColor1,
-                            focusedBorderColor: kFontColor,
-                            hintStyleColor: kFontColor,
-                            phoneNumberController: _phoneNumberController,
-                            widget: const Icon(
-                              Icons.edit,
-                              color: kPrimaryColor1,
-                            ),
-                            textColor: kFontColor,
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 15.w),
-                            child: TextFormField(
-                              onChanged: ((p0) {
-                                onFieldChanged(p0);
-                                dateOfBirth = p0;
-                              }),
-                              validator: ((p0) {
-                                if (p0 == null || p0.isEmpty) {
-                                  return "Date of birth is required.";
-                                }
-                                final parts = p0.split('/');
-                                if (parts.length == 3) {
-                                  final formattedDate =
-                                      "${parts[2]}-${parts[1]}-${parts[0]}";
-                                  final date = DateTime.tryParse(formattedDate);
-                                  if (date == null) {
-                                    return "Invalid date format.";
-                                  }
-                                  return Validator.validateDateOfBirth(date);
-                                } else {
-                                  return "Invalid date format.";
-                                }
-                              }),
-                              controller: birthDateController,
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 20.sp,
-                                fontFamily: kFontRegular,
-                              ),
-                              readOnly: true,
-                              onTap: (() async {
-                                await selectDate(context, _dateController, (
-                                  selectedDate,
-                                ) {
-                                  dateOfBirth = selectedDate;
-                                  birthDateController.text = selectedDate;
-                                });
-                                onFieldChanged(dateOfBirth.toString());
-                              }),
-                              decoration: InputDecoration(
-                                hintText: state.userModel.dateOfBirth,
-                                prefixIcon: const Icon(
-                                  Icons.edit_calendar_rounded,
-                                  color: kPrimaryColor1,
-                                ),
-                                prefixIconConstraints: BoxConstraints(
-                                  minWidth: 35.w,
-                                ),
-                                suffixIcon: const Icon(
-                                  Icons.edit,
-                                  color: kPrimaryColor1,
-                                ),
-                                suffixIconColor: kPrimaryColor1,
-                                hintStyle: TextStyle(
-                                  color: kFontColor,
-                                  fontSize: 20.sp,
-                                  fontFamily: kFontRegular,
-                                ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: kFontColor,
-                                    width: 1.5.w,
-                                  ),
-                                ),
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: kPrimaryColor1,
-                                    width: 1.5.w,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: widget.spaceWithRows),
-                          SizedBox(height: screenWidth * 0.1.w),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              ButtonWidget(
-                                name: "Save",
-                                fontSize: 20.sp,
-                                onTap:
-                                    isChanged
-                                        ? () {
-                                          // if (formKey.currentState!.validate()) {
-                                          BlocProvider.of<ProfileBloc>(
-                                            context,
-                                          ).add(
-                                            EditUserEvent(
-                                              fName:
-                                                  fName ??
-                                                  state.userModel.fName,
-                                              lName:
-                                                  lName ??
-                                                  state.userModel.lName,
-                                              email:
-                                                  email ??
-                                                  state.userModel.email,
-                                              phoneNumber:
-                                                  phoneNumber ??
-                                                  state.userModel.phoneNumber,
-                                              dateOfBirth:
-                                                  dateOfBirth ??
-                                                  state.userModel.dateOfBirth,
-                                            ),
-                                          );
-                                          setState(() {
-                                            isChanged = false;
-                                          });
-                                          // }
-                                        }
-                                        : null,
-                                size: Size(100, 65),
-                                isEnabled: isChanged,
+                              SizedBox(height: avatarRadius + 20.h),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                                child: Text(
+                                  'Edit Your Profile',
+                                  style: TextStyle(
+                                    color: kFontColor,
+                                    fontFamily: kFontBold,
+                                    fontSize: titleFontSize,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              SizedBox(width: 70.w),
-                              ButtonWidget(
-                                name: "Cancel",
-                                fontSize: 20,
-                                onTap: () {
-                                  BlocProvider.of<ProfileBloc>(
-                                    context,
-                                  ).add(ShowUserInfoEvent());
-                                  Navigator.pop(context);
-                                },
-                                size: const Size(100, 65),
+                              SizedBox(height: spaceBetweenFields),
+
+                              // حقول الإدخال
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 15.w),
+                                child: Column(
+                                  children: [
+                                    _buildEditTextField(
+                                      context,
+                                      state.userModel.fName,
+                                      Icons.person_outlined,
+                                      firstNameController,
+                                      name,
+                                      'First Name',
+                                      fieldFontSize,
+                                    ),
+                                    SizedBox(height: spaceBetweenFields),
+                                    _buildEditTextField(
+                                      context,
+                                      state.userModel.lName,
+                                      Icons.group_outlined,
+                                      lastNameController,
+                                      name2,
+                                      'Last Name',
+                                      fieldFontSize,
+                                    ),
+                                    SizedBox(height: spaceBetweenFields),
+                                    _buildPhoneField(
+                                      context,
+                                      state,
+                                      fieldFontSize,
+                                    ),
+                                    SizedBox(height: spaceBetweenFields),
+                                    _buildDateField(
+                                      context,
+                                      state,
+                                      fieldFontSize,
+                                    ),
+                                  ],
+                                ),
                               ),
+                              SizedBox(height: spaceBetweenFields * 2),
+
+                              // أزرار الحفظ والإلغاء
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    _buildActionButton(
+                                      "Save",
+                                      buttonFontSize,
+                                      buttonWidth,
+                                      buttonHeight,
+                                      isChanged,
+                                      () {
+                                        BlocProvider.of<ProfileBloc>(
+                                          context,
+                                        ).add(
+                                          EditUserEvent(
+                                            fName:
+                                                fName ?? state.userModel.fName,
+                                            lName:
+                                                lName ?? state.userModel.lName,
+                                            email:
+                                                email ?? state.userModel.email,
+                                            phoneNumber:
+                                                phoneNumber ??
+                                                state.userModel.phoneNumber,
+                                            dateOfBirth:
+                                                dateOfBirth ??
+                                                state.userModel.dateOfBirth,
+                                          ),
+                                        );
+                                        setState(() => isChanged = false);
+                                      },
+                                    ),
+                                    _buildActionButton(
+                                      "Cancel",
+                                      buttonFontSize,
+                                      buttonWidth,
+                                      buttonHeight,
+                                      true,
+                                      () {
+                                        BlocProvider.of<ProfileBloc>(
+                                          context,
+                                        ).add(ShowUserInfoEvent());
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 20.h),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  top: widget.imagePositionTop,
-                  left: 0,
-                  right: 0,
 
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _pickAndUploadUserImage,
-                      child: CircleAvatar(
-                        radius: 70,
-                        backgroundImage: imageProvider,
+                    // صورة المستخدم
+                    Positioned(
+                      top: imagePositionTop,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: _pickAndUploadUserImage,
+                          child: CircleAvatar(
+                            radius: avatarRadius,
+                            backgroundImage:
+                                userImage != null
+                                    ? MemoryImage(userImage!)
+                                    : const AssetImage(kDefaultUserImge)
+                                        as ImageProvider,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        } else if (state is UserInfoErrorState) {
-          return Center(child: Text('Something went wrong: ${state.error}'));
-        } else {
-          return const Center(child: CircularProgressIndicator());
-        }
+              );
+            } else if (state is UserInfoErrorState) {
+              return Center(
+                child: Text(
+                  'Something went wrong: ${state.error}',
+                  style: TextStyle(fontSize: fieldFontSize),
+                ),
+              );
+            } else {
+              return Center(
+                child: CircularProgressIndicator(color: kPrimaryColor1),
+              );
+            }
+          },
+        );
       },
+    );
+  }
+
+  Widget _buildEditTextField(
+    BuildContext context,
+    String hintText,
+    IconData iconData,
+    TextEditingController controller,
+    GlobalKey<FormFieldState> key,
+    String fieldName,
+    double fontSize,
+  ) {
+    return EditTextField(
+      hintText: hintText,
+      iconData: iconData,
+      controller: controller,
+      onChanged: (p0) {
+        onFieldChanged(p0);
+        if (fieldName == 'First Name') fName = p0;
+        if (fieldName == 'Last Name') lName = p0;
+      },
+      ky: key,
+      validatior: (p0) => Validator.validateEmptyField(fieldName, p0),
+      fontSize: fontSize,
+    );
+  }
+
+  Widget _buildPhoneField(
+    BuildContext context,
+    UserEditedSuccessState state,
+    double fontSize,
+  ) {
+    return PhoneNumberWidget(
+      hint: state.userModel.phoneNumber
+          .split("number: ")[1]
+          .replaceAll(")", ""),
+      onchange: (p0) {
+        onFieldChanged(p0.toString());
+        setState(() {
+          phoneNumber = p0.toString();
+        });
+      },
+      dropdownIconColor: kFontColor,
+      dropdownTextStyleColor: kFontColor,
+      enabledBorderColor: kPrimaryColor1,
+      focusedBorderColor: kFontColor,
+      hintStyleColor: kFontColor,
+      phoneNumberController: _phoneNumberController,
+      widget: const Icon(Icons.edit, color: kPrimaryColor1),
+      textColor: kFontColor,
+    );
+  }
+
+  Widget _buildDateField(
+    BuildContext context,
+    UserEditedSuccessState state,
+    double fontSize,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: TextFormField(
+        onChanged: (p0) {
+          onFieldChanged(p0);
+          dateOfBirth = p0;
+        },
+        validator: (p0) {
+          if (p0 == null || p0.isEmpty) return "Date of birth is required.";
+          final parts = p0.split('/');
+          if (parts.length == 3) {
+            final formattedDate = "${parts[2]}-${parts[1]}-${parts[0]}";
+            final date = DateTime.tryParse(formattedDate);
+            if (date == null) return "Invalid date format.";
+            return Validator.validateDateOfBirth(date);
+          } else {
+            return "Invalid date format.";
+          }
+        },
+        controller: birthDateController,
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: fontSize,
+          fontFamily: kFontRegular,
+        ),
+        readOnly: true,
+        onTap: () async {
+          await selectDate(context, _dateController, (selectedDate) {
+            dateOfBirth = selectedDate;
+            birthDateController.text = selectedDate;
+          });
+          onFieldChanged(dateOfBirth.toString());
+        },
+        decoration: InputDecoration(
+          hintText: state.userModel.dateOfBirth,
+          prefixIcon: const Icon(
+            Icons.edit_calendar_rounded,
+            color: kPrimaryColor1,
+          ),
+          prefixIconConstraints: BoxConstraints(minWidth: 35.w),
+          suffixIcon: const Icon(Icons.edit, color: kPrimaryColor1),
+          suffixIconColor: kPrimaryColor1,
+          hintStyle: TextStyle(
+            color: kFontColor,
+            fontSize: fontSize,
+            fontFamily: kFontRegular,
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: kFontColor, width: 1.5.w),
+          ),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: kPrimaryColor1, width: 1.5.w),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    String text,
+    double fontSize,
+    double width,
+    double height,
+    bool isEnabled,
+    VoidCallback onPressed,
+  ) {
+    return ButtonWidget(
+      name: text,
+      fontSize: fontSize,
+      onTap: isEnabled ? onPressed : null,
+      size: Size(width, height),
+      isEnabled: isEnabled,
     );
   }
 

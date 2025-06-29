@@ -53,13 +53,12 @@ class _SettingsServiceState extends State<SettingsService> {
               .collection('groups')
               .where('members', arrayContains: userId)
               .get();
-      if(mounted){
-setState(() {
-        groupIds = groupSnapshot.docs.map((doc) => doc.id).toList();
-        print('Fetched groupIds: $groupIds');
-      });
+      if (mounted) {
+        setState(() {
+          groupIds = groupSnapshot.docs.map((doc) => doc.id).toList();
+          print('Fetched groupIds: $groupIds');
+        });
       }
-      
     } catch (e) {
       print('Error fetching groups: $e');
     }
@@ -98,10 +97,9 @@ setState(() {
 
   void _handleRiskSwitch() async {
     isAlertActive = await _riskServices.checkRiskSwitch() ?? false;
-    if(mounted){
-setState(() {});
+    if (mounted) {
+      setState(() {});
     }
-    
   }
 
   void _openGroupSelection() async {
@@ -117,13 +115,12 @@ setState(() {});
     );
     log("result...$result");
     if (result != null) {
-      if(mounted){
-setState(() {
-        selectedGroupIds = result;
-        _saveSelectedGroupsToFirebase();
-      });
+      if (mounted) {
+        setState(() {
+          selectedGroupIds = result;
+          _saveSelectedGroupsToFirebase();
+        });
       }
-      
     }
     // Create a batch to update all selected groups
     WriteBatch batch = FirebaseFirestore.instance.batch();
@@ -140,12 +137,12 @@ setState(() {
     log("risk activated on firebase");
 
     await batch.commit();
-    if(mounted){
-setState(() {
-      _handleRiskSwitch();
-    });
+    if (mounted) {
+      setState(() {
+        _handleRiskSwitch();
+      });
     }
-    
+
     log("open group selection: isAlertactive: $isAlertActive");
   }
 
@@ -164,20 +161,22 @@ setState(() {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
-    //isAlertActive = context.read<RiskCubit>().state;
-    //checkRiskSwitch();
-    log("widget: isAlertActive: $isAlertActive");
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GestureDetector(
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1.0),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Flexible(
+              child: GestureDetector(
                 onTap: () {
                   setState(() {
                     isListExpanded = !isListExpanded;
@@ -197,24 +196,25 @@ setState(() {
                     ),
                     SizedBox(width: 10.w),
                     Text(
-                      'Quick Risk Alert',
+                      'Risk Alert',
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: const Color.fromRGBO(55, 55, 55, 1),
                         fontFamily: 'Open Sans',
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.normal,
-                        height: 0.9166,
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              Switch(
-                value: isAlertActive,
-                onChanged: (value) async {
+            ),
+            Switch(
+              value: isAlertActive,
+              onChanged: (value) async {
+                if (mounted) {
                   setState(() {
                     isAlertActive = value;
-                    log("onchanged: isAlertActive: $isAlertActive");
                     if (isAlertActive) {
                       context.read<RiskCubit>().updateValue(true);
                       _openGroupSelection();
@@ -222,16 +222,15 @@ setState(() {
                       selectedGroupIds.clear();
                       context.read<RiskCubit>().updateValue(false);
                       resetUserRiskSwitches();
-                      RiskServices().resetToggleAlert();
+                      _riskServices.resetToggleAlert();
                     }
                   });
-                  //await _handleRiskbutton(value);
-                  await _riskServices.toggleFloatingButton(value);
-                },
-              ),
-            ],
-          ),
-        ],
+                }
+                await _riskServices.toggleFloatingButton(value);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

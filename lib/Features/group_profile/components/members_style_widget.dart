@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/core/services/profile_image_service.dart';
 import '../../../core/constants.dart';
 import '../../Home/Home/components/round_image_widget.dart';
@@ -84,12 +85,16 @@ class _MembersStyleWidgetState extends State<MembersStyleWidget> {
               ),
             ),
             const SizedBox(width: 20),
-            Text(
-              widget.userName ?? 'Unknown User',
-              style: const TextStyle(
-                color: kFontColor,
-                fontSize: 20,
-                fontFamily: kFontRegular,
+            Expanded(
+              child: Text(
+                widget.userName ?? 'Unknown User',
+                style: TextStyle(
+                  color: kFontColor,
+                  fontSize: 20.sp,
+                  fontFamily: kFontRegular,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],

@@ -7,18 +7,6 @@ import '../../../../core/constants.dart';
 import '../../../../core/services/validator.dart';
 
 class PhoneNumberWidget extends StatelessWidget {
-  PhoneNumberWidget(
-      {super.key,
-      required this.onchange,
-      required this.dropdownTextStyleColor,
-      required this.dropdownIconColor,
-      required this.hintStyleColor,
-      required this.focusedBorderColor,
-      required this.enabledBorderColor,
-      required this.hint,
-      required this.phoneNumberController,
-      required this.textColor,
-      required this.widget});
   final TextEditingController phoneNumberController;
   final Function(PhoneNumber) onchange;
   final Color dropdownTextStyleColor;
@@ -26,61 +14,100 @@ class PhoneNumberWidget extends StatelessWidget {
   final Color hintStyleColor;
   final Color focusedBorderColor;
   final Color enabledBorderColor;
-  Widget? widget;
+  final Widget? widget;
   final Color textColor;
-
   final String hint;
+  final double? fontSize; 
+
+  const PhoneNumberWidget({
+    super.key,
+    required this.onchange,
+    required this.dropdownTextStyleColor,
+    required this.dropdownIconColor,
+    required this.hintStyleColor,
+    required this.focusedBorderColor,
+    required this.enabledBorderColor,
+    required this.hint,
+    required this.phoneNumberController,
+    required this.textColor,
+    this.widget,
+    this.fontSize,
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: IntlPhoneField(
-          controller: phoneNumberController,
-          validator: ((p0) {
-            return Validator.validatePhoneNumber(p0);
-          }),
-          dropdownTextStyle: TextStyle(color: dropdownTextStyleColor),
-          keyboardType: TextInputType.phone,
-          dropdownIcon: Icon(
-            Icons.arrow_drop_down,
-            color: dropdownIconColor,
-          ),
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            hintText: hint,
-            labelStyle: const TextStyle(color: Colors.white),
-            prefixIcon: const Icon(
-              Icons.phone_outlined,
-              color: Colors.white,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // تحديد حجم الشاشة
+        final bool isSmallScreen = constraints.maxWidth < 400;
+        final bool isMediumScreen =
+            constraints.maxWidth >= 400 && constraints.maxWidth < 600;
+
+        // ضبط الأحجام بشكل ديناميكي
+        final double textSize =
+            fontSize ??
+            (isSmallScreen
+                ? 14.sp
+                : isMediumScreen
+                ? 15.sp
+                : 16.sp);
+        final double paddingHorizontal = isSmallScreen ? 15.w : 20.w;
+        final double borderWidth = isSmallScreen ? 1.0.w : 1.5.w;
+        final double iconSize = isSmallScreen ? 20.sp : 22.sp;
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
+          child: IntlPhoneField(
+            controller: phoneNumberController,
+            validator: (p0) => Validator.validatePhoneNumber(p0),
+            dropdownTextStyle: TextStyle(
+              color: dropdownTextStyleColor,
+              fontSize: textSize,
             ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 35,
+            keyboardType: TextInputType.phone,
+            dropdownIcon: Icon(
+              Icons.arrow_drop_down,
+              color: dropdownIconColor,
+              size: iconSize,
             ),
-            suffixIcon: widget,
-            suffixIconColor: focusedBorderColor,
-            hintStyle: TextStyle(
-              color: hintStyleColor,
-              fontSize: 20.sp,
-              fontFamily: kFontRegular,
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(
-                color: focusedBorderColor,
-                width: 1.5.w,
+            style: TextStyle(color: textColor, fontSize: textSize),
+            decoration: InputDecoration(
+              hintText: hint,
+              labelStyle: TextStyle(color: textColor, fontSize: textSize),
+              prefixIcon: Icon(
+                Icons.phone_outlined,
+                color: textColor,
+                size: iconSize,
+              ),
+              prefixIconConstraints: BoxConstraints(
+                minWidth: isSmallScreen ? 30.w : 35.w,
+              ),
+              suffixIcon: widget,
+              suffixIconColor: focusedBorderColor,
+              hintStyle: TextStyle(
+                color: hintStyleColor,
+                fontSize: textSize,
+                fontFamily: kFontRegular,
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: focusedBorderColor,
+                  width: borderWidth,
+                ),
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: enabledBorderColor,
+                  width: borderWidth,
+                ),
               ),
             ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(
-                color: enabledBorderColor,
-                width: 1.5.w,
-              ),
-            ),
+            initialCountryCode: 'EG',
+            onSaved: (phone) => Validator.validatePhoneNumber(phone),
+            onChanged: onchange,
           ),
-          initialCountryCode: 'EG',
-          onSaved: (phone) {
-            Validator.validatePhoneNumber(phone);
-          },
-          onChanged: onchange),
+        );
+      },
     );
   }
 }

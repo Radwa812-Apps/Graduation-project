@@ -1104,6 +1104,7 @@ class Map1State extends State<Map1> {
 
   @override
   Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments;
     return BlocConsumer<CustomPlacesBloc, CustomPlacesState>(
       listener: (context, state) {
         if (state is AddCustomPlacesSuccess ||
@@ -1172,6 +1173,7 @@ class Map1State extends State<Map1> {
                     goToPlace: goToPlace,
                   ),
                 ),
+                if (args != 'SettingsScreen')
                 Positioned(
                   bottom: 20.h,
                   left: 270.w,

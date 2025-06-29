@@ -32,7 +32,7 @@ class GroupProfileScreen extends StatefulWidget {
 class _GroupProfileScreenState extends State<GroupProfileScreen> {
   bool _isSearchExpanded = false;
   bool isMenuVisible = false;
-final ProfileImageService _profileImageService = ProfileImageService();
+  final ProfileImageService _profileImageService = ProfileImageService();
   final GroupService _groupService = GroupService();
   Group? _group;
   bool _isDataLoaded = false;

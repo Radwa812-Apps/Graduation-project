@@ -65,14 +65,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
               'dateOfBirth': dateOfBirth,
               'phoneNumber': phoneNumber,
               'fname': fName,
-              'lname': lName
+              'lname': lName,
             },
           );
           isload = false;
         } else if (state is RegisterError) {
           isload = false;
           AppMessages().sendVerification(
-              (context), Colors.red.withOpacity(0.8), state.registerError);
+            (context),
+            Colors.red.withOpacity(0.8),
+            state.registerError,
+          );
         } else {
           isload = true;
         }
@@ -95,22 +98,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         shrinkWrap: true,
                         physics: const BouncingScrollPhysics(),
                         children: [
-                          const Center(
-                            child: BoldTextWidget(
-                              name: 'Sign Up',
-                            ),
-                          ),
+                          const Center(child: BoldTextWidget(name: 'Sign Up')),
                           SizedBox(height: 30.h),
                           TextFormFieldWidget(
                             hintColor: Colors.white,
                             lineColor: Colors.white,
                             controller: _fnameController,
                             hint: 'First Name',
-                            prefixIcon: const Icon(Icons.person_outline,
-                                color: Colors.white),
+                            prefixIcon: const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                            ),
                             keyboardType: TextInputType.text,
-                            validatior: ((p0) =>
-                                Validator.validateEmptyField('First Name', p0)),
+                            validatior:
+                                ((p0) => Validator.validateEmptyField(
+                                  'First Name',
+                                  p0,
+                                )),
                             onchange: ((p0) {
                               fName = p0;
                             }),
@@ -125,11 +129,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             lineColor: Colors.white,
                             controller: _lnameController,
                             hint: 'Last Name',
-                            prefixIcon: const Icon(Icons.people_outline,
-                                color: Colors.white),
+                            prefixIcon: const Icon(
+                              Icons.people_outline,
+                              color: Colors.white,
+                            ),
                             keyboardType: TextInputType.text,
-                            validatior: ((p0) =>
-                                Validator.validateEmptyField('Last Name', p0)),
+                            validatior:
+                                ((p0) => Validator.validateEmptyField(
+                                  'Last Name',
+                                  p0,
+                                )),
                             onchange: ((p0) {
                               lName = p0;
                             }),
@@ -142,8 +151,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             lineColor: Colors.white,
                             controller: _emailController,
                             hint: 'Email',
-                            prefixIcon: const Icon(Icons.email_outlined,
-                                color: Colors.white),
+                            prefixIcon: const Icon(
+                              Icons.email_outlined,
+                              color: Colors.white,
+                            ),
                             keyboardType: TextInputType.emailAddress,
                             validatior: ((p0) => Validator.validateEmail(p0)),
                             onchange: ((p0) {
@@ -160,6 +171,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             enabledBorderColor: Colors.white,
                             focusedBorderColor: Colors.white,
                             hintStyleColor: Colors.white,
+                            
                             onchange: ((p0) {
                               setState(() {
                                 phoneNumber = p0.toString();
@@ -190,13 +202,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               }
                             }),
                             hint: 'BirthDate',
-                            prefixIcon: const Icon(Icons.edit_calendar_rounded,
-                                color: Colors.white),
+                            prefixIcon: const Icon(
+                              Icons.edit_calendar_rounded,
+                              color: Colors.white,
+                            ),
                             isBirthDate: true,
                             controller: _dateController,
                             onTap: (() async {
-                              await selectDate(context, _dateController,
-                                  (selectedDate) {
+                              await selectDate(context, _dateController, (
+                                selectedDate,
+                              ) {
                                 dateOfBirth = selectedDate;
                               });
                             }),
@@ -212,12 +227,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             lineColor: Colors.white,
                             controller: _passwordController,
                             hint: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline,
-                                color: Colors.white),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              color: Colors.white,
+                            ),
                             keyboardType: TextInputType.visiblePassword,
                             isPassword: true,
-                            validatior: ((p0) =>
-                                Validator.validatePassword(p0)),
+                            validatior:
+                                ((p0) => Validator.validatePassword(p0)),
                             onchange: ((p0) {
                               password = p0;
                             }),
@@ -230,13 +247,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             lineColor: Colors.white,
                             controller: _confirmPasswordController,
                             hint: 'Confirm Password',
-                            prefixIcon: const Icon(Icons.lock_outline,
-                                color: Colors.white),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              color: Colors.white,
+                            ),
                             keyboardType: TextInputType.visiblePassword,
                             isPassword: true,
-                            validatior: ((p0) =>
-                                Validator.validateConfirmPassword(
-                                    p0, _passwordController.text)),
+                            validatior:
+                                ((p0) => Validator.validateConfirmPassword(
+                                  p0,
+                                  _passwordController.text,
+                                )),
                             onchange: ((p0) {}),
                           ),
                           SizedBox(height: 60.h),
@@ -246,13 +267,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               if (_formKey.currentState!.validate()) {
                                 if (phoneNumber == null) {
                                   AppMessages().sendVerification(
-                                      (context),
-                                      Colors.red.withOpacity(0.8),
-                                      'phone Number is required');
-                                } else {
-                                  BlocProvider.of<AuthBloc>(context).add(
-                                    RegisterEvent(email!, password!),
+                                    (context),
+                                    Colors.red.withOpacity(0.8),
+                                    'phone Number is required',
                                   );
+                                } else {
+                                  BlocProvider.of<AuthBloc>(
+                                    context,
+                                  ).add(RegisterEvent(email!, password!));
                                 }
                               }
                             },

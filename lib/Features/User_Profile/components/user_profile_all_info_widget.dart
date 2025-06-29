@@ -91,135 +91,200 @@ class _UserProfileAll_InfoWidgetState extends State<UserProfileAll_InfoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxHeight < 600;
+        final isMediumScreen =
+            constraints.maxHeight >= 600 && constraints.maxHeight < 800;
 
-    ImageProvider imageProvider = const AssetImage(kDefaultUserImge);
-    if (userImage != null) {
-      imageProvider = MemoryImage(userImage!);
-    }
-    return Center(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: widget.paddingTopContainer!),
-            child: BlocConsumer<ProfileBloc, ProfileState>(
-              listener: (context, state) {},
-              builder: (context, state) {
-                if (state is UserInfoLoadedSuccessState) {
-                  return Container(
-                    width: screenWidth * 0.80.w,
-                    // height: screenHeight * 0.52.h,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor1.withOpacity(.20),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(vertical: 20.h),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          SizedBox(height: screenWidth * 0.13.w),
-                          Text(
-                            'Welcome ${state.userModel.fName[0].toUpperCase()}${state.userModel.fName.substring(1)}',
-                            style: TextStyle(
-                              color: kFontColor,
-                              fontFamily: kFontBold,
-                              fontSize: 26.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
+        return Center(
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(
+                  top:
+                      widget.paddingTopContainer! * (isSmallScreen ? 0.8 : 1.0),
+                ),
+                child: BlocConsumer<ProfileBloc, ProfileState>(
+                  listener: (context, state) {},
+                  builder: (context, state) {
+                    if (state is UserInfoLoadedSuccessState) {
+                      return Container(
+                        width:
+                            isSmallScreen
+                                ? constraints.maxWidth * 0.90
+                                : constraints.maxWidth * 0.80,
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor1.withOpacity(.20),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(
+                            vertical: isSmallScreen ? 15.h : 20.h,
                           ),
-                          SizedBox(height: screenWidth * 0.08.w),
-                          UserProfileInfoWidget(
-                            info: state.userModel.fName,
-                            iconData: Icons.person_outlined,
-                            size: 25.sp,
-                          ),
-                          SizedBox(height: widget.spaceWithRows),
-                          UserProfileInfoWidget(
-                            info: state.userModel.lName,
-                            iconData: Icons.group_outlined,
-                            size: 25.sp,
-                          ),
-                          SizedBox(height: widget.spaceWithRows),
-                          UserProfileInfoWidget(
-                            info: state.userModel.phoneNumber
-                                .split("number: ")[1]
-                                .replaceAll(")", ""),
-                            iconData: Icons.phone_outlined,
-                            size: 25.sp,
-                          ),
-                          SizedBox(height: widget.spaceWithRows),
-                          UserProfileInfoWidget(
-                            info:
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: isSmallScreen ? 50.h : 60.h),
+                              Text(
+                                'Welcome ${state.userModel.fName[0].toUpperCase()}${state.userModel.fName.substring(1)}',
+                                style: TextStyle(
+                                  color: kFontColor,
+                                  fontFamily: kFontBold,
+                                  fontSize: isSmallScreen ? 22.sp : 22.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: isSmallScreen ? 15.h : 20.h),
+                              _buildResponsiveInfoWidget(
+                                context,
+                                state.userModel.fName,
+                                Icons.person_outlined,
+                                isSmallScreen,
+                              ),
+                              SizedBox(
+                                height:
+                                    widget.spaceWithRows *
+                                    (isSmallScreen ? 0.8 : 1.0),
+                              ),
+                              _buildResponsiveInfoWidget(
+                                context,
+                                state.userModel.lName,
+                                Icons.group_outlined,
+                                isSmallScreen,
+                              ),
+                              SizedBox(
+                                height:
+                                    widget.spaceWithRows *
+                                    (isSmallScreen ? 0.8 : 1.0),
+                              ),
+                              _buildResponsiveInfoWidget(
+                                context,
+                                state.userModel.phoneNumber
+                                    .split("number: ")[1]
+                                    .replaceAll(")", ""),
+                                Icons.phone_outlined,
+                                isSmallScreen,
+                              ),
+                              SizedBox(
+                                height:
+                                    widget.spaceWithRows *
+                                    (isSmallScreen ? 0.8 : 1.0),
+                              ),
+                              _buildResponsiveInfoWidget(
+                                context,
                                 state.userModel.email.length > 25
                                     ? '${state.userModel.email.substring(0, 22)}...'
                                     : state.userModel.email,
-                            iconData: Icons.email_outlined,
-                            size: 25.sp,
-                          ),
-                          SizedBox(height: widget.spaceWithRows),
-                          UserProfileInfoWidget(
-                            info: state.userModel.dateOfBirth,
-                            iconData: Icons.calendar_month_outlined,
-                            size: 25.sp,
-                          ),
-                          SizedBox(height: screenWidth * 0.1.w),
-                          ButtonWidget(
-                            name: 'Edit',
-                            fontSize: 23.sp,
-                            onTap: () {
-                              BlocProvider.of<ProfileBloc>(context).add(
-                                EditUserEvent(
-                                  dateOfBirth: state.userModel.dateOfBirth,
-                                  email: state.userModel.email,
-                                  lName: state.userModel.lName,
-                                  fName: state.userModel.fName,
-                                  phoneNumber: state.userModel.phoneNumber,
-                                ),
-                              );
-                              Navigator.pushNamed(
+                                Icons.email_outlined,
+                                isSmallScreen,
+                              ),
+                              SizedBox(
+                                height:
+                                    widget.spaceWithRows *
+                                    (isSmallScreen ? 0.8 : 1.0),
+                              ),
+                              _buildResponsiveInfoWidget(
                                 context,
-                                EditScreen.editScreenKey,
-                              );
-                            },
-                            size: Size(
-                              screenWidth * 0.4.w,
-                              screenHeight * .01.h,
-                            ),
+                                state.userModel.dateOfBirth,
+                                Icons.calendar_month_outlined,
+                                isSmallScreen,
+                              ),
+                              SizedBox(height: isSmallScreen ? 15.h : 25.h),
+                              _buildResponsiveButton(
+                                context,
+                                isSmallScreen,
+                                constraints,
+                                state,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                } else if (state is UserInfoErrorState) {
-                  return Center(
-                    child: Text('Something went wrong: ${state.error}'),
-                  );
-                } else {
-                  return const Center(child: CircularProgressIndicator());
-                }
-              },
-            ),
+                        ),
+                      );
+                    } else if (state is UserInfoErrorState) {
+                      return Center(
+                        child: Text(
+                          'Something went wrong: ${state.error}',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 14.sp : 16.sp,
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Center(
+                        child: CircularProgressIndicator(color: kPrimaryColor1),
+                      );
+                    }
+                  },
+                ),
+              ),
+              Positioned(
+                top: widget.imagePositionTop! * (isSmallScreen ? 0.9 : 1.0),
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: CircleAvatar(
+                    radius: isSmallScreen ? 55 : 70,
+                    backgroundColor: kPrimaryColor1.withOpacity(0.2),
+                    backgroundImage:
+                        userImage != null
+                            ? MemoryImage(userImage!)
+                            : const AssetImage(kDefaultUserImge)
+                                as ImageProvider,
+                  ),
+                ),
+              ),
+            ],
           ),
-          Positioned(
-            top: widget.imagePositionTop,
-            left: 0,
-            right: 0,
+        );
+      },
+    );
+  }
 
-            child: Center(
-              child: CircleAvatar(radius: 70, backgroundImage: imageProvider),
+  Widget _buildResponsiveInfoWidget(
+    BuildContext context,
+    String info,
+    IconData iconData,
+    bool isSmallScreen,
+  ) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 10.w : 15.w),
+      child: UserProfileInfoWidget(
+        info: info,
+        iconData: iconData,
+        size: isSmallScreen ? 20.sp : 25.sp,
+      ),
+    );
+  }
 
-              // RoundImageWidget(
-              //   // assetImagePath: kDefaultUserImge, // Uncomment if you want to use a default asset image
-              //  // name: kDefaultUserImge,
-              //   width: 110.w,
-              //   height: 110.h,
-              // ),
-            ),
+  Widget _buildResponsiveButton(
+    BuildContext context,
+    bool isSmallScreen,
+    BoxConstraints constraints,
+    UserInfoLoadedSuccessState state,
+  ) {
+    return ButtonWidget(
+      name: 'Edit',
+      fontSize: isSmallScreen ? 18.sp : 23.sp,
+      onTap: () {
+        BlocProvider.of<ProfileBloc>(context).add(
+          EditUserEvent(
+            dateOfBirth: state.userModel.dateOfBirth,
+            email: state.userModel.email,
+            lName: state.userModel.lName,
+            fName: state.userModel.fName,
+            phoneNumber: state.userModel.phoneNumber,
           ),
-        ],
+        );
+        Navigator.pushNamed(context, EditScreen.editScreenKey);
+      },
+      size: Size(
+        constraints.maxWidth * (isSmallScreen ? 0.35 : 0.4),
+        isSmallScreen ? 35.h : 40.h,
       ),
     );
   }

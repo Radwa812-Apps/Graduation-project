@@ -166,12 +166,12 @@ class NearMeApp extends StatefulWidget {
   State<NearMeApp> createState() => _NearMeAppState();
 }
 
-class _NearMeAppState extends State<NearMeApp> {
+class _NearMeAppState extends State<NearMeApp> with WidgetsBindingObserver {
   bool isUserLoggedIn = false;
   @override
   void initState() {
     log("main init");
-
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -185,9 +185,15 @@ class _NearMeAppState extends State<NearMeApp> {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      Services().setUserOnlineStatus(true);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        Services().setUserOnlineStatus(true);
+      }
     } else {
-      Services().setUserOnlineStatus(false);
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        Services().setUserOnlineStatus(false);
+      }
     }
   }
 
@@ -354,6 +360,7 @@ class _NearMeAppState extends State<NearMeApp> {
   @override
   void dispose() {
     Services().setUserOnlineStatus(false);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 }
