@@ -14,6 +14,9 @@ class PermissionHandler {
       return status.isGranted;
     }
   }
+Future<PermissionStatus> getStatus(Permission permission) async {
+  return await permission.status;
+}
 
   Future<bool> checkLocationPermission() async =>
       await _checkPermission(Permission.location);

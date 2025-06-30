@@ -69,7 +69,7 @@ void main() async {
   await Firebase.initializeApp();
 
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
-
+   final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
   await notificationsPlugin.initialize(
     const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -210,6 +210,7 @@ class _NearMeAppState extends State<NearMeApp> with WidgetsBindingObserver {
         if (!snapshot.hasData) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
+            navigatorObservers: [routeObserver],
             theme: ThemeData(
               primarySwatch: MaterialColor(0xFF3D633B, const <int, Color>{
                 50: Color.fromRGBO(34, 55, 33, 1),

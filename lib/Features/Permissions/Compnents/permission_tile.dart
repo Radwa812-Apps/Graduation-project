@@ -6,7 +6,9 @@ import '../../../core/constants.dart';class PermissionTile extends StatelessWidg
   final String title;
   final String subtitle;
   final bool switchValue;
-  final Function(bool) onChanged;
+ final void Function(bool)? onChanged;
+ final bool enabled;
+
 
   const PermissionTile({
     Key? key,
@@ -15,19 +17,22 @@ import '../../../core/constants.dart';class PermissionTile extends StatelessWidg
     required this.subtitle,
     required this.switchValue,
     required this.onChanged,
+    this.enabled = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 18.h),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 30.sp,
-            color: kPrimaryColor1,
-          ),
+    return Opacity( 
+      opacity: enabled ? 1.0 : 0.5,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 18.h),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 30.sp,
+              color: kPrimaryColor1,
+            ),
           SizedBox(width: 10.w),
           Expanded(
             child: Column(
@@ -57,12 +62,12 @@ import '../../../core/constants.dart';class PermissionTile extends StatelessWidg
             scale: 0.9.sp,
             child: Switch(
               value: switchValue,
-              onChanged: onChanged,
+               onChanged: enabled ? onChanged : null,
               activeColor: kPrimaryColor1,
             ),
           ),
         ],
       ),
-    );
+    ));
   }
 }

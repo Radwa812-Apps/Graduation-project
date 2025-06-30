@@ -1,9 +1,13 @@
 import 'dart:async' show StreamSubscription;
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/core/services/chat_services.dart' show ChatService;
+import 'package:near_me_new_version/core/services/chat_services.dart'
+    show ChatService;
+import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,8 +17,7 @@ import 'package:intl/intl.dart';
 import '../components/chat_input_field.dart';
 import '../components/group_media_screen.dart';
 import '../components/message_bubble.dart';
-import '../components/header_chat.dart';
-
+import '../components/header_group_chat.dart';
 
 enum MediaType { image, video, voice }
 
@@ -24,19 +27,16 @@ class GroupChat extends StatefulWidget {
 
   static const String routeName = '/group-chat';
   static String get groupChatKey => routeName;
-  static Map<String, dynamic> createArguments(String groupId, String groupName, List<Map<String, dynamic>> messages) {
-    return {
-      'groupId': groupId,
-      'groupName': groupName,
-      'messages': messages,
-    };
+  static Map<String, dynamic> createArguments(
+    String groupId,
+    String groupName,
+    List<Map<String, dynamic>> messages,
+  ) {
+    return {'groupId': groupId, 'groupName': groupName, 'messages': messages};
   }
 
-  const GroupChat({
-    Key? key,
-    required this.groupId,
-    required this.groupName,
-  }) : super(key: key);
+  const GroupChat({Key? key, required this.groupId, required this.groupName})
+    : super(key: key);
 
   @override
   State<GroupChat> createState() => _GroupChatState();
@@ -55,11 +55,12 @@ class _GroupChatState extends State<GroupChat> {
   late final Record _audioRecorder;
   bool _isRecording = false;
   String? _audioPath;
-  String? _groupImage;
+
   String _searchQuery = '';
   int _currentSearchIndex = -1;
   List<int> _searchMatchIndices = [];
   DateTime? _selectedDate;
+  Uint8List? _groupImage;
 
   @override
   void initState() {
@@ -70,34 +71,27 @@ class _GroupChatState extends State<GroupChat> {
     _fetchGroupImage();
     _filteredMessages = _messages;
   }
-  @override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  _markMessagesAsRead();
-}
 
-void _markMessagesAsRead() async {
-  await _chatService.markGroupMessagesAsRead(widget.groupId);
-}
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _markMessagesAsRead();
+  }
+
+  void _markMessagesAsRead() async {
+    await _chatService.markGroupMessagesAsRead(widget.groupId);
+  }
 
   Future<void> _fetchGroupImage() async {
     try {
-      final groupDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .get();
+      final image = await GroupService().getDecryptedGroupImage(widget.groupId);
       if (mounted) {
         setState(() {
-          _groupImage = groupDoc.data()?['imageUrl'] ?? 'assets/default_group.png';
+          _groupImage = image;
         });
       }
     } catch (e) {
-      print('Error fetching group image: $e');
-      if (mounted) {
-        setState(() {
-          _groupImage = 'assets/default_group.png';
-        });
-      }
+      print('❌ Error fetching group image: $e');
     }
   }
 
@@ -111,30 +105,37 @@ void _markMessagesAsRead() async {
   }
 
   void _setupMessageStream() {
-    _messageSubscription = _chatService.getGroupMessages(widget.groupId).listen(
-      (messages) {
-        if (!mounted) return;
-        if (_messages.isEmpty || !_areMessagesEqual(_messages, messages) || messages.length > _messages.length) {
-          if (mounted) {
-            setState(() {
-              _messages = messages;
-              _filterMessages();
-            });
-            _scrollToBottom();
-          }
-        }
-      },
-      onError: (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading messages: $error')),
-          );
-        }
-      },
-    );
+    _messageSubscription = _chatService
+        .getGroupMessages(widget.groupId)
+        .listen(
+          (messages) {
+            if (!mounted) return;
+            if (_messages.isEmpty ||
+                !_areMessagesEqual(_messages, messages) ||
+                messages.length > _messages.length) {
+              if (mounted) {
+                setState(() {
+                  _messages = messages;
+                  _filterMessages();
+                });
+                _scrollToBottom();
+              }
+            }
+          },
+          onError: (error) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error loading messages: $error')),
+              );
+            }
+          },
+        );
   }
 
-  bool _areMessagesEqual(List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+  bool _areMessagesEqual(
+    List<Map<String, dynamic>> a,
+    List<Map<String, dynamic>> b,
+  ) {
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
       if (a[i]['id'] != b[i]['id']) return false;
@@ -151,18 +152,28 @@ void _markMessagesAsRead() async {
       _filteredMessages = _messages;
       _searchMatchIndices = [];
     } else {
-      _filteredMessages = _messages.where((msg) {
-        bool matchesSearch = _searchQuery.isEmpty ||
-            (msg['text']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-        bool matchesDate = _selectedDate == null ||
-            (msg['timestamp'] is Timestamp &&
-                DateFormat('yyyy-MM-dd').format(msg['timestamp'].toDate()) ==
-                    DateFormat('yyyy-MM-dd').format(_selectedDate!));
-        return matchesSearch && matchesDate;
-      }).toList();
+      _filteredMessages =
+          _messages.where((msg) {
+            bool matchesSearch =
+                _searchQuery.isEmpty ||
+                (msg['text']?.toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ) ??
+                    false);
+            bool matchesDate =
+                _selectedDate == null ||
+                (msg['timestamp'] is Timestamp &&
+                    DateFormat(
+                          'yyyy-MM-dd',
+                        ).format(msg['timestamp'].toDate()) ==
+                        DateFormat('yyyy-MM-dd').format(_selectedDate!));
+            return matchesSearch && matchesDate;
+          }).toList();
       _searchMatchIndices = List.generate(
         _filteredMessages.length,
-        (index) => _messages.indexWhere((m) => m['id'] == _filteredMessages[index]['id']),
+        (index) => _messages.indexWhere(
+          (m) => m['id'] == _filteredMessages[index]['id'],
+        ),
       );
     }
     setState(() {});
@@ -172,9 +183,11 @@ void _markMessagesAsRead() async {
     if (_searchMatchIndices.isEmpty) return;
     setState(() {
       if (forward) {
-        _currentSearchIndex = (_currentSearchIndex + 1) % _searchMatchIndices.length;
+        _currentSearchIndex =
+            (_currentSearchIndex + 1) % _searchMatchIndices.length;
       } else {
-        _currentSearchIndex = (_currentSearchIndex - 1) % _searchMatchIndices.length;
+        _currentSearchIndex =
+            (_currentSearchIndex - 1) % _searchMatchIndices.length;
       }
       if (_scrollController.hasClients) {
         final index = _searchMatchIndices[_currentSearchIndex];
@@ -191,28 +204,29 @@ void _markMessagesAsRead() async {
   Future<void> _pickMedia() async {
     final result = await showModalBottomSheet<MediaType>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.image),
-              title: const Text('Image'),
-              onTap: () => Navigator.pop(context, MediaType.image),
+      builder:
+          (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.image),
+                  title: const Text('Image'),
+                  onTap: () => Navigator.pop(context, MediaType.image),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.videocam),
+                  title: const Text('Video'),
+                  onTap: () => Navigator.pop(context, MediaType.video),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.mic),
+                  title: const Text('Voice Message'),
+                  onTap: () => Navigator.pop(context, MediaType.voice),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.videocam),
-              title: const Text('Video'),
-              onTap: () => Navigator.pop(context, MediaType.video),
-            ),
-            ListTile(
-              leading: const Icon(Icons.mic),
-              title: const Text('Voice Message'),
-              onTap: () => Navigator.pop(context, MediaType.voice),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (result == null) return;
@@ -233,9 +247,9 @@ void _markMessagesAsRead() async {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send media: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send media: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -256,12 +270,10 @@ void _markMessagesAsRead() async {
         setState(() => _isRecording = true);
 
         final tempDir = await getTemporaryDirectory();
-        final path = '${tempDir.path}/voice_message_${DateTime.now().millisecondsSinceEpoch}.aac';
+        final path =
+            '${tempDir.path}/voice_message_${DateTime.now().millisecondsSinceEpoch}.aac';
 
-        await _audioRecorder.start(
-          path: path,
-          encoder: AudioEncoder.aacLc,
-        );
+        await _audioRecorder.start(path: path, encoder: AudioEncoder.aacLc);
 
         setState(() => _audioPath = path);
       }
@@ -296,9 +308,9 @@ void _markMessagesAsRead() async {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to stop recording: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to stop recording: $e')));
       }
     }
   }
@@ -334,7 +346,10 @@ void _markMessagesAsRead() async {
           children: [
             const Icon(Icons.mic, color: Colors.red, size: 30),
             const SizedBox(width: 8),
-            const Text("Recording...", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Recording...",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const Spacer(),
             TextButton(
               child: const Text("CANCEL", style: TextStyle(color: Colors.red)),
@@ -370,9 +385,9 @@ void _markMessagesAsRead() async {
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
       }
     } finally {
       if (mounted) {
@@ -435,25 +450,32 @@ void _markMessagesAsRead() async {
   }
 
   Future<void> _clearChat() async {
-    bool confirmDelete = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Chat'),
-        content: const Text('All messages will be deleted. This action cannot be undone.'),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: kPrimaryColor1),
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    ) ?? false;
+    bool confirmDelete =
+        await showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Clear Chat'),
+                content: const Text(
+                  'All messages will be deleted. This action cannot be undone.',
+                ),
+                actions: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: kPrimaryColor1,
+                    ),
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Continue'),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
 
     if (confirmDelete && mounted) {
       try {
@@ -463,10 +485,10 @@ void _markMessagesAsRead() async {
             .collection('messages')
             .get()
             .then((snapshot) {
-          for (DocumentSnapshot ds in snapshot.docs) {
-            ds.reference.delete();
-          }
-        });
+              for (DocumentSnapshot ds in snapshot.docs) {
+                ds.reference.delete();
+              }
+            });
         if (mounted) {
           setState(() {
             _messages.clear();
@@ -478,9 +500,9 @@ void _markMessagesAsRead() async {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to clear chat: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to clear chat: $e')));
         }
       }
     }
@@ -529,10 +551,11 @@ void _markMessagesAsRead() async {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GroupMediaScreen(
-          messages: _messages,
-          groupName: widget.groupName,
-        ),
+        builder:
+            (context) => GroupMediaScreen(
+              messages: _messages,
+              groupName: widget.groupName,
+            ),
       ),
     );
   }
@@ -544,14 +567,18 @@ void _markMessagesAsRead() async {
       child: Scaffold(
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
-          child: HeaderChat(
+          child: HeaderGroupChat(
             title: widget.groupName,
-            backArrow: const Icon(Icons.arrow_back, color: kPrimaryColor1, size: 25),
-            onBackPressed: () => Navigator.pop(context, GroupChat.createArguments(widget.groupId, widget.groupName, _messages)),
+            backArrow: const Icon(
+              Icons.arrow_back,
+              color: kPrimaryColor1,
+              size: 25,
+            ),
+            onBackPressed: () => Navigator.pop(context),
             showCircleAvatar: true,
-            circleAvatarImage: _groupImage,
+            image: '', // ممكن تحذفيه لو مش مستخدم أصلاً
+            circleAvatarImageBytes: _groupImage,
             onClearChatPressed: _clearChat,
-            image: _groupImage ?? 'assets/default_group.png',
             onSearchChanged: _onSearchChanged,
             onGroupInfoPressed: _navigateToGroupMedia,
           ),
@@ -564,72 +591,96 @@ void _markMessagesAsRead() async {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_upward),
-                    onPressed: _searchMatchIndices.isEmpty ? null : () => _navigateSearch(false),
+                    onPressed:
+                        _searchMatchIndices.isEmpty
+                            ? null
+                            : () => _navigateSearch(false),
                   ),
                   Text('${_searchMatchIndices.length} matches'),
                   IconButton(
                     icon: const Icon(Icons.arrow_downward),
-                    onPressed: _searchMatchIndices.isEmpty ? null : () => _navigateSearch(true),
+                    onPressed:
+                        _searchMatchIndices.isEmpty
+                            ? null
+                            : () => _navigateSearch(true),
                   ),
                 ],
               ),
             Expanded(
-              child: _filteredMessages.isEmpty
-                  ? const Center(child: Text('No messages yet'))
-                  : ListView.builder(
-                      controller: _scrollController,
-                      reverse: true,
-                      itemCount: _filteredMessages.length,
-                      itemBuilder: (context, index) {
-                        final message = _filteredMessages[index];
-                        final isMe = message['senderId'] == _chatService.currentUserId;
-                        final timestamp = message['timestamp'] as Timestamp?;
-                        final dateLabel = timestamp != null ? _getDateLabel(timestamp) : '';
+              child:
+                  _filteredMessages.isEmpty
+                      ? const Center(child: Text('No messages yet'))
+                      : ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        itemCount: _filteredMessages.length,
+                        itemBuilder: (context, index) {
+                          final message = _filteredMessages[index];
+                          final isMe =
+                              message['senderId'] == _chatService.currentUserId;
+                          final timestamp = message['timestamp'] as Timestamp?;
+                          final dateLabel =
+                              timestamp != null ? _getDateLabel(timestamp) : '';
 
-                        // Show date separator if it's the first message or different date
-                        final showDateSeparator = index == _filteredMessages.length - 1 ||
-                            (index < _filteredMessages.length - 1 &&
-                                _getDateLabel(_filteredMessages[index + 1]['timestamp']) != dateLabel);
+                          // Show date separator if it's the first message or different date
+                          final showDateSeparator =
+                              index == _filteredMessages.length - 1 ||
+                              (index < _filteredMessages.length - 1 &&
+                                  _getDateLabel(
+                                        _filteredMessages[index +
+                                            1]['timestamp'],
+                                      ) !=
+                                      dateLabel);
 
-                        if ((message['text']?.isEmpty ?? true) &&
-                            (message['imageUrl']?.isEmpty ?? true) &&
-                            (message['videoUrl']?.isEmpty ?? true) &&
-                            (message['voiceUrl']?.isEmpty ?? true)) {
-                          return const SizedBox.shrink();
-                        }
+                          if ((message['text']?.isEmpty ?? true) &&
+                              (message['imageUrl']?.isEmpty ?? true) &&
+                              (message['videoUrl']?.isEmpty ?? true) &&
+                              (message['voiceUrl']?.isEmpty ?? true)) {
+                            return const SizedBox.shrink();
+                          }
 
-                        return Column(
-                          children: [
-                            if (showDateSeparator)
-                              GestureDetector(
-                                onTap: _showCalendarPicker,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    dateLabel,
-                                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          return Column(
+                            children: [
+                              if (showDateSeparator)
+                                GestureDetector(
+                                  onTap: _showCalendarPicker,
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      dateLabel,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              MessageBubble(
+                                message: message['text'] ?? '',
+                                timestamp: message['timestamp'],
+                                isMe: isMe,
+                                senderName: message['senderName'] ?? 'User',
+                                imageUrl: message['imageUrl'],
+                                videoUrl: message['videoUrl'],
+                                voiceUrl: message['voiceUrl'],
+                                readCount:
+                                    (message['readBy'] as List?)?.length ??
+                                    1, // Add this line
                               ),
-                            MessageBubble(
-                              message: message['text'] ?? '',
-                              timestamp: message['timestamp'],
-                              isMe: isMe,
-                              senderName: message['senderName'] ?? 'User',
-                              imageUrl: message['imageUrl'],
-                              videoUrl: message['videoUrl'],
-                              voiceUrl: message['voiceUrl'],
-                                readCount: (message['readBy'] as List?)?.length ?? 1, // Add this line
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                            ],
+                          );
+                        },
+                      ),
             ),
             if (_isRecording) _buildRecordingUI(),
             ChatInputField(

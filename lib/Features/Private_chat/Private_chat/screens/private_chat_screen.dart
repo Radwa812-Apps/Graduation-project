@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:near_me_new_version/Features/Private_chat/Private_chat/components/header_private_chat.dart';
 import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_media_screen.dart';
 import 'package:near_me_new_version/Features/Private_chat/Private_chat/components/private_message_bubble.dart';
 import 'package:near_me_new_version/core/constants.dart';
@@ -14,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../chat_group/components/chat_input_field.dart';
-import '../../../chat_group/components/header_chat.dart';
+import '../../../chat_group/components/header_group_chat.dart';
 
 class PrivateChatScreen extends StatefulWidget {
   final String recipientId;
@@ -466,7 +467,7 @@ void _markMessagesAsRead() async {
         backgroundColor: kBackgroundColor,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
-          child: HeaderChat(
+          child: HeaderPrivateChat(
             title: widget.recipientName,
             backArrow: const Icon(Icons.arrow_back, color: kPrimaryColor1, size: 25),
             onBackPressed: () => Navigator.pop(context),

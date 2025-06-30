@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:near_me_new_version/Features/Notifications/Components/search_icon.dart';
 import 'package:near_me_new_version/Features/chat_group/components/three_dots_manu.dart';
-import '../../Notifications/Components/search_icon.dart';
-import '../../../core/constants.dart';
-import '../../../core/font_style.dart';
+import 'package:near_me_new_version/core/constants.dart';
+import 'package:near_me_new_version/core/font_style.dart';
 
-class HeaderChat extends StatefulWidget {
+
+class HeaderPrivateChat extends StatefulWidget {
   final String title;
   final Widget backArrow;
   final VoidCallback? onBackPressed;
@@ -15,7 +16,7 @@ class HeaderChat extends StatefulWidget {
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onGroupInfoPressed;
 
-  const HeaderChat({
+  const HeaderPrivateChat({
     Key? key,
     required this.title,
     required this.backArrow,
@@ -32,7 +33,7 @@ class HeaderChat extends StatefulWidget {
   _HeaderChatState createState() => _HeaderChatState();
 }
 
-class _HeaderChatState extends State<HeaderChat> {
+class _HeaderChatState extends State<HeaderPrivateChat> {
   bool _isSearchVisible = false;
   final TextEditingController _searchController = TextEditingController();
 
