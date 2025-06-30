@@ -157,15 +157,15 @@ class SettingsScreen extends StatelessWidget {
                         _showLogoutConfirmation(context);
                       },
                     ),
-                    SizedBox(height: spaceBetweenRows),
-                    _buildSettingsItem(
+                    /*SizedBox(height: spaceBetweenRows),
+                   _buildSettingsItem(
                       context,
                       icon: Icons.lock_outline,
                       text: 'Password',
                       iconSize: iconSize,
                       fontSize: fontSize,
                       onTap: () {},
-                    ),
+                    ),*/
                     SizedBox(height: spaceBetweenRows),
                     _buildSettingsItem(
                       context,
@@ -246,7 +246,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: iconSize, color: iconColor ?? kFontColor),
+              Icon(icon, size: iconSize, color: iconColor ?? kPrimaryColor1),
               SizedBox(width: 20.w),
               Text(
                 text,
@@ -425,7 +425,7 @@ class SettingsScreen extends StatelessWidget {
                               hint: 'Email',
                               prefixIcon: Icon(
                                 Icons.email_outlined,
-                                color: Colors.grey[600],
+                                color: kPrimaryColor1,
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validatior: (value) {
@@ -444,7 +444,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           SizedBox(height: 20.h),
                           SizedBox(
-                            width: 300.w, // تحديد عرض حقول الإدخال
+                            width: 300.w, 
                             child: TextFormFieldWidget(
                               editIcon: null,
                               color: Colors.black87,
@@ -455,7 +455,7 @@ class SettingsScreen extends StatelessWidget {
                               hint: 'Password',
                               prefixIcon: Icon(
                                 Icons.lock_outline,
-                                color: Colors.grey[600],
+                                color: kPrimaryColor1,
                               ),
                               keyboardType: TextInputType.text,
                               isPassword: true,

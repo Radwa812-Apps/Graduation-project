@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants.dart';
 
-
 class SearchBarWidget extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
@@ -57,4 +56,3 @@ class SearchBarWidget extends StatelessWidget {
     );
   }
 }
- 

@@ -474,6 +474,8 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                                 userName:
                                     "${snapshot.data!['fName']} ${snapshot.data!['lName']}"
                                         .trim(),
+                                picture: snapshot.data!['picture'],
+                                uid: uid,
                               ),
                               const SizedBox(height: 10),
                             ],

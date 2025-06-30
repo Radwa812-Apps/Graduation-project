@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:app_settings/app_settings.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -23,11 +25,9 @@ class NotificationService {
   Future<void> _initializeLocalNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
+
+    const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
-      // Add iOS settings if needed
     );
 
     await _flutterLocalNotificationsPlugin.initialize(
@@ -51,7 +51,7 @@ class NotificationService {
           arguments: {
             'recipientId': data['recipientId'],
             'recipientName': data['senderName'],
-            'recipientImage': null, // You can pass image if available
+            'recipientImage': null,
           },
         );
       } else if (type == 'group_chat') {
@@ -85,9 +85,9 @@ class NotificationService {
     } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
       print('User granted provisional permission');
     } else {
-      SnackBar snackBar = SnackBar(
-        content: Text(
-          'User declined permission, Allow notifications in settings',
+      ScaffoldMessenger.of(_context).showSnackBar(
+        SnackBar(
+          content: Text('User declined permission, allow notifications in settings'),
         ),
       );
 
@@ -99,34 +99,69 @@ class NotificationService {
   }
 
   Future<String?> getDeviceToken() async {
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-    String? token = await _firebaseMessaging.getToken(); 
-    print('🤑🤑🤑Device Token: $token');
-    return token;  
+    await _firebaseMessaging.requestPermission();
+    String? token = await _firebaseMessaging.getToken();
+    print('🤑 Device Token: $token');
+    return token;
   }
 
   void _setupFirebaseListeners() {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _showNotification(message);
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      await _showNotification(message);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       if (message.data.isNotEmpty) {
         handleNotificationNavigation(_context, message.data);
       }
-      print('Message opened from notification: ${message.notification?.title}');
     });
   }
+  
 
   Future<void> _showNotification(RemoteMessage message) async {
+    final data = message.data;
+    final type = data['type'];
+    final myUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (data['originallyMuted'] == 'true') {
+    print('Notification was muted at send time. Skipping.');
+    return;
+  }
+
+   if (type == 'private_chat') {
+    final senderId = data['senderId'];
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(myUserId)
+        .collection('muted_chats')
+        .doc(senderId)
+        .get();
+
+    if (doc.exists && doc.data()?['muted'] == true) {
+      print('Currently muted private chat from $senderId. Skipping notification.');
+      return;
+    }
+  }
+
+    if (type == 'group_chat') {
+      final groupId = data['groupId'];
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(myUserId)
+          .collection('muted_groups')
+          .doc(groupId)
+          .get();
+
+      if (doc.exists && doc.data()?['muted'] == true) {
+        print('Muted group $groupId. Skipping notification.');
+        return;
+      }
+    }
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'chat_channel', // channel id
-      'Chat Notifications', // channel name
+      'chat_channel',
+      'Chat Notifications',
       channelDescription: 'This channel is used for chat notifications',
       importance: Importance.max,
       priority: Priority.high,
@@ -141,10 +176,11 @@ class NotificationService {
       message.notification?.title,
       message.notification?.body,
       platformChannelSpecifics,
-      payload: jsonEncode(message.data),
+      payload: jsonEncode(data),
     );
   }
 
+  /// ✅ This is the method that was missing
   static Future<void> sendChatNotification({
     required String recipientToken,
     required String title,

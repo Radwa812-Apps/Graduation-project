@@ -104,7 +104,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-log("AddMembersScreen: Building with screenWidth: $_allUsers");
+    log("AddMembersScreen: Building with screenWidth: $_allUsers");
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -161,6 +161,7 @@ log("AddMembersScreen: Building with screenWidth: $_allUsers");
                     ..._allUsers.map(
                       (user) => RowCheckbox(
                         userName: "${user['fName']} ${user['lName']}".trim(),
+                        uid: user['uid'],
                         initialValue: _selectedUids.contains(user['uid']),
                         onChanged:
                             (value) => _onCheckboxChanged(user['uid'], value),

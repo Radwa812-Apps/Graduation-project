@@ -1,9 +1,10 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/Notifications/Components/search_icon.dart';
 import 'package:near_me_new_version/Features/chat_group/components/three_dots_manu.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:near_me_new_version/core/font_style.dart';
-
+import 'package:near_me_new_version/core/services/profile_image_service.dart';
 
 class HeaderPrivateChat extends StatefulWidget {
   final String title;
@@ -15,6 +16,7 @@ class HeaderPrivateChat extends StatefulWidget {
   final String image;
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onGroupInfoPressed;
+  final String? recipientId; 
 
   const HeaderPrivateChat({
     Key? key,
@@ -27,6 +29,7 @@ class HeaderPrivateChat extends StatefulWidget {
     required this.image,
     this.onSearchChanged,
     this.onGroupInfoPressed,
+    this.recipientId, // 🔥 New
   }) : super(key: key);
 
   @override
@@ -36,6 +39,27 @@ class HeaderPrivateChat extends StatefulWidget {
 class _HeaderChatState extends State<HeaderPrivateChat> {
   bool _isSearchVisible = false;
   final TextEditingController _searchController = TextEditingController();
+  Uint8List? userImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserImage();
+  }
+
+  Future<void> _loadUserImage() async {
+    if (widget.recipientId == null) return;
+    try {
+      final image = await ProfileImageService().getDecryptedUserImage(widget.recipientId!);
+      if (mounted) {
+        setState(() {
+          userImage = image;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load user image: \$e');
+    }
+  }
 
   void _onSearchPressed() {
     setState(() {
@@ -85,10 +109,7 @@ class _HeaderChatState extends State<HeaderPrivateChat> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     GestureDetector(
-                      onTap: widget.onBackPressed ??
-                          () {
-                            Navigator.pop(context);
-                          },
+                      onTap: widget.onBackPressed ?? () => Navigator.pop(context),
                       child: widget.backArrow,
                     ),
                     const SizedBox(width: 10),
@@ -96,10 +117,10 @@ class _HeaderChatState extends State<HeaderPrivateChat> {
                       GestureDetector(
                         onTap: widget.onGroupInfoPressed,
                         child: CircleAvatar(
-                          backgroundImage: widget.circleAvatarImage != null
-                              ? AssetImage("assets/images/group.jpg")
-                              : AssetImage("assets/images/group.jpg"),
                           radius: 20,
+                          backgroundImage: userImage != null
+                              ? MemoryImage(userImage!)
+                              : AssetImage("assets/images/user.jpg") as ImageProvider,
                         ),
                       ),
                     if (widget.showCircleAvatar) const SizedBox(width: 10),
@@ -108,7 +129,7 @@ class _HeaderChatState extends State<HeaderPrivateChat> {
                         onTap: widget.onGroupInfoPressed,
                         child: Text(
                           widget.title,
-                          style: TextStyles.NotificationsTilteText.copyWith(fontSize: 16), // Smaller text size
+                          style: TextStyles.NotificationsTilteText.copyWith(fontSize: 16),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

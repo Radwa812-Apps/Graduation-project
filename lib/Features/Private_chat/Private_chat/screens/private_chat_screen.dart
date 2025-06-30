@@ -68,55 +68,67 @@ class _PrivateChatScreenState extends State<PrivateChatScreen> {
     _audioRecorder.dispose();
     super.dispose();
   }
-  @override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  _markMessagesAsRead();
-}
 
-void _markMessagesAsRead() async {
-  await _chatService.markMessagesAsRead(
-    _chatService.getChatId(widget.recipientId),
-    widget.recipientId,
-  );
-}
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _markMessagesAsRead();
+  }
+
+  void _markMessagesAsRead() async {
+    await _chatService.markMessagesAsRead(
+      _chatService.getChatId(widget.recipientId),
+      widget.recipientId,
+    );
+  }
 
   void _setupMessageStream() {
-    _messageSubscription = _chatService.getPrivateMessages(widget.recipientId).listen(
-      (messages) {
-        if (!mounted) return;
-        setState(() {
-          _messages = messages;
-          _filterMessages();
-        });
-        _scrollToBottom();
-      },
-      onError: (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error loading messages: $error')),
-          );
-        }
-      },
-    );
+    _messageSubscription = _chatService
+        .getPrivateMessages(widget.recipientId)
+        .listen(
+          (messages) {
+            if (!mounted) return;
+            setState(() {
+              _messages = messages;
+              _filterMessages();
+            });
+            _scrollToBottom();
+          },
+          onError: (error) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error loading messages: $error')),
+              );
+            }
+          },
+        );
   }
 
   void _filterMessages() {
     if (_searchQuery!.isEmpty && _selectedDate == null) {
       _searchMatchIndices = [];
     } else {
-      _messages = _messages.where((msg) {
-        bool matchesSearch = _searchQuery!.isEmpty ||
-            (msg['text']?.toLowerCase().contains(_searchQuery!.toLowerCase()) ?? false);
-        bool matchesDate = _selectedDate == null ||
-            (msg['timestamp'] is Timestamp &&
-                DateFormat('yyyy-MM-dd').format(msg['timestamp'].toDate()) ==
-                    DateFormat('yyyy-MM-dd').format(_selectedDate!));
-        return matchesSearch && matchesDate;
-      }).toList();
+      _messages =
+          _messages.where((msg) {
+            bool matchesSearch =
+                _searchQuery!.isEmpty ||
+                (msg['text']?.toLowerCase().contains(
+                      _searchQuery!.toLowerCase(),
+                    ) ??
+                    false);
+            bool matchesDate =
+                _selectedDate == null ||
+                (msg['timestamp'] is Timestamp &&
+                    DateFormat(
+                          'yyyy-MM-dd',
+                        ).format(msg['timestamp'].toDate()) ==
+                        DateFormat('yyyy-MM-dd').format(_selectedDate!));
+            return matchesSearch && matchesDate;
+          }).toList();
       _searchMatchIndices = List.generate(
         _messages.length,
-        (index) => _messages.indexWhere((m) => m['id'] == _messages[index]['id']),
+        (index) =>
+            _messages.indexWhere((m) => m['id'] == _messages[index]['id']),
       );
     }
     setState(() {});
@@ -126,9 +138,11 @@ void _markMessagesAsRead() async {
     if (_searchMatchIndices.isEmpty) return;
     setState(() {
       if (forward) {
-        _currentSearchIndex = (_currentSearchIndex + 1) % _searchMatchIndices.length;
+        _currentSearchIndex =
+            (_currentSearchIndex + 1) % _searchMatchIndices.length;
       } else {
-        _currentSearchIndex = (_currentSearchIndex - 1) % _searchMatchIndices.length;
+        _currentSearchIndex =
+            (_currentSearchIndex - 1) % _searchMatchIndices.length;
       }
       if (_scrollController.hasClients) {
         final index = _searchMatchIndices[_currentSearchIndex];
@@ -145,28 +159,29 @@ void _markMessagesAsRead() async {
   Future<void> _pickMedia() async {
     final result = await showModalBottomSheet<MediaType>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.image),
-              title: const Text('Image'),
-              onTap: () => Navigator.pop(context, MediaType.image),
+      builder:
+          (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.image),
+                  title: const Text('Image'),
+                  onTap: () => Navigator.pop(context, MediaType.image),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.videocam),
+                  title: const Text('Video'),
+                  onTap: () => Navigator.pop(context, MediaType.video),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.mic),
+                  title: const Text('Voice Message'),
+                  onTap: () => Navigator.pop(context, MediaType.voice),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.videocam),
-              title: const Text('Video'),
-              onTap: () => Navigator.pop(context, MediaType.video),
-            ),
-            ListTile(
-              leading: const Icon(Icons.mic),
-              title: const Text('Voice Message'),
-              onTap: () => Navigator.pop(context, MediaType.voice),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
 
     if (result == null) return;
@@ -187,9 +202,9 @@ void _markMessagesAsRead() async {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send media: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send media: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -248,11 +263,9 @@ void _markMessagesAsRead() async {
       if (await _audioRecorder.hasPermission()) {
         setState(() => _isRecording = true);
         final tempDir = await getTemporaryDirectory();
-        final path = '${tempDir.path}/voice_message_${DateTime.now().millisecondsSinceEpoch}.aac';
-        await _audioRecorder.start(
-          path: path,
-          encoder: AudioEncoder.aacLc,
-        );
+        final path =
+            '${tempDir.path}/voice_message_${DateTime.now().millisecondsSinceEpoch}.aac';
+        await _audioRecorder.start(path: path, encoder: AudioEncoder.aacLc);
         setState(() => _audioPath = path);
       }
     } catch (e) {
@@ -283,9 +296,9 @@ void _markMessagesAsRead() async {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to stop recording: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to stop recording: $e')));
       }
     }
   }
@@ -302,7 +315,10 @@ void _markMessagesAsRead() async {
           children: [
             const Icon(Icons.mic, color: Colors.red, size: 30),
             const SizedBox(width: 8),
-            const Text("Recording...", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Recording...",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const Spacer(),
             TextButton(
               child: const Text("CANCEL", style: TextStyle(color: Colors.red)),
@@ -336,9 +352,9 @@ void _markMessagesAsRead() async {
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send message: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
@@ -358,25 +374,32 @@ void _markMessagesAsRead() async {
   }
 
   Future<void> _clearChat() async {
-    bool confirmDelete = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Chat'),
-        content: const Text('All messages will be deleted. This action cannot be undone.'),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: kPrimaryColor1),
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    ) ?? false;
+    bool confirmDelete =
+        await showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Clear Chat'),
+                content: const Text(
+                  'All messages will be deleted. This action cannot be undone.',
+                ),
+                actions: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: kPrimaryColor1,
+                    ),
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Continue'),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
 
     if (confirmDelete && mounted) {
       try {
@@ -386,10 +409,10 @@ void _markMessagesAsRead() async {
             .collection('messages')
             .get()
             .then((snapshot) {
-          for (DocumentSnapshot ds in snapshot.docs) {
-            ds.reference.delete();
-          }
-        });
+              for (DocumentSnapshot ds in snapshot.docs) {
+                ds.reference.delete();
+              }
+            });
         if (mounted) {
           setState(() {
             _messages.clear();
@@ -400,9 +423,9 @@ void _markMessagesAsRead() async {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to clear chat: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to clear chat: $e')));
         }
       }
     }
@@ -435,10 +458,11 @@ void _markMessagesAsRead() async {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PrivateChatMediaScreen(
-          messages: _messages,
-          recipientName: widget.recipientName,
-        ),
+        builder:
+            (context) => PrivateChatMediaScreen(
+              messages: _messages,
+              recipientName: widget.recipientName,
+            ),
       ),
     );
   }
@@ -469,14 +493,19 @@ void _markMessagesAsRead() async {
           preferredSize: const Size.fromHeight(100),
           child: HeaderPrivateChat(
             title: widget.recipientName,
-            backArrow: const Icon(Icons.arrow_back, color: kPrimaryColor1, size: 25),
+            backArrow: const Icon(
+              Icons.arrow_back,
+              color: kPrimaryColor1,
+              size: 25,
+            ),
             onBackPressed: () => Navigator.pop(context),
             showCircleAvatar: true,
-            circleAvatarImage: widget.recipientImage ?? 'assets/images/user.jpg',
+            circleAvatarImage: widget.recipientImage,
             onClearChatPressed: _clearChat,
             image: widget.recipientImage ?? 'assets/images/user.jpg',
             onSearchChanged: _onSearchChanged,
             onGroupInfoPressed: _navigateToMediaScreen,
+            recipientId: widget.recipientId, 
           ),
         ),
         body: Column(
@@ -487,77 +516,100 @@ void _markMessagesAsRead() async {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_upward),
-                    onPressed: _searchMatchIndices.isEmpty ? null : () => _navigateSearch(false),
+                    onPressed:
+                        _searchMatchIndices.isEmpty
+                            ? null
+                            : () => _navigateSearch(false),
                   ),
                   Text('${_searchMatchIndices.length} matches'),
                   IconButton(
                     icon: const Icon(Icons.arrow_downward),
-                    onPressed: _searchMatchIndices.isEmpty ? null : () => _navigateSearch(true),
+                    onPressed:
+                        _searchMatchIndices.isEmpty
+                            ? null
+                            : () => _navigateSearch(true),
                   ),
                 ],
               ),
             Expanded(
-              child: _messages.isEmpty
-                  ? const Center(child: Text('No messages yet'))
-                  : ListView.builder(
-                      controller: _scrollController,
-                      reverse: true,
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final message = _messages[index];
-                        final isMe = message['senderId'] == _chatService.currentUserId;
-                        final timestamp = message['timestamp'] as Timestamp?;
-                        final dateLabel = timestamp != null ? _getDateLabel(timestamp) : '';
+              child:
+                  _messages.isEmpty
+                      ? const Center(child: Text('No messages yet'))
+                      : ListView.builder(
+                        controller: _scrollController,
+                        reverse: true,
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          final message = _messages[index];
+                          final isMe =
+                              message['senderId'] == _chatService.currentUserId;
+                          final timestamp = message['timestamp'] as Timestamp?;
+                          final dateLabel =
+                              timestamp != null ? _getDateLabel(timestamp) : '';
 
-                        final showDateSeparator = index == _messages.length - 1 ||
-                            (index < _messages.length - 1 &&
-                                _getDateLabel(_messages[index + 1]['timestamp']) != dateLabel);
+                          final showDateSeparator =
+                              index == _messages.length - 1 ||
+                              (index < _messages.length - 1 &&
+                                  _getDateLabel(
+                                        _messages[index + 1]['timestamp'],
+                                      ) !=
+                                      dateLabel);
 
-                        if ((message['text']?.isEmpty ?? true) &&
-                            (message['imageUrl']?.isEmpty ?? true) &&
-                            (message['videoUrl']?.isEmpty ?? true) &&
-                            (message['voiceUrl']?.isEmpty ?? true)) {
-                          return const SizedBox.shrink();
-                        }
+                          if ((message['text']?.isEmpty ?? true) &&
+                              (message['imageUrl']?.isEmpty ?? true) &&
+                              (message['videoUrl']?.isEmpty ?? true) &&
+                              (message['voiceUrl']?.isEmpty ?? true)) {
+                            return const SizedBox.shrink();
+                          }
 
-                        return Column(
-                          children: [
-                            if (showDateSeparator)
-                              GestureDetector(
-                                onTap: _showCalendarPicker,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    dateLabel,
-                                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                          return Column(
+                            children: [
+                              if (showDateSeparator)
+                                GestureDetector(
+                                  onTap: _showCalendarPicker,
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      dateLabel,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              PrivateMessageBubble(
+                                message: message['text'] ?? '',
+                                timestamp: message['timestamp'],
+                                isMe: isMe,
+                                imageUrl: message['imageUrl'],
+                                videoUrl: message['videoUrl'],
+                                voiceUrl: message['voiceUrl'],
+                                isRead:
+                                    message['read'] ?? false, // Add this line
                               ),
-                            PrivateMessageBubble(
-                              message: message['text'] ?? '',
-                              timestamp: message['timestamp'],
-                              isMe: isMe,
-                              imageUrl: message['imageUrl'],
-                              videoUrl: message['videoUrl'],
-                              voiceUrl: message['voiceUrl'],
-                              isRead: message['read'] ?? false, // Add this line
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                            ],
+                          );
+                        },
+                      ),
             ),
             if (_isRecording) _buildRecordingUI(),
             ChatInputField(
               controller: _messageController,
               onSend: _sendMessage,
               isSending: _isSending,
-              onEmojiPressed: () => setState(() => _showEmojiPicker = !_showEmojiPicker),
+              onEmojiPressed:
+                  () => setState(() => _showEmojiPicker = !_showEmojiPicker),
               onMediaPressed: _pickMedia,
               isRecording: _isRecording,
             ),

@@ -211,6 +211,7 @@ class _SettingsServiceState extends State<SettingsService> {
             ),
             Switch(
               value: isAlertActive,
+              activeColor: kPrimaryColor1,focusColor: kPrimaryColor1,
               onChanged: (value) async {
                 if (mounted) {
                   setState(() {
