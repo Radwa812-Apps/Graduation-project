@@ -22,27 +22,32 @@ class _SearchMemberState extends State<SearchMember> {
   void initState() {
     super.initState();
 
-   
-    print("🔍 Members received:");
-    for (var member in widget.groupMembers) {
+    // نسخة منفصلة من groupMembers علشان نفلتر عليها بدون التعديل على widget.groupMembers
+    filteredMembers = List<Map<String, dynamic>>.from(widget.groupMembers);
+
+    // ديباج للتأكيد
+    print("🔍 Members received (${filteredMembers.length}):");
+    for (var member in filteredMembers) {
       print(" - ${member['name']}");
     }
 
-    filteredMembers = widget.groupMembers;
+    _searchController.addListener(_filterMembers);
+  }
 
-    _searchController.addListener(() {
-      final query = _searchController.text.toLowerCase().trim();
-      setState(() {
-        filteredMembers = widget.groupMembers.where((member) {
-          final name = (member['name'] ?? '').toLowerCase();
-          return name.contains(query);
-        }).toList();
-      });
+  void _filterMembers() {
+    final query = _searchController.text.toLowerCase().trim();
+
+    setState(() {
+      filteredMembers = widget.groupMembers.where((member) {
+        final name = (member['name'] ?? '').toLowerCase();
+        return name.contains(query);
+      }).toList();
     });
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_filterMembers);
     _searchController.dispose();
     super.dispose();
   }
@@ -79,7 +84,6 @@ class _SearchMemberState extends State<SearchMember> {
                         final uid = member['uid'] ?? '';
                         final picture = member['encryptedUserPicture'];
 
-                        
                         if (name.trim().isEmpty) return const SizedBox.shrink();
 
                         return Padding(
