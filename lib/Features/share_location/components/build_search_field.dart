@@ -1,29 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/tracking.dart';
 import 'package:near_me_new_version/core/constants.dart';
 
-class BuildSearchField extends StatefulWidget {
-  const BuildSearchField({Key? key}) : super(key: key);
+class BuildSearchField extends StatelessWidget {
+  final TextEditingController controller;
 
-  @override
-  _buildSearchField createState() => _buildSearchField();
-}
-
-class _buildSearchField extends State<BuildSearchField> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  const BuildSearchField({
+    Key? key,
+    required this.controller,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +16,12 @@ class _buildSearchField extends State<BuildSearchField> {
       children: [
         Expanded(
           child: TextField(
+            controller: controller,
             decoration: InputDecoration(
               hintText: 'Search...',
               filled: true,
               fillColor: Colors.grey[100],
-              prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
+              prefixIcon: Icon(Icons.search, color: kPrimaryColor1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
                 borderSide: BorderSide.none,
@@ -44,9 +30,8 @@ class _buildSearchField extends State<BuildSearchField> {
             ),
           ),
         ),
-
-        const SizedBox(width: 10),
-        Container(
+        //const SizedBox(width: 10),
+        /*Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Colors.grey[200],
@@ -57,7 +42,7 @@ class _buildSearchField extends State<BuildSearchField> {
             color: kPrimaryColor1,
             size: 30.sp,
           ),
-        ),
+        ),*/
       ],
     );
   }

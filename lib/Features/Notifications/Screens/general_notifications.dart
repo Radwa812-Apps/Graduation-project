@@ -272,11 +272,18 @@ class _GeneralNotificationsState extends State<GeneralNotifications> {
       Stream<QuerySnapshot>.empty();
   final Map<String, String> _groupNamesCache = {};
   List<String> _userGroups = [];
+  String _searchText = '';
 
   @override
   void initState() {
     super.initState();
     _loadUserGroups();
+  }
+
+  void _handleSearchChanged(String value) {
+    setState(() {
+      _searchText = value.toLowerCase();
+    });
   }
 
   Future<void> _loadUserGroups() async {
@@ -285,19 +292,15 @@ class _GeneralNotificationsState extends State<GeneralNotifications> {
 
     try {
       final groupsQuery =
-          await _firestore
-              .collection('groups')
-              .where('members', arrayContains: user.uid)
-              .get();
+          await _firestore.collection('groups').where('members', arrayContains: user.uid).get();
 
       _userGroups = groupsQuery.docs.map((doc) => doc.id).toList();
 
-      _notificationsStream =
-          _firestore
-              .collection('notifications')
-              .where('groupsID', arrayContainsAny: _userGroups)
-              .orderBy('timeOfLocation', descending: true)
-              .snapshots();
+      _notificationsStream = _firestore
+          .collection('notifications')
+          .where('groupsID', arrayContainsAny: _userGroups)
+          .orderBy('timeOfLocation', descending: true)
+          .snapshots();
 
       setState(() {});
     } catch (e) {
@@ -318,8 +321,7 @@ class _GeneralNotificationsState extends State<GeneralNotifications> {
 
     try {
       final doc = await _firestore.collection('groups').doc(groupId).get();
-      final groupName =
-          doc.exists ? doc.get('name') ?? 'Unknown Group' : 'Unknown Group';
+      final groupName = doc.exists ? doc.get('name') ?? 'Unknown Group' : 'Unknown Group';
       _groupNamesCache[groupId] = groupName;
       return groupName;
     } catch (e) {
@@ -332,115 +334,102 @@ class _GeneralNotificationsState extends State<GeneralNotifications> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-      body: SingleChildScrollView(
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(40),
-            color: background,
+      body: Column(
+        children: [
+          HeaderNotifications(
+            title: 'Notifications',
+            onSearchChanged: _handleSearchChanged,
+            backArrow: null,
+            showCircleAvatar: false,
+            image: "assets/images/group.jpg",
           ),
-          child: Column(
-            children: [
-              const HeaderNotifications(
-                title: 'Notifications',
-                backArrow: null,
-                showCircleAvatar: false,
-                image: "assets/images/group.jpg",
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 10.h,
-                  ),
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: _notificationsStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _notificationsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
 
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Center(
-                          child: Text('No notifications available'),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('No notifications available'));
+                  }
+
+                  final Map<String, List<Map<String, dynamic>>> groupedNotifications = {};
+                  final now = DateTime.now();
+                  final today = DateTime(now.year, now.month, now.day);
+                  final yesterday = today.subtract(const Duration(days: 1));
+
+                  for (final doc in snapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final timestamp = data['timeOfLocation'] as Timestamp?;
+                    if (timestamp == null) continue;
+
+                    final date = timestamp.toDate();
+                    final dateKey = _getDateKey(date, today, yesterday);
+
+                    final messageData = jsonDecode(data['messageLocation']);
+                    final userName = messageData['userName']?.toString().toLowerCase() ?? '';
+                    final groupNamesList = data['groupsID'] ?? [];
+
+                    if (_searchText.isNotEmpty &&
+                        !userName.contains(_searchText) &&
+                        !groupNamesList.any(
+                          (g) => _groupNamesCache[g]?.toLowerCase().contains(_searchText) ?? false,
+                        )) {
+                      continue;
+                    }
+
+                    if (!groupedNotifications.containsKey(dateKey)) {
+                      groupedNotifications[dateKey] = [];
+                    }
+
+                    groupedNotifications[dateKey]!.add(data);
+                  }
+
+                  final items = <Widget>[];
+                  groupedNotifications.forEach((dateKey, notifications) {
+                    items.add(DateLabel(dateText: dateKey));
+
+                    for (final data in notifications) {
+                      final messageData = jsonDecode(data['messageLocation']);
+                      final groups = List<String>.from(data['groupsID'] ?? []);
+
+                      for (final groupId in groups.where((g) => _userGroups.contains(g))) {
+                        items.add(
+                          FutureBuilder<String>(
+                            future: _getGroupName(groupId),
+                            builder: (context, groupSnapshot) {
+                              return _buildNotificationItem(
+                                data,
+                                messageData,
+                                groupId,
+                                groupSnapshot.data ?? 'Loading...',
+                              );
+                            },
+                          ),
                         );
                       }
+                    }
+                  });
 
-                      // Group notifications by date
-                      final Map<String, List<Map<String, dynamic>>>
-                      groupedNotifications = {};
-                      final now = DateTime.now();
-                      final today = DateTime(now.year, now.month, now.day);
-                      final yesterday = today.subtract(const Duration(days: 1));
-
-                      for (final doc in snapshot.data!.docs) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final timestamp = data['timeOfLocation'] as Timestamp?;
-                        if (timestamp == null) continue;
-
-                        final date = timestamp.toDate();
-                        final dateKey = _getDateKey(date, today, yesterday);
-
-                        if (!groupedNotifications.containsKey(dateKey)) {
-                          groupedNotifications[dateKey] = [];
-                        }
-
-                        groupedNotifications[dateKey]!.add(data);
-                      }
-
-                      // Build the list of notifications grouped by date
-                      final items = <Widget>[];
-                      groupedNotifications.forEach((dateKey, notifications) {
-                        // Add date label
-                        items.add(DateLabel(dateText: dateKey));
-
-                        // Add notifications for this date
-                        for (final data in notifications) {
-                          final messageData = jsonDecode(
-                            data['messageLocation'],
-                          );
-                          final groups = List<String>.from(
-                            data['groupsID'] ?? [],
-                          );
-
-                          for (final groupId in groups.where(
-                            (g) => _userGroups.contains(g),
-                          )) {
-                            items.add(
-                              FutureBuilder<String>(
-                                future: _getGroupName(groupId),
-                                builder: (context, groupSnapshot) {
-                                  return _buildNotificationItem(
-                                    data,
-                                    messageData,
-                                    groupId,
-                                    groupSnapshot.data ?? 'Loading...',
-                                  );
-                                },
-                              ),
-                            );
-                          }
-                        }
-                      });
-
-                      return ListView(
-                        padding: EdgeInsets.zero,
-                        shrinkWrap: true,
-                        physics: const BouncingScrollPhysics(),
-                        children: items,
-                      );
-                    },
-                  ),
-                ),
+                  return ListView(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    physics: const BouncingScrollPhysics(),
+                    children: items,
+                  );
+                },
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -473,9 +462,7 @@ class _GeneralNotificationsState extends State<GeneralNotifications> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder:
-                (context) =>
-                    GroupNotifications(title: groupName, groupId: groupId),
+            builder: (context) => GroupNotifications(title: groupName, groupId: groupId),
           ),
         );
       },

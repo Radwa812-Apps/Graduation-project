@@ -47,6 +47,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   bool isLiveTrackingOn = false;
   Uint8List? groupImage;
   bool _isLoading = false;
+  List<Map<String, dynamic>> groupMembersList = [];
 
   @override
   void didChangeDependencies() {
@@ -94,6 +95,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
         }
       }
     }
+    _loadGroupMembers();
   }
 
   void _toggleSearch() {
@@ -101,6 +103,8 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
       _isSearchExpanded = !_isSearchExpanded;
     });
   }
+  
+
 
   void _showMenu(BuildContext context) {
     showDialog(
@@ -156,6 +160,31 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
   );
 }
 */
+//load group member
+  Future<void> _loadGroupMembers() async {
+  if (_group != null) {
+    List<Map<String, dynamic>> members = [];
+
+    for (var uid in _group!.members) {
+      final data = await _groupService.getUserData(uid);
+      log("📥 Member Data for $uid: $data");
+
+      if (data != null && data['fName'] != null && data['lName'] != null) {
+        members.add({
+          'name': "${data['fName']} ${data['lName']}".trim(),
+          'uid': uid,
+          'encryptedUserPicture': data['picture'],
+        });
+      }
+    }
+
+    log("✅ Final groupMembersList: ${members.map((m) => m['name']).toList()}");
+
+    setState(() {
+      groupMembersList = members;
+    });
+  }
+}
 
   Future<void> _pickAndUploadGroupImage() async {
     try {
@@ -446,7 +475,7 @@ class _GroupProfileScreenState extends State<GroupProfileScreen> {
                   screenWidth: screenWidth,
                   onSearchPressed: _toggleSearch,
                   groupId: _group?.id ?? '',
-                  onReturn: _loadGroupData,
+                  onReturn: _loadGroupData,groupMembersList: groupMembersList,
                 ),
                 if (_isSearchExpanded) const SearchTextWidget(),
                 const SizedBox(height: 30),

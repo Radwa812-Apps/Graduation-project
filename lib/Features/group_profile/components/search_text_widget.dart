@@ -45,7 +45,7 @@ class SearchTextWidget extends StatelessWidget {
             filled: true,
             fillColor: Colors.white.withOpacity(0.9),
           ),
-          style: const TextStyle(color: Colors.black), // Changed text color to black for better visibility
+          style: const TextStyle(color: Colors.black), 
           onChanged: onChanged,
         ),
       ),

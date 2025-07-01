@@ -329,7 +329,7 @@ class _NearMeAppState extends State<NearMeApp> with WidgetsBindingObserver {
                     recipientImage: args?['recipientImage'],
                   );
                 },
-                SearchMember.searchMemberKey: (context) => const SearchMember(),
+                //SearchMember.searchMemberKey: (context) => const SearchMember(),
                 SelectPlaceScreen.routeName:
                     ((context) => const SelectPlaceScreen(groupId: '')),
                 MediaScreen.mediaScreenKey: (context) => const MediaScreen(),

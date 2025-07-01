@@ -1,8 +1,7 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/floating_add_icon.dart';
-import 'package:near_me_new_version/Features/group_profile/components/search_text_widget.dart';
+import 'package:near_me_new_version/Features/share_location/components/build_search_field.dart';
 import 'package:near_me_new_version/core/constants.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/Features/group_profile/components/row_checkbox.dart';
@@ -22,9 +21,23 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   List<String> _selectedUids = [];
   bool _isDataLoaded = false;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,6 +53,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
     final String? groupId =
         ModalRoute.of(context)?.settings.arguments as String?;
     log("AddMembersScreen: Loading users for groupId: $groupId");
+
     if (groupId == null) {
       setState(() {
         _isDataLoaded = true;
@@ -50,12 +64,13 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
     List<Map<String, dynamic>> users =
         await _groupService.getUsersFromContacts();
     final group = await _groupService.getGroupById(groupId);
+
     if (group != null) {
       List<Map<String, dynamic>> filteredUsers =
           users.where((user) {
             return !group.members.contains(user['uid']);
           }).toList();
-      log("Filtered users: ${filteredUsers.length} out of ${users.length}");
+
       setState(() {
         _allUsers = filteredUsers;
         _isDataLoaded = true;
@@ -104,7 +119,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    log("AddMembersScreen: Building with screenWidth: $_allUsers");
+
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -118,7 +133,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
               child: IconButton(
                 icon: const Icon(
                   Icons.arrow_back_ios,
-                  color: kFontColor,
+                  color: kPrimaryColor1,
                   size: 28,
                 ),
                 onPressed: () {
@@ -141,35 +156,50 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: BuildSearchField(controller: _searchController),
+          ),
+          const SizedBox(height: 10),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SearchTextWidget(),
-                  const SizedBox(height: 10),
-                  if (!_isDataLoaded)
-                    const Center(child: CircularProgressIndicator())
-                  else if (_allUsers.isEmpty)
-                    const Padding(
+            child:
+                !_isDataLoaded
+                    ? const Center(child: CircularProgressIndicator())
+                    : _allUsers.isEmpty
+                    ? const Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Text(
                         "No available contacts to add.",
                         style: TextStyle(color: kFontColor),
                       ),
                     )
-                  else
-                    ..._allUsers.map(
-                      (user) => RowCheckbox(
-                        userName: "${user['fName']} ${user['lName']}".trim(),
-                        uid: user['uid'],
-                        initialValue: _selectedUids.contains(user['uid']),
-                        onChanged:
-                            (value) => _onCheckboxChanged(user['uid'], value),
-                      ),
+                    : ListView(
+                      children:
+                          _allUsers
+                              .where((user) {
+                                final name =
+                                    "${user['fName']} ${user['lName']}"
+                                        .toLowerCase();
+                                return name.contains(_searchQuery);
+                              })
+                              .map((user) {
+                                return RowCheckbox(
+                                  userName:
+                                      "${user['fName']} ${user['lName']}"
+                                          .trim(),
+                                  uid: user['uid'],
+                                  initialValue: _selectedUids.contains(
+                                    user['uid'],
+                                  ),
+                                  onChanged:
+                                      (value) => _onCheckboxChanged(
+                                        user['uid'],
+                                        value,
+                                      ),
+                                );
+                              })
+                              .toList(),
                     ),
-                ],
-              ),
-            ),
           ),
           FloatingAddIcon(
             screenWidth: screenWidth,

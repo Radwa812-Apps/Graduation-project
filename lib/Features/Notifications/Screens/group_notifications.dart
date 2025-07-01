@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -36,14 +35,19 @@ class GroupNotifications extends StatefulWidget {
 class _GroupNotificationsState extends State<GroupNotifications> {
   late String _groupName;
   late String _groupId;
+  String _searchText = '';
+
+  void _handleSearchChanged(String value) {
+    setState(() {
+      _searchText = value.toLowerCase();
+    });
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
       _groupName = args['groupName'];
       _groupId = args['groupId'];
@@ -72,7 +76,6 @@ class _GroupNotificationsState extends State<GroupNotifications> {
           } else if (state is GroupNotificationsLoaded) {
             return _buildContent(state.notifications);
           }
-
           return _buildContent([]);
         },
       ),
@@ -80,30 +83,21 @@ class _GroupNotificationsState extends State<GroupNotifications> {
   }
 
   Widget _buildContent(List<Notifications> notifications) {
-    return SingleChildScrollView(
-      child: Container(
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(40),
-          color: background,
+    return Column(
+      children: [
+        HeaderNotifications(
+          title: _groupName,
+          onSearchChanged: _handleSearchChanged,
+          onBackPressed: () => Navigator.pop(context),
+          image: "assets/images/group.jpg",
         ),
-        child: Column(
-          children: [
-            HeaderNotifications(
-              title: _groupName ?? widget.title,
-              onBackPressed: () => Navigator.pop(context),
-              image: "assets/images/group.jpg",
-            ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                child: _buildNotificationsList(notifications),
-              ),
-            ),
-          ],
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+            child: _buildNotificationsList(notifications),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -137,13 +131,12 @@ class _GroupNotificationsState extends State<GroupNotifications> {
       groupedNotifications[date]!.add(notification);
     }
 
-    // ترتيب التواريخ بشكل صحيح
-    final sortedDates =
-        groupedNotifications.keys.toList()..sort((a, b) {
-          final dateA = _parseGroupDateToDateTime(a);
-          final dateB = _parseGroupDateToDateTime(b);
-          return dateB.compareTo(dateA); // الأحدث أولاً
-        });
+    final sortedDates = groupedNotifications.keys.toList()
+      ..sort((a, b) {
+        final dateA = _parseGroupDateToDateTime(a);
+        final dateB = _parseGroupDateToDateTime(b);
+        return dateB.compareTo(dateA);
+      });
 
     return ListView.builder(
       shrinkWrap: true,
@@ -152,6 +145,16 @@ class _GroupNotificationsState extends State<GroupNotifications> {
       itemBuilder: (context, index) {
         final date = sortedDates[index];
         final dateNotifications = groupedNotifications[date]!;
+
+        final filtered = dateNotifications.where((notification) {
+          final message = notification.messageLocation?.toLowerCase() ?? '';
+          final userName = _getUserName(notification.userLocationId).toLowerCase();
+          return _searchText.isEmpty ||
+              userName.contains(_searchText) ||
+              message.contains(_searchText);
+        }).toList();
+
+        if (filtered.isEmpty) return const SizedBox();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +165,7 @@ class _GroupNotificationsState extends State<GroupNotifications> {
                 child: DateLabel(dateText: date),
               ),
             ),
-            ...dateNotifications.map((notification) {
+            ...filtered.map((notification) {
               return SizedBox(
                 width: MediaQuery.of(context).size.width,
                 child: NotificationItem(
@@ -173,12 +176,11 @@ class _GroupNotificationsState extends State<GroupNotifications> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (context) => PersonalNotifications(
-                              groupId: _groupId,
-                              userId: notification.userLocationId,
-                              title: _groupName ?? widget.title,
-                            ),
+                        builder: (context) => PersonalNotifications(
+                          groupId: _groupId,
+                          userId: notification.userLocationId,
+                          title: _groupName,
+                        ),
                       ),
                     );
                   },
@@ -192,28 +194,22 @@ class _GroupNotificationsState extends State<GroupNotifications> {
     );
   }
 
-  // دالة مساعدة لتحويل تاريخ المجموعة إلى DateTime
   DateTime _parseGroupDateToDateTime(String groupDate) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
 
-    if (groupDate == 'Today') {
-      return today;
-    } else if (groupDate == 'Yesterday') {
-      return yesterday;
-    } else {
-      try {
-        return DateFormat('MMMM d, y').parse(groupDate);
-      } catch (e) {
-        return DateTime(1970); // تاريخ افتراضي في حالة الخطأ
-      }
+    if (groupDate == 'Today') return today;
+    if (groupDate == 'Yesterday') return yesterday;
+
+    try {
+      return DateFormat('MMMM d, y').parse(groupDate);
+    } catch (e) {
+      return DateTime(1970);
     }
   }
 
   String _getUserName(String? userId) {
-    // Implement logic to get user name from userId
-    // You might want to fetch this from your user repository
     return userId ?? 'Unknown User';
   }
 
@@ -222,16 +218,12 @@ class _GroupNotificationsState extends State<GroupNotifications> {
     final date = timestamp.toDate();
     final today = DateTime.now();
 
-    if (date.year == today.year &&
-        date.month == today.month &&
-        date.day == today.day) {
+    if (date.year == today.year && date.month == today.month && date.day == today.day) {
       return 'Today';
     }
 
     final yesterday = today.subtract(const Duration(days: 1));
-    if (date.year == yesterday.year &&
-        date.month == yesterday.month &&
-        date.day == yesterday.day) {
+    if (date.year == yesterday.year && date.month == yesterday.month && date.day == yesterday.day) {
       return 'Yesterday';
     }
 

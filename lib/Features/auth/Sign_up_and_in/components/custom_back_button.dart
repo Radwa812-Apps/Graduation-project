@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:near_me_new_version/core/constants.dart';
 
 class CustomBackButton extends StatelessWidget {
   const CustomBackButton({super.key, required this.ontap, required this.icon});
@@ -25,7 +26,7 @@ class CustomBackButton extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          color: Colors.black,
+          color: kPrimaryColor1,
         ),
       ),
     );

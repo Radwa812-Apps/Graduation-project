@@ -129,7 +129,7 @@ class LeaveGroup extends StatelessWidget {
         ),
         child: Row(
           children: const [
-            Icon(Icons.exit_to_app, color: kFontColor, size: 30),
+            Icon(Icons.exit_to_app, color: Colors.red, size: 30),
             SizedBox(width: 15),
             Text(
               'Leave Group',

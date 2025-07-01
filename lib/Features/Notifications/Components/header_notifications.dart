@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Notifications/Components/search_icon.dart';
 import '../../../core/constants.dart';
 import '../../../core/font_style.dart' show TextStyles;
+
 class HeaderNotifications extends StatefulWidget {
   final String title;
   final Widget? backArrow;
@@ -10,6 +11,8 @@ class HeaderNotifications extends StatefulWidget {
   final bool showCircleAvatar;
   final String? circleAvatarImage;
   final String image;
+  final ValueChanged<String>? onSearchChanged;
+
   const HeaderNotifications({
     Key? key,
     required this.title,
@@ -18,6 +21,7 @@ class HeaderNotifications extends StatefulWidget {
     this.showCircleAvatar = true,
     this.circleAvatarImage,
     required this.image,
+    this.onSearchChanged,
   }) : super(key: key);
 
   @override
@@ -36,7 +40,7 @@ class _HeaderNotificationsState extends State<HeaderNotifications> {
 
   @override
   Widget build(BuildContext context) {
-     Widget defaultBackArrow = Icon(
+    Widget defaultBackArrow = Icon(
       Icons.arrow_back_ios,
       color: kPrimaryColor1,
       size: 25.sp,
@@ -53,57 +57,60 @@ class _HeaderNotificationsState extends State<HeaderNotifications> {
         color: kPrimaryColor1.withOpacity(0.20),
       ),
       child: Padding(
-        padding:  EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
         child: Align(
           alignment: Alignment.bottomCenter,
-          child: _showSearchBar
-              ? SearchIcon(
-                  controller: _searchController,
-                  onSearch: () {},
-                  onChanged: (value) {},
-                  onClose: _toggleSearchBar,
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (widget.backArrow != null ||
-                        widget.onBackPressed != null)
-                      GestureDetector(
-                        onTap: widget.onBackPressed ??
-                            () {
-                              Navigator.pop(context);
-                            },
-                        child: widget.backArrow ?? defaultBackArrow,
-                      ),
-                     SizedBox(width: 10.w),
-                    if (widget.showCircleAvatar)
-                      CircleAvatar(
-                        backgroundImage: widget.circleAvatarImage != null
-                            ? AssetImage(widget.circleAvatarImage!)
-                            : AssetImage(widget.image),
-                        radius: 20,
-                      ),
-                    if (widget.showCircleAvatar)  SizedBox(width: 10.w),
-                    Text(
-                      widget.title,
-                      style: TextStyles.NotificationsTilteText,
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon:  Icon(
-                            Icons.search,
-                            color: kPrimaryColor1,
-                            size: 30.sp,
-                          ),
-                          onPressed: _toggleSearchBar,
+          child:
+              _showSearchBar
+                  ? SearchIcon(
+                    controller: _searchController,
+                    onSearch: () {},
+                    onChanged: widget.onSearchChanged ?? (value) {},
+                    onClose: _toggleSearchBar,
+                  )
+                  : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (widget.backArrow != null ||
+                          widget.onBackPressed != null)
+                        GestureDetector(
+                          onTap:
+                              widget.onBackPressed ??
+                              () {
+                                Navigator.pop(context);
+                              },
+                          child: widget.backArrow ?? defaultBackArrow,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      SizedBox(width: 10.w),
+                      if (widget.showCircleAvatar)
+                        CircleAvatar(
+                          backgroundImage:
+                              widget.circleAvatarImage != null
+                                  ? AssetImage(widget.circleAvatarImage!)
+                                  : AssetImage(widget.image),
+                          radius: 20,
+                        ),
+                      if (widget.showCircleAvatar) SizedBox(width: 10.w),
+                      Text(
+                        widget.title,
+                        style: TextStyles.NotificationsTilteText,
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              Icons.search,
+                              color: kPrimaryColor1,
+                              size: 30.sp,
+                            ),
+                            onPressed: _toggleSearchBar,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
         ),
       ),
     );

@@ -11,17 +11,18 @@ class RowAddMember extends StatelessWidget {
     required this.screenWidth,
     required this.onSearchPressed,
     required this.groupId,
-    required this.onReturn, 
+    required this.onReturn,
+    required this.groupMembersList,
   });
 
   final double screenWidth;
   final VoidCallback onSearchPressed;
   final String groupId;
-  final VoidCallback onReturn; 
-
+  final VoidCallback onReturn;
+  final List<Map<String, dynamic>> groupMembersList;
   @override
   Widget build(BuildContext context) {
-    log("RowAddMember: Building RowAddMember with groupId: $groupId"); 
+    log("RowAddMember: Building RowAddMember with groupId: $groupId");
     return Padding(
       padding: const EdgeInsets.only(left: 10.0),
       child: Row(
@@ -33,7 +34,7 @@ class RowAddMember extends StatelessWidget {
                 AddMembersScreen.addMembersScreenKey,
                 arguments: groupId,
               ).then((_) {
-                onReturn(); 
+                onReturn();
               });
             },
             child: Row(
@@ -59,8 +60,17 @@ class RowAddMember extends StatelessWidget {
           const Spacer(flex: 1),
           IconButton(
             icon: const Icon(Icons.search, size: 28, color: kPrimaryColor1),
-            onPressed: () =>
-                Navigator.pushNamed(context, SearchMember.searchMemberKey),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => SearchMember(
+                          groupMembers:
+                              groupMembersList, // هات الداتا هنا من الفايربيز أو السيرفيس بتاعك
+                        ),
+                  ),
+                ),
           ),
         ],
       ),
