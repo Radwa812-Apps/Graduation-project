@@ -14,8 +14,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/Sign_up_and_in/components/text_form_widget.dart';
-import '../components/confirm_message_widget.dart';
-import '../components/icon_and_text_widget.dart';
+
 
 class MyCustomClipper extends CustomClipper<Path> {
   @override
@@ -45,7 +44,6 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // تحديد المسافات والأحجام بناءً على حجم الشاشة
     final double spaceBetweenRows = 0.04.sh;
     final double appBarHeight = 0.1.sh;
     final double iconSize = 24.sp;
@@ -157,15 +155,7 @@ class SettingsScreen extends StatelessWidget {
                         _showLogoutConfirmation(context);
                       },
                     ),
-                    /*SizedBox(height: spaceBetweenRows),
-                   _buildSettingsItem(
-                      context,
-                      icon: Icons.lock_outline,
-                      text: 'Password',
-                      iconSize: iconSize,
-                      fontSize: fontSize,
-                      onTap: () {},
-                    ),*/
+                    
                     SizedBox(height: spaceBetweenRows),
                     _buildSettingsItem(
                       context,
@@ -388,11 +378,11 @@ class SettingsScreen extends StatelessWidget {
           ),
           insetPadding: EdgeInsets.symmetric(
             horizontal: 20.w,
-          ), // إضافة هذا السطر
+          ),
           backgroundColor: Colors.white,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: 400.w, // تحديد أقصى عرض للديالوج
+              maxWidth: 400.w,
             ),
             child: Padding(
               padding: EdgeInsets.all(dialogPadding),
@@ -414,7 +404,7 @@ class SettingsScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           SizedBox(
-                            width: 300.w, // تحديد عرض حقول الإدخال
+                            width: 300.w,
                             child: TextFormFieldWidget(
                               editIcon: null,
                               color: Colors.black87,
@@ -559,7 +549,6 @@ class SettingsScreen extends StatelessWidget {
         'Failed to delete account: ${state.error}',
       );
     } else {
-      // هذه الحالة تغني عن UserDeletingState
       showDialog(
         context: context,
         barrierDismissible: false,

@@ -1,10 +1,6 @@
-///😍😍😍😍😍😍😍😍😍😍😍😍😍
 
-// States
 import 'package:near_me_new_version/core/data/models/notification.dart';
-
 abstract class NotificationState {}
-
 class GroupNotificationsLoaded extends NotificationState {
   final List<Notifications> notifications;
 

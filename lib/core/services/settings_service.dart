@@ -1,20 +1,14 @@
 import 'dart:developer';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:location/location.dart' as Location;
 import 'package:near_me_new_version/Features/Settings/components/group_selection_widget.dart';
 import 'package:near_me_new_version/Features/Settings/components/risk_block.dart';
-import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/core/constants.dart';
-import 'package:near_me_new_version/core/data/models/location.dart';
 import 'package:near_me_new_version/core/services/risk_services.dart';
-import 'package:near_me_new_version/main.dart';
-
 class SettingsService extends StatefulWidget {
   const SettingsService({super.key});
 
@@ -122,7 +116,6 @@ class _SettingsServiceState extends State<SettingsService> {
         });
       }
     }
-    // Create a batch to update all selected groups
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
     await FirebaseFirestore.instance

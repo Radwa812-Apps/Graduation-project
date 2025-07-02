@@ -85,7 +85,6 @@ class _SignUpVerificationEmailPageState
     bool isConnected = await checkConnection();
     {
       if (!isConnected) {
-        // ignore: use_build_context_synchronously
         AppMessages().sendVerification(
           context,
           Colors.red.withOpacity(0.8),
@@ -100,7 +99,6 @@ class _SignUpVerificationEmailPageState
       isEmailVerified = FirebaseAuth.instance.currentUser!.emailVerified;
     });
     if (isEmailVerified) {
-      // ignore: use_build_context_synchronously
       AppMessages().sendVerification(
         context,
         Colors.green.withOpacity(0.8),
@@ -109,7 +107,6 @@ class _SignUpVerificationEmailPageState
 
       timer?.cancel();
       final Map<String, dynamic> arguments =
-          // ignore: use_build_context_synchronously
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
       final String email = arguments['email'] as String;
       final String dateOfBirth = arguments['dateOfBirth'] as String;
@@ -128,7 +125,7 @@ class _SignUpVerificationEmailPageState
         profilPicture: 'assets/images/user.jpg',
         role: 'Not admin',
         fcmToken: fcmToken ?? '',
-        isTracking: false, // Default value for tracking
+        isTracking: false, 
       );
     }
   }
@@ -137,7 +134,7 @@ class _SignUpVerificationEmailPageState
     bool isConnected = await checkConnection();
     {
       if (!isConnected) {
-        // ignore: use_build_context_synchronously
+        
         AppMessages().sendVerification(
           context,
           Colors.red.withOpacity(0.8),
@@ -160,7 +157,6 @@ class _SignUpVerificationEmailPageState
       await Future.delayed(const Duration(seconds: 5));
       setState(() => canResentEmail = true);
     } catch (e) {
-      // ignore: use_build_context_synchronously
       AppMessages().sendVerification(
         context,
         Colors.red.withOpacity(0.8),

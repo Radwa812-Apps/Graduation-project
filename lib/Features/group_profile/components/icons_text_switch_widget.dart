@@ -1,4 +1,4 @@
-import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/group_profile/components/switch_widget.dart';
 import 'package:near_me_new_version/core/constants.dart';
@@ -58,7 +58,7 @@ class _IconsTextSwitchWidgetState extends State<IconsTextSwitchWidget> {
               id: widget.id,
             ),
 
-          // Removed invalid if statement; only widgets are allowed here.
+          
         ],
       ),
     );

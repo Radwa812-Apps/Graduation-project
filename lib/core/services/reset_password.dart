@@ -10,7 +10,6 @@ Future<void> sendPasswordResetEmail({
 }) async {
   bool isConnected = await checkConnection();
   if (!isConnected) {
-    // ignore: use_build_context_synchronously
     AppMessages().sendVerification(
       context,
       Colors.red.withOpacity(0.8),
@@ -24,7 +23,6 @@ Future<void> sendPasswordResetEmail({
     final email = emailController.trim();
 
     if (email.isEmpty) {
-      // ignore: use_build_context_synchronously
       AppMessages().sendVerification(
         context,
         Colors.red.withOpacity(0.8),
@@ -34,18 +32,14 @@ Future<void> sendPasswordResetEmail({
     }
 
     await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
-    // ignore: use_build_context_synchronously
     AppMessages().sendVerification(
       context,
       Colors.green.withOpacity(0.8),
       'A password reset link has been sent to your email. Please check your inbox.',
     );
     await Future.delayed(const Duration(seconds: 3));
-    // ignore: use_build_context_synchronously
     Navigator.pushNamed(context, SignInScreen.signInScreenKey);
   } catch (e) {
-    // ignore: use_build_context_synchronously
     AppMessages().sendVerification(
       context,
       Colors.red.withOpacity(0.8),

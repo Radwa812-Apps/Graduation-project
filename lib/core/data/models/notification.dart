@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Notifications {
   final String id;
   final String userLocationId;
-  final List<String> groupsID; // Changed to List<String>
-  final String type; // (custom,risk,chat)
+  final List<String> groupsID; 
+  final String type; 
   final String messageLocation;
   final Timestamp timeOfLocation;
 
@@ -58,7 +58,6 @@ class Notifications {
       if (data['groupsID'] is List) {
         groupIds = List<String>.from(data['groupsID']);
       } else if (data['groupsID'] is String) {
-        // Backward compatibility with single ID
         groupIds = [data['groupsID'] as String];
       }
     }
@@ -77,8 +76,6 @@ class Notifications {
       groupsID: groupIds, // Updated field
     );
   }
-
-  // Helper method to convert to map for Firestore
   Map<String, dynamic> toFirestore() {
     return {
       'userLocationId': userLocationId,

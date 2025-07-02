@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'package:flutter/services.dart';
 import 'package:location/location.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
@@ -8,22 +7,22 @@ import 'package:near_me_new_version/Features/share_location/components/firebase_
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
 import '../../../core/constants.dart';
 
-bool sharingLocation = false; // Default value for sharing location
+bool sharingLocation = false; 
 
 class SwitchWidget extends StatefulWidget {
   final bool initialFeatureStatus;
   final bool isSharingLocationPressed;
-  final Function(bool)? onToggle; // ← New callback
-  final String id; // ← New parameter
-  final bool isLiveTrackingOn; // ← New parameter
+  final Function(bool)? onToggle; 
+  final String id;
+  final bool isLiveTrackingOn; 
   final bool isRiskPresserd;
   SwitchWidget({
     super.key,
     this.initialFeatureStatus = false,
     this.isSharingLocationPressed = false,
     this.onToggle,
-    this.isLiveTrackingOn = false, // ← New param
-    this.id = '', // ← New parameter
+    this.isLiveTrackingOn = false, 
+    this.id = '', 
     this.isRiskPresserd = false,
   });
 
@@ -41,13 +40,7 @@ class _SwitchWidgetState extends State<SwitchWidget> {
   @override
   void initState() {
     super.initState();
-    // if (widget.isLiveTrackingOn) {
-    //   log("Live tracking is enabled");
-    //   _featureEnabled = true;
-    // } else {
-    //   log("Live tracking is disabled");
-    //   _featureEnabled = widget.initialFeatureStatus;
-    // }
+    
     isUserLiveLocationOn();
   }
 
@@ -87,7 +80,7 @@ class _SwitchWidgetState extends State<SwitchWidget> {
           log("Calling parent's toggleLiveTracking with value: $value");
           widget.onToggle!(
             value,
-          ); // ← Call parent's _hanldeLiveLocationInstance
+          ); 
         }
       },
       activeColor: kPrimaryColor1,

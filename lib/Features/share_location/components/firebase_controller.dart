@@ -3,9 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:location/location.dart';
 import 'dart:developer';
 
-import 'package:near_me_new_version/core/data/models/userRadwa.dart';
-import 'package:near_me_new_version/core/services/live_location_services.dart'
-    as _firebaseController;
 import 'package:near_me_new_version/core/services/risk_services.dart';
 
 class FirebaseController {

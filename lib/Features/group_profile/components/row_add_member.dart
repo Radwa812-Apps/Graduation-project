@@ -67,7 +67,7 @@ class RowAddMember extends StatelessWidget {
                     builder:
                         (context) => SearchMember(
                           groupMembers:
-                              groupMembersList, // هات الداتا هنا من الفايربيز أو السيرفيس بتاعك
+                              groupMembersList, 
                         ),
                   ),
                 ),

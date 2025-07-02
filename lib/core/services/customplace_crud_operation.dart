@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:near_me_new_version/core/data/models/geofence_model.dart';
-import '../data/models/custom_places.dart';
 
 Future<void> deleteUser(String documentId) async {
   try {

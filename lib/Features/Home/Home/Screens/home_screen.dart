@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Home/Home/components/chat_list.dart';
-
-import 'package:near_me_new_version/Features/Private_chat/Private_chat/screens/private_chat_screen.dart';
 import 'package:near_me_new_version/Features/share_location/screens/live_location_map.dart';
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';

@@ -4,8 +4,6 @@ import 'package:near_me_new_version/Features/Settings/screens/settings_screen.da
 import 'package:near_me_new_version/components/bottom_bar.dart';
 import '../Features/Home/Home/Screens/home_screen.dart';
 import '../Features/User_Profile/screens/user_profile_screen.dart';
-
-// Create a RouteObserver
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 class MainScaffold extends StatefulWidget {
@@ -25,8 +23,6 @@ class MainScaffoldState extends State<MainScaffold> with RouteAware {
     SettingsScreen(),
   ];
   
-  // MainScaffoldState.add(super.ObjectFlagProperty) : super.add();
-
   void _onIconPressed(int index) {
     setState(() {
       _selectedIndex = index;

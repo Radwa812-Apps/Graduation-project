@@ -5,7 +5,7 @@ class Location {
   final double latitude;
   final double longitude;
   final String name;
-  final String locationStatus; //  بتاعت اي دى 🧐
+  final String locationStatus; 
 
   Location(
       {required this.id,

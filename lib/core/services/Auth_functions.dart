@@ -1,6 +1,4 @@
-///😍😍😍😍😍😍😍😍😍😍😍😍😍
 
-import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -37,7 +35,7 @@ class Services {
     required String profilPicture,
     required String role,
     required String fcmToken,
-    bool isTracking = false, // Default value for tracking
+    bool isTracking = false, 
   }) async {
     try {
       final User? user = FirebaseAuth.instance.currentUser;
@@ -46,10 +44,8 @@ class Services {
         return;
       }
 
-      // 1. الحصول على FCM Token
+      
       final String? fcmToken = await _getFcmToken();
-
-      // 2. إنشاء مستند المستخدم
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'authUid': user.uid,
         'fName': fName,
@@ -59,23 +55,19 @@ class Services {
         'dateOfBirth': dateOfBirth,
         'profilPicture': profilPicture,
         'role': role,
-        'fcmToken': fcmToken, // تخزين التوكن
+        'fcmToken': fcmToken, 
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        'isTracking': isTracking, // حالة التتبع
+        'isTracking': isTracking, 
       });
 
       print("✅ User profile created for ${user.uid}");
-
-      // 3. إعداد تحديث التوكن التلقائي
       _setupTokenRefresh(user.uid);
     } catch (error, stack) {
       print("❌ User creation failed: $error");
       await FirebaseCrashlytics.instance.recordError(error, stack);
     }
   }
-
-  // دالة مساعدة للحصول على FCM Token
   Future<String?> _getFcmToken() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
@@ -86,8 +78,6 @@ class Services {
       return null;
     }
   }
-
-  // متابعة تحديثات التوكن
   void _setupTokenRefresh(String userId) {
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       try {
@@ -100,43 +90,6 @@ class Services {
       }
     });
   }
-  // Future<void> addUser({
-  //   required String fName,
-  //   required String lName,
-  //   required String email,
-  //   required String phoneNumber,
-  //   required String dateOfBirth,
-  //   required String profilPicture,
-  //   required String role,
-  // }) async {
-  //   try {
-  //     final User? user = FirebaseAuth.instance.currentUser;
-  //     if (user == null) {
-  //       print("❌ No user logged in!");
-  //       return;
-  //     }
-
-  //     String userId = user.uid;
-
-  //     CollectionReference usersCollection =
-  //         FirebaseFirestore.instance.collection('users');
-
-  //     await usersCollection.doc(userId).set({
-  //       'authUid': userId,
-  //       'fName': fName,
-  //       'lName': lName,
-  //       'email': email,
-  //       'phoneNumber': phoneNumber,
-  //       'dateOfBirth': dateOfBirth,
-  //       'profilPicture': profilPicture,
-  //       'role': role,
-  //     });
-
-  //     print("✅ User added successfully with ID: $userId");
-  //   } catch (error) {
-  //     print("❌ Failed to add user: $error");
-  //   }
-  // }
 
   Future<void> deleteCustomPlace(String dId) {
     return customPlace

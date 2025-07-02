@@ -4,7 +4,6 @@ import '../../../../core/data/models/userRadwa.dart';
 import '../../../core/constants.dart';
 import '../components/edit_user_widget.dart';
 
-// ignore: must_be_immutable
 class EditScreen extends StatelessWidget {
   static String editScreenKey = '/EditScreen';
   @override

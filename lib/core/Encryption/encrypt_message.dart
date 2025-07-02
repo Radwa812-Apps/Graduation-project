@@ -7,8 +7,6 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 class MessageEncryption {
   final encrypt.Encrypter _encrypter;
   final encrypt.Key _key;
-
-  /// Constructor - Takes a key and initializes encryption
   MessageEncryption(String encryptionKey)
       : _key = encrypt.Key.fromUtf8(_normalizeKey(encryptionKey)),
         _encrypter = encrypt.Encrypter(
@@ -19,13 +17,10 @@ class MessageEncryption {
           ),
         );
 
-  /// Ensures the key is 32 characters (256-bit)
   static String _normalizeKey(String key) {
     if (key.length > 32) return key.substring(0, 32);
     return key.padRight(32, '0');
   }
-
-  /// Encrypts text (supports Unicode & emojis) with validation
   String encryptText(String plaintext) {
     if (plaintext.isEmpty) return '';
     try {
@@ -38,7 +33,6 @@ class MessageEncryption {
     }
   }
 
-  /// Decrypts text with error handling for invalid Base64
   String decryptText(String base64Ciphertext) {
     if (base64Ciphertext.isEmpty) return '';
     try {
@@ -53,16 +47,12 @@ class MessageEncryption {
       return '[Decryption failed]';
     }
   }
-
-  /// Encrypts a file (returns encrypted bytes)
   Future<Uint8List> encryptFile(File file) async {
     final fileBytes = await file.readAsBytes();
     final iv = encrypt.IV.fromSecureRandom(16);
     final encrypted = _encrypter.encryptBytes(fileBytes, iv: iv);
     return Uint8List.fromList(iv.bytes + encrypted.bytes);
   }
-
-  /// Decrypts a file (returns decrypted bytes)
   Uint8List decryptFile(Uint8List encryptedData) {
     if (encryptedData.length < 16) throw FormatException('Invalid encrypted data length');
     final iv = encrypt.IV(Uint8List.fromList(encryptedData.sublist(0, 16)));

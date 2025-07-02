@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/chat_group/components/group_media_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/components/icons_text_switch_widget.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/media.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 import 'package:near_me_new_version/core/services/chat_services.dart';
 import 'package:provider/provider.dart';
@@ -71,7 +70,7 @@ class _FeaturesOneState extends State<FeaturesOne> {
                 MaterialPageRoute(
                   builder: (context) => GroupMediaScreen(
                     messages: messages,
-                    groupName: '', // You can pass group name if needed
+                    groupName: '', 
                   ),
                 ),
               );

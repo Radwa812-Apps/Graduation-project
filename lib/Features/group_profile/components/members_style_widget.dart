@@ -66,7 +66,7 @@ class _MembersStyleWidgetState extends State<MembersStyleWidget> {
       "MembersStyleWidget build called, userName: ${widget.userName}, uid: ${widget.uid}",
     );
     return GestureDetector(
-      onTap: _navigateToPrivateChat, // Updated to use the new navigation method
+      onTap: _navigateToPrivateChat,
       child: Container(
         width: MediaQuery.of(context).size.width * .96,
         height: MediaQuery.of(context).size.height * .08,

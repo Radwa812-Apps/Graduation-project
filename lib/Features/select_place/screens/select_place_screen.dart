@@ -48,7 +48,7 @@ class SelectPlaceScreen extends StatefulWidget {
 
 class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
   final _auth = FirebaseAuth.instance;
-  final _selectedGeofences = <String>{}; // Stores selected geofence IDs
+  final _selectedGeofences = <String>{}; 
   final _temporarySelection = <String, bool>{};
   String _searchQuery = '';
   List<Geofence> _allGeofences = [];
@@ -118,35 +118,6 @@ class _SelectPlaceScreenState extends State<SelectPlaceScreen> {
     }
   }
 
-  // Future<void> _loadUserGeofences() async {
-  //   final userId = _auth.currentUser?.uid;
-  //   if (userId == null) return;
-
-  //   final snapshot =
-  //       await FirebaseFirestore.instance
-  //           .collection('userGeofences')
-  //           .doc(userId)
-  //           .collection('geofences')
-  //           .get();
-
-  //   final geofences =
-  //       snapshot.docs.map((doc) => Geofence.fromFirestore(doc)).toList();
-
-  //   setState(() {
-  //     _allGeofences = geofences;
-  //     _isLoading = false;
-  //   });
-  // }
-
-  // void _toggleGeofenceSelection(String geofenceId) {
-  //   setState(() {
-  //     if (_selectedGeofences.contains(geofenceId)) {
-  //       _selectedGeofences.remove(geofenceId);
-  //     } else {
-  //       _temporarySelection[geofenceId] = true;
-  //     }
-  //   });
-  // }
 
   static String _extractPlaceNameFromGeofenceId(String geofenceId) {
     try {

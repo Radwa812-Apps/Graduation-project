@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:near_me_new_version/core/data/models/user.dart';
 import 'package:near_me_new_version/core/messages.dart';
-import 'package:sign_in_button/sign_in_button.dart';
 import '../../components/mainScaffold.dart';
 import '../constants.dart';
 import 'handleFirebaseAuthException.dart';
@@ -20,9 +19,6 @@ import 'internet_connection.dart';
 
 class SocialAuthWidgetState  extends State<SocialAuthWidget> {
   bool isLoading = false;
-  
-  // SocialAuthWidgetState.add(super.ObjectFlagProperty) : super.add();
-
   Future<void> signInWithGoogle(BuildContext context) async {
     setState(() {
       isLoading = true;
@@ -54,7 +50,6 @@ class SocialAuthWidgetState  extends State<SocialAuthWidget> {
       UserCredential user =
           await FirebaseAuth.instance.signInWithCredential(credential);
       print(user.additionalUserInfo!.username);
-      // Navigator.pushNamed(context, HomeScreen.homeScreenKey);
       Navigator.pushReplacementNamed(context, MainScaffold.mainScaffoldKey);
 
       await addUserToFirestore(user, context);

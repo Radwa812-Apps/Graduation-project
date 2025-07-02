@@ -1,12 +1,9 @@
-import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:near_me_new_version/Features/Notifications/Components/group_noti_element.dart';
 import 'package:near_me_new_version/Features/Notifications/Components/notification_item.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/personal_notifications.dart';
 import 'package:near_me_new_version/core/constants.dart';

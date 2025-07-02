@@ -13,12 +13,11 @@ class UserProfileInfoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // تحديد حجم الشاشة
+
         final bool isSmallScreen = constraints.maxWidth < 400;
         final bool isMediumScreen =
             constraints.maxWidth >= 400 && constraints.maxWidth < 600;
 
-        // ضبط أحجام الخطوط بشكل ديناميكي
         final double textSize =
             isSmallScreen
                 ? 16.sp
@@ -80,7 +79,7 @@ class UserProfileInfoWidget extends StatelessWidget {
         color: kFontColor,
         fontFamily: kFontRegular,
         fontSize: fontSize,
-        height: 1.2, // تحسين تباعد الأسطر
+        height: 1.2, 
       ),
     );
   }

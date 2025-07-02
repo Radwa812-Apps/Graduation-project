@@ -13,7 +13,6 @@ import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bl
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/core/services/location_noti.dart';
 import '../../../../core/constants.dart';
-import '../../../group_profile/screens/group_inside.dart';
 import 'round_image_widget.dart';
 
 class GroupStyle extends StatefulWidget {
@@ -50,15 +49,10 @@ class _GroupStyleState extends State<GroupStyle>
       duration: const Duration(milliseconds: 500),
     )..addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        //_animationController.reverse();
+      
         _animationController.repeat(reverse: true); //Add commentMore actions
         log("animation..");
-        // if (_isAlerted) {
-        //   FirebaseFirestore.instance
-        //       .collection('groups')
-        //       .doc(widget.groupId)
-        //       .update({'alert_triggered': false});
-        // }
+        
       }
     });
 
@@ -88,18 +82,9 @@ class _GroupStyleState extends State<GroupStyle>
           if (snapshot.exists) {
             final triggered = snapshot.data()?['alert_triggered'] ?? false;
 
-            // final updatedImage = await _groupService.getDecryptedGroupImage(
-            //   widget.groupId!,
-
-            // );
-
             if (mounted) {
               setState(() {
-                //groupImage = updatedImage;
-                // if (triggered && !_isAlerted) {
-                //   _isAlerted = true;
-                //   _animationController.forward();
-                // }
+              
                 _isAlerted = triggered; //Add commentMore actions
                 _animationController.forward();
               });

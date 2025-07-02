@@ -22,17 +22,6 @@ class BottomContainerWithIcons extends StatelessWidget {
       decoration: BoxDecoration(
           color: kPrimaryColor1.withOpacity(.20),
           borderRadius: BorderRadius.all(Radius.circular(12))),
-
-      // return Container(
-      // height: 65,
-      // decoration: BoxDecoration(
-      //   color: kPrimaryColor1.withOpacity(.20),
-      //   borderRadius:  BorderRadius.only(
-
-      //     topLeft: Radius.circular(18),
-      //     topRight: Radius.circular(18),
-      //   ),
-      // ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

@@ -44,7 +44,6 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
         print('No authenticated user found');
         return;
       }
-      // Check if we should process this event
       final geofenceIdd = params.geofences.first.id;
       if (!NotificationSentCache.shouldSendNotification(
         userId,
@@ -66,13 +65,10 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
 
         if (userDoc.exists) {
           firstName = userDoc.get('fName') ?? 'User';
-          //   print('Retrieved user name: $firstName');
         }
       } catch (e) {
         print('Error fetching user data: $e');
       }
-
-      // Find relevant groups
       print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Querying groups for geofence: $geofenceId');
       final groupsQuery =
           await FirebaseFirestore.instance
@@ -85,8 +81,6 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
       );
 
       final matchingGroupIds = groupsQuery.docs.map((doc) => doc.id).toList();
-
-      // Collect unique members
       final Set<String> allMembers = {};
       for (final groupDoc in groupsQuery.docs) {
         final members = List<String>.from(groupDoc['members'] ?? []);
@@ -96,18 +90,14 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
         );
       }
 
-      // Exclude current user
       allMembers.remove(userId);
-      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Total recipients: ${allMembers.length}');
+      print('🦕Total recipients: ${allMembers.length}');
 
-      // Prepare notification content
       final placeName = extractPlaceNameFromGeofenceId(geofenceId);
       final eventVerb =
           params.event == GeofenceEvent.enter
               ? "just arrived"
               : (params.event == GeofenceEvent.exit ? "just left" : "is in");
-
-      // Save notification locally
       final repository = NotificationRepository(
         firestore: FirebaseFirestore.instance,
       );
@@ -130,15 +120,12 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
       );
       await repository.saveNotification(currentUserNotification);
 
-      // Initialize notifications plugin
       final notificationsPlugin = FlutterLocalNotificationsPlugin();
       await notificationsPlugin.initialize(
         const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         ),
       );
-
-      // Show local notification
       const androidDetails = AndroidNotificationDetails(
         'geofence_channel',
         'Geofence Notifications',
@@ -155,8 +142,6 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
         notificationBody,
         const NotificationDetails(android: androidDetails),
       );
-
-      // Send remote notifications
       if (allMembers.isNotEmpty) {
         await sendPushNotifications(
           recipients: allMembers.toList(),
@@ -199,8 +184,6 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
         print('🦕 No valid device tokens found');
         return;
       }
-
-      // Send in batches (FCM limit: 500 per request)
       const batchSize = 500;
       for (var i = 0; i < tokens.length; i += batchSize) {
         final batch = tokens.sublist(
@@ -274,7 +257,6 @@ Future<bool> checkLocationPermissions( BuildContext context) async {
           } else {
             print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Invalid token for user $userId');
 
-            // إذا كان الـ token غير صالح، يمكنك توليد واحد جديد وتحديثه
             final newToken = await FirebaseMessaging.instance.getToken();
             if (newToken != null) {
               await updateUserFcmToken(userId, newToken);

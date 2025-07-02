@@ -19,4 +19,4 @@ const kDefaultGroupImge = 'assets/images/group.jpg';
 const kDefaultUserImge = 'assets/images/user.jpg';
 const kGreenLogo = 'assets/images/GreenTransparent.png';
 const notificationColor = Color.fromRGBO(209, 177, 83, 0.68);
-const goMapsApiKey = "AlzaSymXRz1aohjN0sFzp8SfhLt5ZIWlsc9MQ6c";
+const goMapsApiKey = "AlzaSy5B1B3y6VJVdqCPemSgzSap2ThYXfSSQps";

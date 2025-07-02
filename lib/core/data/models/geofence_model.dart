@@ -16,8 +16,6 @@ class GeofenceModel {
     required this.placeName,
     this.createdAt,
   });
-
-  // Factory constructor to create a Geofence from Firestore document
   factory GeofenceModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return GeofenceModel(
@@ -31,8 +29,6 @@ class GeofenceModel {
       createdAt: data['createdAt']?.toDate(),
     );
   }
-
-  // Convert Geofence to a Map for Firestore
   Map<String, dynamic> toFirestore() {
     return {
       'id': id,
@@ -43,8 +39,6 @@ class GeofenceModel {
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
-
-  // Helper method to create a Circle for Google Maps
   Circle toGoogleMapCircle({String? circleId}) {
     return Circle(
       circleId: CircleId(circleId ?? id),

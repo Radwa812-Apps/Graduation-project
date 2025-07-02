@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/Features/Map_After_SignUp/Screens/map1.dart';
-import 'package:near_me_new_version/Features/Notifications/Components/date_label.dart';
-import 'package:near_me_new_version/Features/Notifications/Components/header_notifications.dart';
-import 'package:near_me_new_version/Features/Notifications/Components/notification_item.dart';
-import 'package:near_me_new_version/Features/Notifications/Screens/group_notifications.dart';
 import 'package:near_me_new_version/Features/Permissions/Compnents/button.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/components/custom_back_button.dart';
 import 'package:near_me_new_version/core/font_style.dart';
@@ -17,7 +13,6 @@ class PermissionLocation extends StatefulWidget {
   const PermissionLocation({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _PermissionLocationState createState() => _PermissionLocationState();
   static String permissionLocationKey = '/PermissionLocation';
 }
@@ -42,7 +37,7 @@ class _PermissionLocationState extends State<PermissionLocation> {
       });
 
       if (!permissionGranted) {
-        // ignore: use_build_context_synchronously
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

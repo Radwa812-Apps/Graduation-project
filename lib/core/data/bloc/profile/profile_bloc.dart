@@ -36,73 +36,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       }
     });
 
-    // on<DeleteUserEvent>((event, emit) async {
-    //   try {
-    //     emit(UserDeleteLoadingState());
-    //     User? user = FirebaseAuth.instance.currentUser;
-    //     if (user != null) {
-    //       final authCredential = EmailAuthProvider.credential(
-    //         email: event.email,
-    //         password: event.password,
-    //       );
-    //       await user.reauthenticateWithCredential(authCredential);
-    //       CollectionReference users =
-    //           FirebaseFirestore.instance.collection('users');
-    //       await users.doc(user.uid).delete();
-    //       await user.delete();
-    //       emit(UserDeletedSuccessState());
-    //     } else {
-    //       emit(UserDeleteErrorState(error: 'No user logged in'));
-    //     }
-    //   } catch (e) {
-    //     emit(UserDeleteErrorState(error: 'Failed to delete user: $e'));
-    //   }
-    // });
-    // on<DeleteUserEvent>((event, emit) async {
-    //   try {
-    //     emit(UserDeleteLoadingState());
-    //     User? user = FirebaseAuth.instance.currentUser;
-    //     if (user != null) {
-    //       final authCredential = EmailAuthProvider.credential(
-    //         email: event.email,
-    //         password: event.password,
-    //       );
-    //       await user.reauthenticateWithCredential(authCredential);
-    //       final customPlacesRef =
-    //           FirebaseFirestore.instance.collection('customPlaces');
-    //       final userCustomPlacesRef =
-    //           FirebaseFirestore.instance.collection('user_customPlaces');
-    //       final userCustomPlacesQuery =
-    //           userCustomPlacesRef.where('userId', isEqualTo: user.uid);
-    //       final userCustomPlacesSnapshot = await userCustomPlacesQuery.get();
-    //       for (var doc in userCustomPlacesSnapshot.docs) {
-    //         final customPlaceId = doc['customPlaceId'];
-    //         await customPlacesRef.doc(customPlaceId).delete();
-    //         await doc.reference.delete();
-    //       }
-    //       CollectionReference users =
-    //           FirebaseFirestore.instance.collection('users');
-    //       await users.doc(user.uid).delete();
-    //       await user.delete();
-    //       emit(UserDeletedSuccessState());
-    //     } else {
-    //       emit(UserDeleteErrorState(error: 'No user logged in'));
-    //     }
-    //   } catch (e) {
-    //     emit(UserDeleteErrorState(error: 'Failed to delete user: $e'));
-    //   }
-    // });
-
     on<DeleteUserEvent>((event, emit) async {
       try {
         emit(UserDeleteLoadingState());
 
         User? user = FirebaseAuth.instance.currentUser;
-
-        // تحقق من أن المستخدم موجود وأن طريقة تسجيل الدخول معروفة
         if (user != null) {
           if (user.providerData.any((info) => info.providerId == 'google.com')) {
-            // إعادة المصادقة باستخدام Google
             final GoogleSignIn googleSignIn = GoogleSignIn();
             final GoogleSignInAccount? googleAuth = await googleSignIn.signIn();
 
@@ -121,15 +61,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
               return;
             }
           } else {
-            // إعادة المصادقة باستخدام البريد الإلكتروني/كلمة المرور
             final authCredential = EmailAuthProvider.credential(
               email: event.email,
               password: event.password,
             );
             await user.reauthenticateWithCredential(authCredential);
           }
-
-          // حذف البيانات المرتبطة بالمستخدم من Firestore
           final customPlacesRef = FirebaseFirestore.instance.collection(
             'customPlaces',
           );
@@ -148,14 +85,10 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             await customPlacesRef.doc(customPlaceId).delete();
             await doc.reference.delete();
           }
-
-          // حذف المستخدم من Firestore
           CollectionReference users = FirebaseFirestore.instance.collection(
             'users',
           );
           await users.doc(user.uid).delete();
-
-          // حذف المستخدم من Firebase Authentication
           await user.delete();
           emit(UserDeletedSuccessState());
         } else {

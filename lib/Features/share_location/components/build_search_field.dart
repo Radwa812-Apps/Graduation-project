@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:near_me_new_version/core/constants.dart';
 
 class BuildSearchField extends StatelessWidget {
@@ -30,19 +29,7 @@ class BuildSearchField extends StatelessWidget {
             ),
           ),
         ),
-        //const SizedBox(width: 10),
-        /*Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.notifications_outlined,
-            color: kPrimaryColor1,
-            size: 30.sp,
-          ),
-        ),*/
+      
       ],
     );
   }

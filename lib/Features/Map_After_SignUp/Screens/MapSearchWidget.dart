@@ -29,7 +29,6 @@ class _Map1shimaaState extends State<Map1shimaa> {
     zoom: 14.4746,
   );
   final String _googleAPIKey = "AIzaSyAC_AFu3lh7dP-a_Ffj4JZFeqmK_fGkNwo";
-  // ignore: prefer_typing_uninitialized_variables
   var onCreatedmapController;
   final TextEditingController controller = TextEditingController();
   final FocusNode focusNode = FocusNode();

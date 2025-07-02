@@ -1,23 +1,16 @@
-///😍😍😍😍😍😍😍😍😍😍😍😍😍
-
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:native_geofence/native_geofence.dart';
-import 'package:native_geofence/src/typedefs.dart';
 import 'package:near_me_new_version/Features/Map_After_SignUp/Screens/map1.dart';
 import 'package:near_me_new_version/core/data/bloc/Notification/notifications_bloc.dart';
 import 'package:near_me_new_version/core/data/models/notification.dart';
@@ -27,9 +20,7 @@ import 'package:near_me_new_version/core/services/notification_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import '../../../core/constants.dart' show kFontColor, kPrimaryColor1;
-import '../../../core/services/get_service_key.dart';
 import '../../../core/services/handle_dublicate_noti.dart';
 import '../../../core/services/send_notification_service.dart';
 
@@ -55,30 +46,22 @@ class TrackingMapScreen extends StatefulWidget {
 
 class _TrackingMapScreenState extends State<TrackingMapScreen> {
   NotificationService notificationService = NotificationService();
-
-  // save notification to firestore
   late NotificationBloc _notificationBloc;
   final NotificationRepository _notificationRepository = NotificationRepository(
     firestore: FirebaseFirestore.instance,
   );
-
-  // Geofence state tracking
   final Map<String, bool> _geofenceStates = {};
   String? _currentGeofenceId;
   Position? _lastPosition;
-
-  // Tracking control
   bool _isTracking = false;
   StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<User?>? _authStateSubscription;
-  // UI elements
   Set<Circle> _geofenceCircles = {};
   final Set<Marker> _markers = {};
   LatLng? _manualTestPoint;
   GoogleMapController? mapController;
   late GoogleMapController _mapController;
 
-  // Services
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   List<ActiveGeofence> activeGeofences = [];
@@ -126,7 +109,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
     }
 
     if (isTracking) {
-      // If tracking was active, restart it
       await _toggleAutoTracking();
     }
   }
@@ -223,7 +205,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         }).toSet();
   }
 
-  // Add this method to move camera to geofence
   void _moveCameraToGeofence(ActiveGeofence geofence) {
     final latLng = LatLng(
       geofence.location.latitude,
@@ -289,15 +270,12 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         }
       });
     } else {
-      // Stop tracking logic
       await _positionStreamSubscription?.cancel();
       setState(() {
         _isTracking = false;
         _positionStreamSubscription = null;
       });
     }
-
-    // Save the new state
     await saveTrackingState(newState);
   }
 
@@ -340,8 +318,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         enteredGeofenceId = geofence.id;
         exitedAllGeofences = false;
       }
-
-      // Only trigger events if state changed
       if (isInside != previousState) {
         final event = isInside ? GeofenceEvent.enter : GeofenceEvent.exit;
 
@@ -357,8 +333,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         await geofenceTriggered(params);
         _geofenceStates[geofence.id] = isInside;
       }
-
-      // Handle "still inside" case
       if (isInside && previousState && !isAutoTracking) {
         await _showNotification(
           'Geofence Update',
@@ -372,7 +346,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         PreviousState: $previousState
       ''');
     }
-    // Handle current geofence state changes
     if (enteredGeofenceId != null && enteredGeofenceId != _currentGeofenceId) {
       _currentGeofenceId = enteredGeofenceId;
     } else if (exitedAllGeofences && _currentGeofenceId != null) {
@@ -418,24 +391,19 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         print('No internet connection');
         return;
       }
-      // Remove duplicates
       final uniqueRecipients = recipients.toSet().toList();
 
       print(
-        '🦕 Preparing to notify ${uniqueRecipients.length} unique recipients',
+        'Preparing to notify ${uniqueRecipients.length} unique recipients',
       );
 
-      print('🦕 Preparing to notify ${recipients.length} recipients');
-
-      // Get valid FCM tokens
+      print('Preparing to notify ${recipients.length} recipients');
       final tokens = await _fetchValidFcmTokens(recipients);
 
       if (tokens.isEmpty) {
-        print('🦕 No valid device tokens found');
+        print('No valid device tokens found');
         return;
       }
-
-      // Send in batches (FCM limit: 500 per request)
       const batchSize = 500;
       for (var i = 0; i < tokens.length; i += batchSize) {
         final batch = tokens.sublist(
@@ -492,7 +460,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         print('No authenticated user found');
         return;
       }
-      // Check if we should process this event
       final geofenceIdd = params.geofences.first.id;
       if (!NotificationSentCache.shouldSendNotification(
         userId,
@@ -502,8 +469,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         print('🦕 Duplicate geofence event - skipping');
         return;
       }
-
-      // Get user profile data
       String firstName = 'User';
       try {
         final userDoc =
@@ -519,9 +484,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       } catch (e) {
         print('Error fetching user data: $e');
       }
-
-      // Find relevant groups
-      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Querying groups for geofence: $geofenceId');
+      print('Querying groups for geofence: $geofenceId');
       final groupsQuery =
           await FirebaseFirestore.instance
               .collection('groups')
@@ -529,33 +492,29 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
               .get();
 
       print(
-        '🦕🦕🦕🦕🦕🦕🦕🦕🦕Found ${groupsQuery.docs.length} matching groups',
+        'Found ${groupsQuery.docs.length} matching groups',
       );
 
       final matchingGroupIds = groupsQuery.docs.map((doc) => doc.id).toList();
 
-      // Collect unique members
       final Set<String> allMembers = {};
       for (final groupDoc in groupsQuery.docs) {
         final members = List<String>.from(groupDoc['members'] ?? []);
         allMembers.addAll(members);
         print(
-          '👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻👨🏾‍🤝‍👨🏻Group ${groupDoc.id} has ${members.length} members',
+          'Group ${groupDoc.id} has ${members.length} members',
         );
       }
 
-      // Exclude current user
       allMembers.remove(userId);
-      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Total recipients: ${allMembers.length}');
+      print('Total recipients: ${allMembers.length}');
 
-      // Prepare notification content
       final placeName = _extractPlaceNameFromGeofenceId(geofenceId);
       final eventVerb =
           params.event == GeofenceEvent.enter
               ? "just arrived"
               : (params.event == GeofenceEvent.exit ? "just left" : "is in");
 
-      // Save notification locally
       final repository = NotificationRepository(
         firestore: FirebaseFirestore.instance,
       );
@@ -578,15 +537,12 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       );
       await repository.saveNotification(currentUserNotification);
 
-      // Initialize notifications plugin
       final notificationsPlugin = FlutterLocalNotificationsPlugin();
       await notificationsPlugin.initialize(
         const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         ),
       );
-
-      // Show local notification
       const androidDetails = AndroidNotificationDetails(
         'geofence_channel',
         'Geofence Notifications',
@@ -604,7 +560,6 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         const NotificationDetails(android: androidDetails),
       );
 
-      // Send remote notifications
       if (allMembers.isNotEmpty) {
         await _sendPushNotifications(
           recipients: allMembers.toList(),
@@ -634,19 +589,17 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
           if (token != null && token.isNotEmpty && token != 'null') {
             validTokens.add(token);
           } else {
-            print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Invalid token for user $userId');
-
-            // إذا كان الـ token غير صالح، يمكنك توليد واحد جديد وتحديثه
+            print('Invalid token for user $userId');
             final newToken = await FirebaseMessaging.instance.getToken();
             if (newToken != null) {
               await _updateUserFcmToken(userId, newToken);
               validTokens.add(newToken);
-              print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Generated new token for user $userId');
+              print('Generated new token for user $userId');
             }
           }
         }
       } catch (e) {
-        print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Error fetching token for user $userId: $e');
+        print('Error fetching token for user $userId: $e');
       }
     }
 
@@ -661,16 +614,15 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'fcmToken': newToken,
       });
-      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Updated FCM token for user $userId');
+      print('Updated FCM token for user $userId');
     } catch (e) {
-      print('🦕🦕🦕🦕🦕🦕🦕🦕🦕Error updating FCM token: $e');
+      print('Error updating FCM token: $e');
     }
   }
 
   static void _validateFcmResponse(http.Response response) {
     try {
-      // تسجيل البيانات الأساسية للاستجابة
-      print('🛠️🛠️🛠️🛠️🛠️🛠️ Raw FCM Response:');
+      print(' Raw FCM Response:');
       print('Status Code: ${response.statusCode}');
       print('Headers: ${response.headers}');
       print('Body: ${response.body}');
@@ -683,7 +635,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
           'timestamp': DateTime.now().toIso8601String(),
         };
 
-        print('❌❌❌❌❌❌ FCM Error Details:');
+        print(' FCM Error Details:');
         print(jsonEncode(errorDetails));
 
         FirebaseCrashlytics.instance.log(
@@ -696,7 +648,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       }
 
       final responseData = jsonDecode(response.body);
-      print('🔍🔍🔍🔍🔍🔍 Parsed FCM Response:');
+      print('Parsed FCM Response:');
       print('Success: ${responseData['success']}');
       print('Failure: ${responseData['failure']}');
       print('Message ID: ${responseData['multicast_id']}');
@@ -705,7 +657,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
         final errors =
             responseData['results']?.where((r) => r['error'] != null)?.toList();
 
-        print('⚠️⚠️⚠️⚠️⚠️⚠️ Failed Deliveries Details:');
+        print(' Failed Deliveries Details:');
         errors?.forEach((error) {
           print('Error: ${error['error']}');
         });
@@ -720,7 +672,7 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
         );
       }
     } catch (e, stack) {
-      print('💥💥💥💥💥💥 Error processing FCM response: $e');
+      print('Error processing FCM response: $e');
       print(stack.toString());
       FirebaseCrashlytics.instance.recordError(e, stack);
       rethrow;
@@ -826,11 +778,7 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
           barrierDismissible: false,
           builder: (context) => Center(child: CircularProgressIndicator()),
         );
-
-        // Remove from native manager
         await NativeGeofenceManager.instance.removeGeofenceById(geofence.id);
-
-        // Remove from Firestore
         final userId = FirebaseAuth.instance.currentUser?.uid;
         if (userId != null) {
           await FirebaseFirestore.instance
@@ -923,8 +871,7 @@ Errors: ${errors?.map((e) => e['error'])?.join(', ')}
                       ),
                     );
                   });
-                  // // ✅ Automatically trigger geofence test
-                  // await _checkPositionAgainstGeofences(latLng);
+                
                 },
               ),
             ),

@@ -6,17 +6,16 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as flutter_contacts;
 import 'package:near_me_new_version/core/data/models/group.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class GroupService {
-  // Create a new group
+
   Future<String?> makeNewGroup(
     String name,
     String description, {
-    List<String> geofencesIds = const [], // Default empty list
+    List<String> geofencesIds = const [], 
   }) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -33,7 +32,7 @@ class GroupService {
         'createdAt': Timestamp.now(),
         'createdBy': user.uid,
         'members': [user.uid],
-        'geofenceIds': geofencesIds, // Add the custom places list
+        'geofenceIds': geofencesIds, 
         'id': '',
       });
 
@@ -47,8 +46,6 @@ class GroupService {
       return null;
     }
   }
-
-  // to use stream builder
   Stream<List<Group>> getMyGroupsStream() {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return const Stream.empty();
@@ -63,15 +60,12 @@ class GroupService {
           }).toList();
         });
   }
-
-  // Add group to user's list
   Future<void> addGroupToUser(String groupId) async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       print("No user is logged in!");
       return;
     }
-
     try {
       var userDoc = FirebaseFirestore.instance
           .collection('users')
@@ -128,8 +122,6 @@ class GroupService {
               .toList();
         });
   }
-
-  // Get user's groups
   Future<List<Group>> getMyGroups() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -157,8 +149,6 @@ class GroupService {
       return [];
     }
   }
-
-  // Get group by ID
   Future<Group?> getGroupById(String groupId) async {
     try {
       var groupDoc =
@@ -181,8 +171,6 @@ class GroupService {
       return null;
     }
   }
-
-  // Get user data
   Future<Map<String, String>?> getUserData(String uid) async {
     try {
       var userDoc =
@@ -205,8 +193,6 @@ class GroupService {
       return null;
     }
   }
-
-  // Get all users
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
       var usersSnapshot =
@@ -349,14 +335,11 @@ class GroupService {
     }
 
     try {
-      // First remove user from group members
       await FirebaseFirestore.instance.collection('groups').doc(groupId).update(
         {
           'members': FieldValue.arrayRemove([user.uid]),
         },
       );
-
-      // Then check if group is now empty
       var groupDoc =
           await FirebaseFirestore.instance
               .collection('groups')
@@ -376,7 +359,6 @@ class GroupService {
         }
       }
 
-      // Remove group from user's groups list
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
         {
           'groups': FieldValue.arrayRemove([groupId]),

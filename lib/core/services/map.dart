@@ -119,7 +119,6 @@ Future<List<LatLng>?> getPolyPoints(LocationData sourceLocation, LocationData de
       final data = jsonDecode(response.body);
       final encodedPolyline = data['routes'][0]['legs'][0]['polyline']['encodedPolyline'];
       
-      // فك تشفير الـ polyline
       polylineCoordinates = _decodePolyline(encodedPolyline);
       return polylineCoordinates;
     } else {

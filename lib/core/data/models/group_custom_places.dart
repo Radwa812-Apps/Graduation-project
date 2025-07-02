@@ -1,4 +1,3 @@
-///😍😍😍😍😍😍😍😍😍😍😍😍😍
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -14,8 +13,6 @@ class GroupCustomPlace {
     required this.groupId,
     required this.assignedAt,
   });
-
-  // Convert Firestore document to GroupCustomPlace object
   factory GroupCustomPlace.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return GroupCustomPlace(
@@ -26,7 +23,6 @@ class GroupCustomPlace {
     );
   }
 
-  // Convert object to Map for Firestore
   Map<String, dynamic> toMap() {
     return {
       'customPlaceId': customPlaceId,

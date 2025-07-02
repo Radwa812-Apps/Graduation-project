@@ -1,8 +1,6 @@
-///😍😍😍😍😍😍😍😍😍😍😍😍😍
 
 import 'package:flutter/material.dart';
 import 'package:near_me_new_version/Features/Notifications/Screens/personal_notifications.dart';
-import 'package:near_me_new_version/core/data/models/userRadwa.dart';
 
 class GroupNotiElement extends StatelessWidget {
   const GroupNotiElement({
@@ -49,8 +47,6 @@ final String userId;
           ),
         );
       },
-
-      // في مكان الضغط على الإشعار (مثل onTap في ListTile)
       trailing: true ? Icon(Icons.arrow_forward_ios) : null,
     );
   }

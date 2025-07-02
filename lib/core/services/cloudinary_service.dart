@@ -2,7 +2,6 @@ import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:near_me_new_version/core/Encryption/encrypt_message.dart';
-import 'package:path_provider/path_provider.dart';
 
 class CloudinaryService {
   static const String _cloudName = 'da7ora77f';

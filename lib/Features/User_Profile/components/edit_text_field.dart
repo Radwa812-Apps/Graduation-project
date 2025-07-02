@@ -11,7 +11,7 @@ class EditTextField extends StatelessWidget {
   final Function(String)? onChanged;
   final String? Function(String?) validatior;
   final GlobalKey<FormFieldState> ky;
-  final double? fontSize; // جعل حجم الخط قابل للتخصيص
+  final double? fontSize; 
 
   const EditTextField({
     super.key,
@@ -30,12 +30,10 @@ class EditTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // تحديد حجم الشاشة
         final bool isSmallScreen = constraints.maxWidth < 400;
         final bool isMediumScreen =
             constraints.maxWidth >= 400 && constraints.maxWidth < 600;
 
-        // ضبط أحجام الخطوط بشكل ديناميكي
         final double textSize =
             fontSize ??
             (isSmallScreen
@@ -96,7 +94,7 @@ class EditTextField extends StatelessWidget {
               fontSize: textSize,
               fontFamily: kFontRegular,
               color: kFontColor,
-              height: 1.2, // تحسين تباعد الأسطر
+              height: 1.2, 
             ),
           ),
         );

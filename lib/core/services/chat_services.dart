@@ -260,8 +260,6 @@ class ChatService {
     try {
       final user = _auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
-
-      // Get sender info with proper name formatting
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       final firstName = userDoc.data()?['firstName'] ?? '';
       final lastName = userDoc.data()?['lastName'] ?? '';
@@ -272,7 +270,6 @@ class ChatService {
               : userDoc.data()?['email']?.split('@').first ?? 'User';
       final senderImage = userDoc.data()?['image'];
 
-      // Get recipient info with proper name formatting
       final recipientDoc =
           await _firestore.collection('users').doc(recipientId).get();
       final recipientFirstName = recipientDoc.data()?['firstName'] ?? '';
@@ -285,16 +282,10 @@ class ChatService {
               : recipientDoc.data()?['email']?.split('@').first ?? 'User';
       final recipientImage = recipientDoc.data()?['image'];
       final recipientToken = recipientDoc.data()?['fcmToken'];
-
-      // Check mute status
       final isMuted = await isChatMuted(recipientId);
       print('Sending message to $recipientId. Chat muted status: $isMuted');
-
-      // Encrypt message text
       final encryptedText =
           text.isNotEmpty ? _encryption.encryptText(text) : '';
-
-      // Create last message preview
       String lastMessagePreview;
       if (voiceUrl != null) {
         lastMessagePreview = '🎤 Voice message';
@@ -337,8 +328,6 @@ class ChatService {
             'read': false,
             'deletedBy': [],
           });
-
-      // Update recent chats for both users with properly formatted names
       await _firestore
           .collection('users')
           .doc(user.uid)
@@ -366,10 +355,8 @@ class ChatService {
             'lastMessage': lastMessagePreview,
             'time': DateFormat('HH:mm').format(DateTime.now()),
             'timestamp': FieldValue.serverTimestamp(),
-            'isMuted': false, // Always false for recipient
+            'isMuted': false, 
           });
-
-      // Send notification if not muted
       if (recipientToken != null && recipientToken.isNotEmpty && !isMuted) {
         final notificationTitle = 'New message from $senderDisplayName';
         String notificationBody;
@@ -520,16 +507,12 @@ class ChatService {
           for (var doc in snapshot.docs) {
             final chatData = doc.data();
             final recipientId = chatData['recipientId'];
-
-            // Get fresh name data from users collection
             final userDoc =
                 await _firestore.collection('users').doc(recipientId).get();
             final firstName = userDoc.data()?['firstName'] ?? '';
             final lastName = userDoc.data()?['lastName'] ?? '';
             final properName = '${firstName.trim()} ${lastName.trim()}'.trim();
-
-            // fallback to recipientName or email prefix if name not found
-            final fallbackName =
+                        final fallbackName =
                 userDoc.data()?['email']?.split('@').first ?? 'Unknown';
             final displayName =
                 properName.isNotEmpty ? properName : fallbackName;
@@ -587,7 +570,7 @@ class ChatService {
               );
               await chatDoc.reference.update({
                 'recipientName': properName,
-                'nameFormatted': true, // Add marker to indicate formatted name
+                'nameFormatted': true, 
               });
               totalUpdated++;
             }
@@ -603,8 +586,6 @@ Migration completed:
 - Total chats processed: $totalProcessed
 - Total names updated: $totalUpdated
 ''');
-
-      // Mark migration as complete in Firestore
       await _firestore.collection('metadata').doc('migrations').set({
         'lastNameMigration': FieldValue.serverTimestamp(),
         'usersProcessed': users.docs.length,

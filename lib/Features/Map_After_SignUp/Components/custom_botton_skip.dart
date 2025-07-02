@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 
 import '../../../components/mainScaffold.dart';
@@ -19,8 +18,7 @@ class SkipBtn extends StatelessWidget {
             padding: EdgeInsets.zero,
             minimumSize: const Size(10, 40)),
         onPressed: () {
-        // Navigator.pushNamed(context, HomeScreen.homeScreenKey);
-         // Navigator.pushNamed(context, MainScaffold.mainScaffoldKey);
+      
          Navigator.pushReplacementNamed(context, MainScaffold.mainScaffoldKey);
         },
         child: const Text(

@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:near_me_new_version/core/services/group_services.dart';
 
 class ProfileImageService {
@@ -110,7 +109,7 @@ class ProfileImageService {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.blue), // You can customize the color
+      leading: Icon(icon, color: Colors.blue), 
       title: Text(title, style: const TextStyle(fontSize: 16)),
       onTap: onTap,
     );

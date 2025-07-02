@@ -28,7 +28,7 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
   Future<void> _createFixedMarker() async {
     customMarkerIcon = await createCircleMarkerWithImage(
       'assets/images/user_photo.jpeg',
-      circleRadius: 60.0, // يمكنك تعديل الحجم
+      circleRadius: 60.0,
       circleColor: Colors.blueAccent,
       borderWidth: 4.0,
       borderColor: Colors.white,
@@ -39,7 +39,7 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
   Future<void> _createCombinedMarker() async {
     customMarkerIcon = await createCircleMarkerWithImage(
       'assets/images/user_photo.jpeg',
-      circleRadius: 60.0, // يمكنك تعديل الحجم
+      circleRadius: 60.0, 
       circleColor: Colors.blueAccent,
       borderWidth: 4.0,
       borderColor: Colors.white,
@@ -65,17 +65,15 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    // رسم دبوس الموقع
     final pinCodec = await ui.instantiateImageCodec(pinImage);
     final pinFrame = await pinCodec.getNextFrame();
     canvas.drawImage(pinFrame.image, Offset.zero, Paint());
 
-    // رسم صورة المستخدم في المنتصف
     final userCodec = await ui.instantiateImageCodec(userImage);
     final userFrame = await userCodec.getNextFrame();
     canvas.drawImage(
       userFrame.image,
-      Offset(25, 10), // تعديل الموقع حسب التصميم
+      Offset(25, 10), 
       Paint(),
     );
 
@@ -94,29 +92,22 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
     double borderWidth = 3.0,
     Color borderColor = Colors.white,
   }) async {
-    // 1. تحميل صورة المستخدم
     final Uint8List userImage = await getBytesFromAsset(userAssetPath, 100);
     final ui.Codec userCodec = await ui.instantiateImageCodec(userImage);
     final ui.FrameInfo userFrame = await userCodec.getNextFrame();
     final ui.Image image = userFrame.image;
 
-    // 2. إنشاء Canvas لرسم العلامة
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    // 3. حساب أبعاد الصورة داخل الدائرة
     final double imageSize = (circleRadius - borderWidth) * 1.9;
     final double imageOffset = circleRadius - (imageSize / 2);
-
-    // 4. رسم الدائرة الأساسية
     final Paint circlePaint = Paint()..color = circleColor;
     canvas.drawCircle(
       Offset(circleRadius, circleRadius),
       circleRadius,
       circlePaint,
     );
-
-    // 5. رسم حدود الدائرة
     final Paint borderPaint =
         Paint()
           ..color = borderColor
@@ -128,14 +119,12 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
       borderPaint,
     );
 
-    // 6. حفظ حالة Canvas الحالية
+    
     canvas.save();
 
-    // 7. تطبيق تحويل لتصحيح اتجاه الصورة
+   
     canvas.translate(0,circleRadius * 2);
-    canvas.scale(1.0, -1.0); // عكس الصورة أفقياً
-
-    // 8. قص الصورة بشكل دائري
+    canvas.scale(1.0, -1.0); 
     final Path clipPath =
         Path()..addOval(
           Rect.fromCircle(
@@ -145,7 +134,6 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
         );
     canvas.clipPath(clipPath);
 
-    // 9. رسم الصورة مع التصحيح
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
@@ -158,10 +146,10 @@ class _CustomMarkerMapState extends State<CustomMarkerMap> {
       Paint()..filterQuality = FilterQuality.high,
     );
 
-    // 10. استعادة حالة Canvas السابقة
+  
     canvas.restore();
 
-    // 11. تحويل الرسم إلى BitmapDescriptor
+
     final ui.Picture picture = recorder.endRecording();
     final ui.Image markerImage = await picture.toImage(
       (circleRadius * 2).toInt(),

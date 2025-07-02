@@ -21,11 +21,7 @@ class _SearchMemberState extends State<SearchMember> {
   @override
   void initState() {
     super.initState();
-
-    // نسخة منفصلة من groupMembers علشان نفلتر عليها بدون التعديل على widget.groupMembers
     filteredMembers = List<Map<String, dynamic>>.from(widget.groupMembers);
-
-    // ديباج للتأكيد
     print("🔍 Members received (${filteredMembers.length}):");
     for (var member in filteredMembers) {
       print(" - ${member['name']}");

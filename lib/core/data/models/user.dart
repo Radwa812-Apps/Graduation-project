@@ -1,8 +1,6 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:intl_phone_field/phone_number.dart';
-
 class UserModel {
   final String id;
   final String fName;
@@ -27,7 +25,7 @@ class UserModel {
     required this.role,
     this.groups = const [],
     required this.fcmToken,
-    this.isTracking = false, // Default value for tracking
+    this.isTracking = false, 
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json, String id) {
@@ -42,7 +40,7 @@ class UserModel {
       role: json['role'],
       groups: List<String>.from(json['groups'] ?? []),
       fcmToken: json['fcmToken'] ?? '',
-      isTracking: json['isTracking'] ?? false, // Default to false
+      isTracking: json['isTracking'] ?? false, 
 
     );
   }
@@ -54,8 +52,6 @@ class UserModel {
     if (user == null) {
       throw Exception("UserCredential does not contain a valid user.");
     }
-    
-    // Get FCM token
     final fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
 
     return UserModel(
@@ -70,7 +66,7 @@ class UserModel {
       lName: '',
       groups: const [],
       fcmToken: fcmToken,
-      isTracking: false, // Default value for tracking
+      isTracking: false, 
     );
   }
 
@@ -86,7 +82,7 @@ class UserModel {
       'profilPicture': this.profilPicture,
       'groups': this.groups,
       'fcmToken': this.fcmToken,
-      'isTracking': this.isTracking, // Include tracking status
+      'isTracking': this.isTracking, 
     };
   }
 }

@@ -10,7 +10,6 @@ import 'package:near_me_new_version/core/services/validator.dart';
 import '../../../../core/constants.dart';
 import '../../../core/services/profile_image_service.dart';
 import '../../Auth/Sign_up_and_in/components/phone_widget.dart';
-import '../../Home/Home/components/round_image_widget.dart';
 import '../../auth/Sign_up_and_in/components/functions.dart';
 import 'edit_text_field.dart';
 import 'button_widget.dart';
@@ -30,7 +29,6 @@ class EditUserWidget extends StatefulWidget {
   });
 
   @override
-  // ignore: library_private_types_in_public_api
   _EditUserWidgetState createState() => _EditUserWidgetState();
 }
 
@@ -91,8 +89,6 @@ class _EditUserWidgetState extends State<EditUserWidget> {
         final bool isSmallScreen = constraints.maxHeight < 700;
         final bool isMediumScreen =
             constraints.maxHeight >= 700 && constraints.maxHeight < 900;
-
-        // ضبط أحجام الخطوط بشكل ديناميكي
         final double titleFontSize =
             isSmallScreen
                 ? 20.sp
@@ -157,7 +153,7 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                               ),
                               SizedBox(height: spaceBetweenFields),
 
-                              // حقول الإدخال
+                              
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 15.w),
                                 child: Column(
@@ -198,7 +194,6 @@ class _EditUserWidgetState extends State<EditUserWidget> {
                               ),
                               SizedBox(height: spaceBetweenFields * 2),
 
-                              // أزرار الحفظ والإلغاء
                               Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                                 child: Row(

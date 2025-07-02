@@ -180,7 +180,6 @@ class NotificationService {
     );
   }
 
-  /// ✅ This is the method that was missing
   static Future<void> sendChatNotification({
     required String recipientToken,
     required String title,

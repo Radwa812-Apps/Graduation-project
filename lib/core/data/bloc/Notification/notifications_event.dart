@@ -1,20 +1,13 @@
-///😍😍😍😍😍😍😍😍😍😍😍😍😍
+
 
 import 'package:near_me_new_version/core/data/models/notification.dart';
-
 abstract class NotificationEvent {}
-
 class SaveNotification extends NotificationEvent {
   final Notifications notification;
 
   SaveNotification({required this.notification});
 }
 
-// class LoadNotifications extends NotificationEvent {
-//   final String userId;
-//  // final String? groupId;
-//   LoadNotifications(this.userId);
-// }
 
 class LoadGroupNotifications extends NotificationEvent {
   final String groupId;

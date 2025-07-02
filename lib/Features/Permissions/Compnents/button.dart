@@ -10,7 +10,6 @@ class AppButtonStyles {
     );
   }
 }
-//-------triangle corner ---------------
 class TrianglePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

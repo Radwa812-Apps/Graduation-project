@@ -7,7 +7,6 @@ import 'package:location/location.dart' as Location;
 import 'package:near_me_new_version/Features/share_location/components/firebase_controller.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/bloc_singletons.dart';
 import 'package:near_me_new_version/core/data/bloc/Risk/risk_bloc.dart';
-import 'package:near_me_new_version/core/data/models/location.dart';
 import 'package:near_me_new_version/core/services/group_services.dart';
 import 'package:near_me_new_version/core/services/send_notification_service.dart';
 
@@ -160,7 +159,6 @@ class RiskServices {
         }
         if (members != null && members.isNotEmpty) {
           for (var memberId in members) {
-            // Skip sending notification to the user who triggered the alert
             if (memberId == userId) {
               continue;
             }

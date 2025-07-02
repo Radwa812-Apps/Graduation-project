@@ -62,12 +62,10 @@ class _MemberGroupInsideState extends State<MemberGroupInside> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // تحديد حجم الشاشة
         final bool isSmallScreen = constraints.maxWidth < 400;
         final bool isMediumScreen =
             constraints.maxWidth >= 400 && constraints.maxWidth < 600;
 
-        // ضبط الأحجام بشكل ديناميكي
         final double containerHeight =
             isSmallScreen
                 ? 70.h

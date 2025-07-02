@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:near_me_new_version/Features/share_location/components/custom_marker_map%20.dart';
-import 'package:near_me_new_version/Features/share_location/components/location_controller.dart';
 import 'package:near_me_new_version/Features/share_location/components/map_controller.dart';
 
 class MapWidget extends StatefulWidget {
@@ -41,8 +40,7 @@ class _MapWidgetState extends State<MapWidget> {
   }
 
   void _createPolylines() {
-    // TODO: Implement polyline creation logic if needed.
-    // This is a placeholder to resolve the missing method error.
+    
   }
 
   @override
@@ -90,7 +88,6 @@ class _MapWidgetState extends State<MapWidget> {
   }
 
   Widget _buildStaticMap() {
-    //final MapController _mapController = MapController();
 
     log("markers: ${widget.markers}");
     log("initial position: ${widget.mapController.initialPosition}");

@@ -50,14 +50,13 @@ class _AutoCompleteSearchState extends State<AutoCompleteSearch> {
               borderRadius: BorderRadius.circular(60),
               borderSide: BorderSide.none,
             ),
-            // suffixIcon: const Icon(Icons.search, color: kPrimaryColor1),
 
             suffixIcon: IconButton(
               icon: const Icon(Icons.search, color: kPrimaryColor1),
               onPressed: () async {
                 await widget.GetSearchedPlace(
-                    ''); // استدعاء الدالة بقيمة فارغةw
-                widget.controller.clear(); // مسح النص في TextField
+                    ''); 
+                widget.controller.clear(); 
               },
             ),
           ),

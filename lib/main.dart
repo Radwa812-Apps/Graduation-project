@@ -21,7 +21,6 @@ import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/add_use
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/signUp_verifiy_email.dart';
 import 'package:near_me_new_version/Features/auth/Sign_up_and_in/screens/sign_up_screen.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/add_members_screen.dart';
-import 'package:near_me_new_version/Features/group_profile/screens/search_member.dart';
 import 'package:near_me_new_version/Features/group_profile/screens/tracking.dart';
 import 'package:near_me_new_version/Features/select_place/screens/select_place_screen.dart';
 import 'package:near_me_new_version/Features/share_location/components/is_tracking_on_block.dart';
@@ -53,7 +52,7 @@ import 'Features/User_Profile/screens/edit_screen.dart';
 import 'Features/auth/Forgot_password/Screens/send_email_for_pass.dart';
 import 'Features/auth/Sign_up_and_in/screens/sign_in_screen.dart';
 import 'Features/group_profile/screens/group_profile_screen.dart';
-import 'Features/group_profile/screens/media.dart';
+
 import 'package:flutter/services.dart';
 
 const platform = MethodChannel(
@@ -79,16 +78,8 @@ void main() async {
     persistenceEnabled: true,
   );
 
-  /*runApp(
-    ScreenUtilInit(
-      builder: (BuildContext context, Widget? child) {
-        return NearMeApp();
-      },
-      child: ChangeNotifierProvider(create: (_) => ChatModelTemp()),
-    ),
-  );*/
+  
   const encryptionKey = 'your-256-bit-super-secret-key!!';
-  //FirebaseMessaging.instance.getToken().then(print);
 
   runApp(
     ScreenUtilInit(
@@ -126,7 +117,7 @@ void main() async {
           child: NearMeApp(),
         );
       },
-      child: Container(), // Empty container since providers are now above
+      child: Container(), 
     ),
   );
   platform.setMethodCallHandler((call) async {
@@ -329,10 +320,10 @@ class _NearMeAppState extends State<NearMeApp> with WidgetsBindingObserver {
                     recipientImage: args?['recipientImage'],
                   );
                 },
-                //SearchMember.searchMemberKey: (context) => const SearchMember(),
+                
                 SelectPlaceScreen.routeName:
                     ((context) => const SelectPlaceScreen(groupId: '')),
-                MediaScreen.mediaScreenKey: (context) => const MediaScreen(),
+                
                 PasswordResetPage.passwordResetPageKey:
                     (context) => const PasswordResetPage(),
 
