@@ -39,12 +39,10 @@ NearMe is a smart mobile application designed to help families, friends, and sch
 ---
 
 ## 📸 Screenshots
-
-![Home Screen](assets\screenshots\WhatsApp Image 2025-07-29 at 00.03.19_ce9f8294.jpg)
-![Group inside](assets\screenshots\WhatsApp Image 2025-07-29 at 00.03.21_b05af999.jpg)
-![sign in/ login](assets\screenshots\WhatsApp Image 2025-07-29 at 00.03.13_d3d72058.jpg)
-![chats](assets\screenshots\WhatsApp Image 2025-07-29 at 00.03.21_246e4b42.jpg)
-
+![WhatsApp Image 2025-07-29 at 00 03 13_d3d72058](https://github.com/user-attachments/assets/5d88c46a-697d-4142-a11c-98da8da680af)
+![WhatsApp Image 2025-07-29 at 00 03 19_ce9f8294](https://github.com/user-attachments/assets/74e271b8-6a79-40f4-9fa1-3c33dd9c89c6)
+![WhatsApp Image 2025-07-29 at 00 03 21_246e4b42](https://github.com/user-attachments/assets/511964d0-d7f0-4719-9c7e-2ffef193f361)
+![WhatsApp Image 2025-07-29 at 00 03 21_b05af999](https://github.com/user-attachments/assets/3d57841f-271b-4a2f-a32b-0dcf7ae10856)
 ---
 
 ## 📦 Installation & Setup
