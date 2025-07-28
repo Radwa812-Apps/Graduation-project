@@ -48,7 +48,7 @@ NearMe is a smart mobile application designed to help families, friends, and sch
 ## 📦 Installation & Setup
 
 1. *Clone the repository*bash
-   git clone https://github.com/ShimaaAbdalraheem/NearMe-App.git
+   git clone https://github.com/Radwa812-Apps/Graduation-project.git
 2. *Install dependencies*
    bash
    flutter pub get
